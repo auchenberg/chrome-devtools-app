@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="home">
+<head>
+  <meta charset="utf-8">
+  <title>Chrome DevEditor</title>
+  <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="node_modules/angular/angular.js"></script>
+  <script src="controllers.js"></script>
+</head>
+
+<body ng-controller="home">
+
+	<button ng-click="discover()">Discover targets</button>
+	<button ng-click="debug()">Debug</button>
+
+	<h2 ng-show="targets">Targets</h2>
+	<ul class="targets">
+	  <li ng-repeat="target in targets">
+	    <h2>{{target.title}}</h2>
+	    <h3>{{target.type}} - {{target.url}}</h3>
+	    <p>{{target.description}}</p>
+	    <button class="connect" ng-click="connect(target)">Connect</button>
+	  </li>
+	</ul>
+
+
+</body>
+</html>
