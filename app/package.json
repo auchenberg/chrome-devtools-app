@@ -1,0 +1,10 @@
+{
+  "name": "Chrome DevEditor",
+  "main": "index.html",
+  "window": {
+    "toolbar": false,
+    "width": 800,
+    "height": 600,
+    "icon": "icon/icon.png"
+  }
+}
