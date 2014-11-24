@@ -36,6 +36,9 @@ app.controller('home', function ($scope, $http, $location) {
 			$scope.targets = data;
 	  	});
 
+	  	req.catch(function() {
+	  		$scope.targets = [];
+	  	});
 
 	}
 
