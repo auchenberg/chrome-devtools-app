@@ -1,5 +1,5 @@
 {
-  "name": "Chrome DevEditor",
+  "name": "Chrome DevTools",
   "main": "index.html",
   "window": {
     "toolbar": false,

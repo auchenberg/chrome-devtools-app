@@ -1,5 +1,5 @@
 {
-  "name": "chrome-devtools-app",
+  "name": "chrome-devtools",
   "version": "0.0.1",
   "description": "Chrome DevTools packaged as an app via node-webkit",
   "main": "index.js",
@@ -8,7 +8,10 @@
     "nodewebkit": "~0.11.0",
     "bower": "~1.3.12"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-node-webkit-builder": "~0.3.0"
+  },
   "scripts": {
     "start": "nodewebkit app"
   },

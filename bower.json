@@ -1,7 +1,7 @@
 {
-  "name": "chrome-devtools-app",
+  "name": "chrome-devtools",
   "version": "0.0.0",
-  "homepage": "https://github.com/auchenberg/chrome-deveditor",
+  "homepage": "https://github.com/auchenberg/chrome-devtools-app",
   "authors": [
     "Kenneth Auchenberg <kenneth@auchenberg.dk>"
   ],
