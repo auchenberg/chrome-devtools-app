@@ -1,4 +1,6 @@
-chrome-devtools-app
+![Logo](https://github.com/auchenberg/chrome-devtools-app/raw/master/app/icon/logo.png)
+
+Chrome DevTools App.
 ===================
 
 Chrome DevTools packaged as an app via [node-webkit](https://github.com/rogerwang/node-webkit). 
