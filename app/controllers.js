@@ -1,47 +1,64 @@
-
 var gui = require('nw.gui');
 
 var app = angular.module('app', []);
 
+app.filter('regex', function() {
+    return function(input, field, regex) {
+        var patt = new RegExp(regex);
+        var out = [];
+
+        if(input) {
+            for (var i = 0; i < input.length; i++){
+                if(patt.test(input[i][field])) {
+                    out.push(input[i]);
+                }
+            }
+        }
+
+        return out;
+    };
+});
+
 app.controller('home', function ($scope, $http, $location) {
 
-	$scope.debug = function() {
-		console.log('debug');
-		var win = gui.Window.get();
-		
-		win.showDevTools();		
-	}
+    $scope.filter = '^page$';
 
-	$scope.connect = function(target) {
+    $scope.debug = function() {
+        console.log('debug');
+        var win = gui.Window.get();
 
-		console.log('target', target);
+        win.showDevTools();
+    }
 
-		if(!target.devtoolsFrontendUrl) {
-			return 
-		}
+    $scope.connect = function(target) {
 
-		var frontendUrl = target.devtoolsFrontendUrl.replace('/devtools/', '');
-		var win = gui.Window.get();
+        console.log('target', target);
 
-		var new_win = gui.Window.get(
-  			window.open('./devtools/front_end/' + frontendUrl)
-		);
+        if(!target.devtoolsFrontendUrl) {
+            return;
+        }
 
-	}	
+        var frontendUrl = target.devtoolsFrontendUrl.replace('/devtools/', '');
+        var win = gui.Window.get();
 
-	$scope.discover = function() {
-		var req = $http.get('http://localhost:9222/json');
+        var new_win = gui.Window.get(
+            window.open('./devtools/front_end/' + frontendUrl)
+        );
 
-		req.success(function(data, status, headers, config) {
-			$scope.targets = data;
-	  	});
+    }
 
-	  	req.catch(function() {
-	  		$scope.targets = [];
-	  	});
+    $scope.discover = function() {
+        var req = $http.get('http://localhost:9222/json');
 
-	}
+        req.success(function(data, status, headers, config) {
+            $scope.targets = data;
+        });
 
-	$scope.discover();
+        req.catch(function() {
+            $scope.targets = [];
+        });
+    }
+
+    $scope.discover();
 
 });

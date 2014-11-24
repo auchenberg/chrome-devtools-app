@@ -36,6 +36,17 @@ nav {
 
 section.targets {
     padding: 0 20px;
+    position: relative;
+}
+
+section.targets nav {
+    position: absolute;
+    top: 5px;
+    right: 0;
+}
+
+section.targets nav a {
+    padding-left: 10px;
 }
 
 ul.targets {
