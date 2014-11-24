@@ -13,5 +13,12 @@ This project is an exploration of how much work it would take to seperate Chrome
 4. Locate target, and click "connect"
 5. Bam. There go you.
 
+### How to start this app from source?
+Run ``npm start`` and make sure you have [node-webkit](https://github.com/rogerwang/node-webkit) installed.
+
+### How to make a new release?
+Run ``grunt nodewebkit``.
+
+
 
 This project is highly experimental.
