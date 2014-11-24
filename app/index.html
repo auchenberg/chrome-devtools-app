@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="home">
+<head>
+  <meta charset="utf-8">
+  <title>Chrome DevTools</title>
+  <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="lib/bower_components/angular/angular.js"></script>
+  <script src="controllers.js"></script>
+</head>
+
+<body ng-controller="home">
+
+	<button ng-click="discover()">Discover targets</button>
+	<button ng-click="debug()">Debug</button>
+
+	<h2 ng-show="targets">Targets</h2>
+	<ul class="targets">
+	  <li ng-repeat="target in targets">
+	    <h2>{{target.title}}</h2>
+	    <h3>{{target.type}} - {{target.url}}</h3>
+	    <p>{{target.description}}</p>
+	    <button class="connect" ng-click="connect(target)">Connect</button>
+	  </li>
+	</ul>
+
+
+<div id="pages-list" class="list pages"><div class="row"><div class="properties-box"><img src="https://chaturbate.com/favicon.ico"><div class="subrow-box"><div class="subrow"><div class="name">Chat with Allyson_Taylor in a Live Adult Video Chat Room Now</div><div class="url">https://chaturbate.com/allyson_taylor/</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img><div class="subrow-box"><div class="subrow"><div class="name">Chat with Sexykarensexy in a Live Adult Video Chat Room Now</div><div class="url">https://chaturbate.com/sexykarensexy/</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img src="https://chaturbate.com/favicon.ico"><div class="subrow-box"><div class="subrow"><div class="name">Chat with Sakarah in a Live Adult Video Chat Room Now</div><div class="url">https://chaturbate.com/sakarah/</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img><div class="subrow-box"><div class="subrow"><div class="name">Chat with Jennajustice in a Live Adult Video Chat Room Now</div><div class="url">https://chaturbate.com/jennajustice/</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img><div class="subrow-box"><div class="subrow"><div class="name">Inspect with Chrome Developer Tools</div><div class="url">chrome://inspect/#pages</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img src="https://assets-cdn.github.com/favicon.ico"><div class="subrow-box"><div class="subrow"><div class="name">mllrsohn/grunt-node-webkit-builder</div><div class="url">https://github.com/mllrsohn/grunt-node-webkit-builder</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img><div class="subrow-box"><div class="subrow"><div class="name">Chat with Soifiee in a Live Adult Video Chat Room Now</div><div class="url">https://chaturbate.com/soifiee/</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img src="http://www.business.dk/sites/www.business.dk/favicon.ico"><div class="subrow-box"><div class="subrow"><div class="name">Nye OW-oplysninger sætter kapitalfond under hårdt pres - Transport | www.business.dk</div><div class="url">http://www.business.dk/transport/nye-ow-oplysninger-saetter-kapitalfond-under-haardt-pres?utm_source…</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img src="https://prod01-cdn00.cdn.firstlook.org/theintercept/wp-content/themes/the-intercept-v2/favicon.png"><div class="subrow-box"><div class="subrow"><div class="name">Vodafone-Linked Company Aided British Mass Surveillance - The Intercept</div><div class="url">https://firstlook.org/theintercept/2014/11/20/vodafone-surveillance-gchq-snowden/</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img src="https://a-v2.sndcdn.com/assets/images/sc-icons/favicon-cb20269e.ico"><div class="subrow-box"><div class="subrow"><div class="name">auchenberg’s likes on SoundCloud - Hear the world’s sounds</div><div class="url">https://soundcloud.com/auchenberg/likes</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div><div class="row"><div class="properties-box"><img src="https://assets-cdn.github.com/favicon.ico"><div class="subrow-box"><div class="subrow"><div class="name">auchenberg/chrome-devtools-app</div><div class="url">https://github.com/auchenberg/chrome-devtools-app</div></div><div class="actions"><span class="action" tabindex="1">inspect</span></div></div></div></div></div>
+
+
+</body>
+</html>

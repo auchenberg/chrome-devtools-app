@@ -1,0 +1,10 @@
+
+
+ul.targets img {
+	flex-shrink: 0;
+	height: 16px;
+	padding-left: 2px;
+	padding-right: 5px;
+	vertical-align: top;
+	width: 16px;
+}

@@ -495,6 +495,8 @@ WebInspector.InspectorFrontendHostStub.prototype = {
 
     addFileSystem: function()
     {
+        alert('here?');
+        
     },
 
     /**
