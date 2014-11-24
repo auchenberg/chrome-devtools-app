@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" ng-app="app" ng-controller="home">
+<head>
+    <meta charset="utf-8">
+    <title>Chrome DevTools</title>
+    <link rel="stylesheet" href="css/app.css">
+    <script src="lib/bower_components/angular/angular.js"></script>
+    <script src="controllers.js"></script>
+</head>
+
+<body ng-controller="home">
+
+    <nav>
+        <button ng-click="discover()">Discover targets</button>
+        <button class="align-right" ng-click="debug()">Debug</button>
+    </nav>
+
+    <section class="targets" ng-show="targets">
+        <h1>Targets</h1>
+        <nav class="filter">
+            <a href="" ng-click="filter = '^page$'; reverse=false">Pages</a>
+            <a href="" ng-click="filter = 'background_page'; reverse=false">Extensions</a>
+        </nav>
+
+        <ul class="targets">
+            <li class="media" ng-repeat="target in targets | regex:'type': filter | orderBy:'type':true">
+                <img ng-src="{{target.faviconUrl}}" />
+                <div class="media-body info">
+                    <h2>{{target.title}}</h2>
+                    <h3>{{target.type}} - {{target.url}}</h3>
+                    <p>{{target.description}}</p>
+                </div>
+                <div class="actions">
+                    <button class="connect" ng-click="connect(target)">Connect</button>
+                </div>
+            </li>
+        </ul>
+    </section>
+
+</body>
+</html>
