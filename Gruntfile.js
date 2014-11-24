@@ -4,7 +4,7 @@ module.exports = function(grunt) {
 
 	  nodewebkit: {
 	    options: {
-	        platforms: ['win','osx'],
+	        platforms: ['osx'],
 	        buildDir: './build', 
 		    macIcns: './app/icon/icon.icns'
 	    },
