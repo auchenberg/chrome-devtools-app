@@ -27,6 +27,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-node-webkit-builder');
     grunt.loadNpmTasks('grunt-browser-sync');
 
-    grunt.registerTask('default', ['nodewebkit']);
+    grunt.registerTask('build', ['nodewebkit']);
+    grunt.registerTask('server', ['browserSync']);
 
 }
