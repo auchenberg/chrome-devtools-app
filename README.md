@@ -13,11 +13,10 @@ This project is an exploration of how much work it would take to seperate Chrome
 ## How to get started
 
 1. Download and start [Chrome DevTools.app](https://github.com/auchenberg/chrome-devtools-app/raw/master/build/Chrome%20DevTools/osx/Chrome%20DevTools.app.zip).
-2. Start an instance of Chrome with remote debugging enabled
-3. Click "discover targets"
-4. Locate target, and click "connect"
+2. Start an instance of Chrome with [remote debugging enabled](https://developer.chrome.com/devtools/docs/debugger-protocol#remote)
+3. Wait a sec or click the refresh button.
+4. Targets should show up. Click "Go" next to your target.
 5. Bam. There go you.
-
 
 ### How to get started with the source?
 1. Run ``npm install``
