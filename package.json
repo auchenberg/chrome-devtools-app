@@ -12,7 +12,9 @@
   "devDependencies": {
     "grunt": "~0.4.5",
     "grunt-node-webkit-builder": "~0.3.0",
-    "grunt-browser-sync": "~1.5.3"
+    "grunt-browser-sync": "~1.5.3",
+    "grunt-shell": "~1.1.1",
+    "load-grunt-tasks": "~2.0.0"
   },
   "scripts": {
     "start": "nodewebkit app"

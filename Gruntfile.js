@@ -13,21 +13,27 @@ module.exports = function(grunt) {
 
         browserSync: {
             bsFiles: {
-                src : 'css/*.css'
+                src : 'app/css/*.css'
             },
             options: {
                 server: {
                     baseDir: "./app"
                 }
             }
-        }
+        },
+
+        shell: {
+            runApp: {
+                command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app'
+            }
+        }        
 
     });
 
-    grunt.loadNpmTasks('grunt-node-webkit-builder');
-    grunt.loadNpmTasks('grunt-browser-sync');
+    require('load-grunt-tasks')(grunt);
 
     grunt.registerTask('build', ['nodewebkit']);
     grunt.registerTask('server', ['browserSync']);
+    grunt.registerTask('run', ['shell:runApp']);
 
 }
