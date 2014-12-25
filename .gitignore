@@ -1,3 +1,5 @@
 node_modules
+bower_components
 npm-debug.log
 cache
+.DS_Store
