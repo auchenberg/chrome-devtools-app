@@ -3,38 +3,84 @@
 <head>
     <meta charset="utf-8">
     <title>Chrome DevTools</title>
+    <link rel="shortcut icon" href="icon/logo.png">
     <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="lib/bower_components/angular-material/angular-material.css">
+
     <script src="lib/bower_components/angular/angular.js"></script>
-    <script src="controllers.js"></script>
+    <script src="lib/bower_components/hammerjs/hammer.js"></script>
+    <script src="lib/bower_components/angular-animate/angular-animate.js"></script>
+    <script src="lib/bower_components/angular-aria/angular-aria.js"></script>
+    <script src="lib/bower_components/angular-material/angular-material.js"></script>
+
+    <script src="app.js"></script>
 </head>
 
 <body ng-controller="home">
+    
+    <md-toolbar class="toolbar md-medium-tall md-accent md-default-theme md-whiteframe-z2">
+      
+        <div class="container" layout="row" layout-align="end center">
+            <div>
+                <h2>Chrome DevTools</h2>
+            </div>
+            <div flex></div>
+            <div>
+                <md-button class="md-fab md-default-theme refresh" md-theme="cyan" aria-label="Profile"  ng-click="discover()">
+                   <img src="img/ic_refresh_24px.svg" />
+                </md-button>
+                <!-- <button class="align-right" ng-click="debug()">Debug</button> -->
+            </div>            
+        </div>
 
-    <nav>
-        <button ng-click="discover()">Discover targets</button>
-        <button class="align-right" ng-click="debug()">Debug</button>
-    </nav>
+    </md-toolbar>
 
-    <section class="targets" ng-show="targets">
-        <h1>Targets</h1>
-        <nav class="filter">
-            <a href="" ng-click="filter = '^page$'; reverse=false">Pages</a>
-            <a href="" ng-click="filter = 'background_page'; reverse=false">Extensions</a>
-        </nav>
+    <section class="targets" ng-show="targets.length">
 
-        <ul class="targets">
-            <li class="media" ng-repeat="target in targets | regex:'type': filter | orderBy:'type':true">
-                <img ng-src="{{target.faviconUrl}}" />
-                <div class="media-body info">
-                    <h2>{{target.title}}</h2>
-                    <h3>{{target.type}} - {{target.url}}</h3>
-                    <p>{{target.description}}</p>
+        <md-tabs class="md-accent" md-selected="targetsFilterSelectedIndex">
+            <md-tab id="tab1" ng-click="setTargetFilter('apps')" aria-controls="tab1-content">Apps</md-tab>
+            <md-tab id="tab2" ng-click="setTargetFilter('pages')"aria-controls="tab2-content" >Pages</md-tab>
+            <md-tab id="tab3" ng-click="setTargetFilter('background_page')" aria-controls="tab3-content">Extensions</md-tab>
+        </md-tabs>
+
+        <md-list class="target-list">
+          <md-item ng-repeat="target in targets | regex:'type': filter | orderBy:'type':true">
+            <md-item-content ng-click="connect(target)">
+              <div class="md-tile-left icon">
+                  <img ng-src="{{target.faviconUrl}}" class="face" alt="{{item.who}}">
+              </div>
+              <div class="md-tile-content">
+                <h3>{{target.title}}</h3>
+                <h4>{{target.type}} - {{target.url}}</h4>
+                <p>{{target.description}}</p>
+                
+              </div>
+              <div class="md-tile-right">
+                <md-button class="md-fab md-default-theme connect" ng-click="connect(target)">Go</md-button>
+              </div>                  
+            </md-item-content>
+            <md-divider ng-if="!$last"></md-divider>
+          </md-item>
+        </md-list>
+    </section>
+
+    <section class="devtool md-whiteframe-z2" ng-show="devtoolsUrl">
+
+        <md-toolbar class="toolbar md-accent md-default-theme ">
+            <div class="container" layout="row" layout-align="start center">
+                <div>
+                    <md-button class="md-fab md-default-theme back" md-theme="cyan" aria-label="Profile" ng-click="showTargets()">
+                        <img src="img/ic_arrow_back_24px.svg" width="20" />
+                    </md-button>
                 </div>
-                <div class="actions">
-                    <button class="connect" ng-click="connect(target)">Connect</button>
-                </div>
-            </li>
-        </ul>
+
+                <div flex></div>
+
+            </div>
+        </md-toolbar>
+
+        <devtools src="{{devtoolsUrl}}">  
+
     </section>
 
 </body>

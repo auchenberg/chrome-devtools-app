@@ -1,20 +1,32 @@
 module.exports = function(grunt) { 
 
-	grunt.initConfig({
+    grunt.initConfig({
 
-	  nodewebkit: {
-	    options: {
-	        platforms: ['osx'],
-	        buildDir: './build', 
-		    macIcns: './app/icon/icon.icns'
-	    },
-	    src: ['./app/**/*'] 	       
-	  }
+        nodewebkit: {
+            options: {
+                platforms: ['osx'],
+                buildDir: './build', 
+                macIcns: './app/icon/logo.icns'
+            },
+            src: ['./app/**/*']
+        },
 
-	});
+        browserSync: {
+            bsFiles: {
+                src : 'css/*.css'
+            },
+            options: {
+                server: {
+                    baseDir: "./app"
+                }
+            }
+        }
 
-	grunt.loadNpmTasks('grunt-node-webkit-builder');
+    });
 
-	grunt.registerTask('default', ['nodewebkit']);
+    grunt.loadNpmTasks('grunt-node-webkit-builder');
+    grunt.loadNpmTasks('grunt-browser-sync');
+
+    grunt.registerTask('default', ['nodewebkit']);
 
 }
