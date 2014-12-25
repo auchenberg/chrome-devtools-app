@@ -5,6 +5,16 @@ body {
     margin: 0;
     min-width: 47em;
     padding: 20px 0 65px 0;  
+    overflow: hidden;
+}
+
+body > section {
+    position: absolute;
+    top: 88px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;    
 }
 
 .media {
@@ -30,13 +40,33 @@ h1 {
     padding-bottom: 10px;    
 }
 
-nav {
+.toolbar {
     padding: 0 20px;
+    z-index: 30;
+}
+
+.toolbar .container {
+    height: 100%;
+}
+
+.toolbar .md-fab.refresh {
+    background: #fff !important;
+    height: 40px;
+    width: 40px;
+}
+
+.toolbar .refresh img {
+    height: 20px;
+    width: 20px;
+    margin-top: 4px;
+}
+
+.toolbar h2 {
+    font-weight: normal;
 }
 
 section.targets {
-    padding: 0 20px;
-    position: relative;
+
 }
 
 section.targets nav {
@@ -49,39 +79,65 @@ section.targets nav a {
     padding-left: 10px;
 }
 
-ul.targets {
-    margin: 0;
-    padding: 0;
+.target-list {
+    display: block;
+    overflow: auto;
+    height: calc(100% - 48px);
+    padding: 0 20px;
+    cursor: pointer;
 }
 
-ul.targets li {
-    padding: 6px 0;
-    list-style: none;
-    margin: 0;
-    overflow: hidden;
+.target-list .md-button.md-fab.connect {
+    background: #DB4437;
+    height: 36px;
+    width: 36px;
+    color: #fff;
+    font-size: 14px;
+    text-transform: capitalize;
 }
 
-ul.targets li .info {
-    display: inline-block;
-    vertical-align: top;
+.target-list .icon img {
+    border-radius: 32px;
+    height: 32px;
+    width: 32px;
 }
 
-ul.targets li .info h2,
-ul.targets li .info h3 {
-    margin: 0;
+section.devtool {
+    background: #fff;
+    transform: translateX(0);
+
+    z-index: 20;
 }
 
-ul.targets li .info h3 {
-    font-weight: normal;
-    font-size: 80%;
-    color: #bebebe;
+section.devtool.ng-hide {
+    transform: translateX(150%);
 }
 
-ul.targets li img {
-    float: left;
-    height: 16px;
-    padding-left: 2px;
-    padding-right: 5px;
-    vertical-align: top;
-    width: 16px;
+section.devtool.ng-hide-add,
+section.devtool.ng-hide-remove {
+    transition: 0.4s ease all;
+}
+
+section.devtool .toolbar {
+    height: 48px;
+    min-height: 48px;
+}
+
+section.devtool .toolbar .back {
+    background: transparent;
+    box-shadow: none;
+
+    width: 30px;
+    height: 30px;
+}
+
+section.devtool .devtools-wrapper {
+    width: 100%;
+    height: calc(100% - 52px);
+}
+
+section.devtool .devtools-wrapper iframe {
+    border: 0;
+    width: 100%;
+    height: 100%;
 }
