@@ -18,24 +18,7 @@
 
 <body ng-controller="home">
     
-    <md-toolbar class="toolbar md-medium-tall md-accent md-default-theme md-whiteframe-z2">
-      
-        <div class="container" layout="row" layout-align="end center">
-            <div>
-                <h2>Chrome DevTools</h2>
-            </div>
-            <div flex></div>
-            <div>
-                <md-button class="md-fab md-default-theme refresh" md-theme="cyan" aria-label="Profile"  ng-click="discover()">
-                   <img src="img/ic_refresh_24px.svg" />
-                </md-button>
-                <!-- <button class="align-right" ng-click="debug()">Debug</button> -->
-            </div>            
-        </div>
-
-    </md-toolbar>
-
-    <section class="targets" ng-show="targets.length">
+    <section class="targets" ng-show="!devtoolsUrl">
 
         <md-tabs class="md-accent" md-selected="targetsFilterSelectedIndex">
             <md-tab id="tab1" ng-click="setTargetFilter('apps')" aria-controls="tab1-content">Apps</md-tab>
@@ -62,11 +45,20 @@
             <md-divider ng-if="!$last"></md-divider>
           </md-item>
         </md-list>
+
+
+        <div class="floating-nav">
+            <md-button class="md-fab refresh" md-theme="cyan" aria-label="Profile"  ng-click="discover()">
+               <img src="img/ic_refresh_24px.svg" />
+            </md-button>
+            <!-- <button class="align-right" ng-click="debug()">Debug</button> -->
+        </div>  
+
     </section>
 
-    <section class="devtool md-whiteframe-z2" ng-show="devtoolsUrl">
+    <section class="devtool" ng-show="devtoolsUrl">
 
-        <md-toolbar class="toolbar md-accent md-default-theme ">
+        <md-toolbar class="toolbar md-accent md-default-theme">
             <div class="container" layout="row" layout-align="start center">
                 <div>
                     <md-button class="md-fab md-default-theme back" md-theme="cyan" aria-label="Profile" ng-click="showTargets()">
@@ -82,6 +74,7 @@
         <devtools src="{{devtoolsUrl}}">  
 
     </section>
+
 
 </body>
 </html>
