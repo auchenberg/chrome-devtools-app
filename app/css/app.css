@@ -10,7 +10,7 @@ body {
 
 body > section {
     position: absolute;
-    top: 88px;
+    top: 0px;
     bottom: 0;
     left: 0;
     right: 0;
@@ -43,16 +43,22 @@ h1 {
 .toolbar {
     padding: 0 20px;
     z-index: 30;
+    height: 48px;
+    min-height: 48px;
 }
 
 .toolbar .container {
     height: 100%;
 }
 
-.toolbar .md-fab.refresh {
-    background: #fff !important;
-    height: 40px;
-    width: 40px;
+section.targets .toolbar .refresh {
+    height: 30px;
+    width: 30px;
+
+
+
+    background: #DB4437;
+    box-shadow: none;    
 }
 
 .toolbar .refresh img {
@@ -62,11 +68,14 @@ h1 {
 }
 
 .toolbar h2 {
+    font-size: 18px;
     font-weight: normal;
 }
 
-section.targets {
-
+section.targets .floating-nav{ 
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
 }
 
 section.targets nav {
