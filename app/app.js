@@ -1,5 +1,30 @@
 var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
 
+angular.element(document).ready(function () {
+    var gui = require('nw.gui');
+    var win = gui.Window.get();
+    //In order to deal with "close" from menu bar, and close from the Dock
+    win.on('close', function(event) {
+      if (event == 'quit') {
+        win.close(true);
+      } else { 
+       // event is `undefined`
+        win.hide();
+      }
+    });
+    gui.App.on('reopen', function() {
+        win.show();
+    });
+    //Close from cmd + q
+    document.addEventListener('keydown', function(event) {
+        if(event.keyCode == 81 && event.metaKey){
+            win.close(true);
+        }
+        
+    });
+});
+
+
 app.filter('regex', function() {
     return function(input, field, regex) {
         var patt = new RegExp(regex);
