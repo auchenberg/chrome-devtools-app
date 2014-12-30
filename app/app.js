@@ -1,3 +1,9 @@
+var gui = require('nw.gui');
+var win = gui.Window.get();
+var nativeMenuBar = new gui.Menu({ type: "menubar" });
+nativeMenuBar.createMacBuiltin('chrome devtools app');
+win.menu = nativeMenuBar;
+
 var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
 
 app.filter('regex', function() {
@@ -19,7 +25,7 @@ app.filter('regex', function() {
 
 app.directive('devtools', function() {
 
-    return {   
+    return {
         restrict: 'E',
         replace: true,
         template: '<div class="devtools-wrapper"><iframe src="{{src}}"></iframe></div>',
@@ -63,19 +69,19 @@ app.controller('home', function ($scope, $http, $location) {
 
         switch(filter) {
             case 'apps':
-                $scope.filter = '^apps$'; 
+                $scope.filter = '^apps$';
                 $scope.targetsFilterSelectedIndex = 0;
                 break;
             case 'pages':
-                $scope.filter = '^page$'; 
+                $scope.filter = '^page$';
                 $scope.targetsFilterSelectedIndex = 1;
-                break;        
+                break;
             case 'background_page':
-                $scope.filter = '^background_page$'; 
+                $scope.filter = '^background_page$';
                 $scope.targetsFilterSelectedIndex = 2;
                 break;
         }
-        
+
     }
 
     $scope.discover = function() {
@@ -87,7 +93,7 @@ app.controller('home', function ($scope, $http, $location) {
         });
 
         req.catch(function() {
-            
+
         });
     }
 
