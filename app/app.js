@@ -1,8 +1,3 @@
-var gui = require('nw.gui');
-var win = gui.Window.get();
-var nativeMenuBar = new gui.Menu({ type: "menubar" });
-nativeMenuBar.createMacBuiltin('chrome devtools app');
-win.menu = nativeMenuBar;
 
 var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
 
@@ -41,17 +36,23 @@ app.directive('devtools', function() {
 
 app.controller('home', function ($scope, $http, $location) {
 
+
+
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
     $scope.targets = [];
     $scope.devtoolsUrl = '';
 
+    $scope.gui = require('nw.gui');
+    $scope.win = $scope.gui.Window.get();
+
+    var nativeMenuBar = new $scope.gui.Menu({ type: "menubar" });
+    nativeMenuBar.createMacBuiltin('chrome devtools app');
+
+    $scope.win.menu = nativeMenuBar;
+
     $scope.debug = function() {
-
-        var gui = require('nw.gui');
-        var win = gui.Window.get();
-
-        win.showDevTools();
+        $scope.win.showDevTools();
     }
 
     $scope.connect = function(target) {
