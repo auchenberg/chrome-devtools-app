@@ -48,6 +48,7 @@ WebInspector.InspectElementModeController.createShortcut = function()
 
 WebInspector.InspectElementModeController.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -59,6 +60,7 @@ WebInspector.InspectElementModeController.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)
@@ -100,6 +102,7 @@ WebInspector.InspectElementModeController.ToggleSearchActionDelegate = function(
 
 WebInspector.InspectElementModeController.ToggleSearchActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -121,6 +124,7 @@ WebInspector.InspectElementModeController.ToggleButtonProvider = function()
 
 WebInspector.InspectElementModeController.ToggleButtonProvider.prototype = {
     /**
+     * @override
      * @return {?WebInspector.StatusBarItem}
      */
     item: function()

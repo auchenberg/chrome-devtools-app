@@ -30,7 +30,7 @@
 
 /**
  * @constructor
- * @param {!function()} onHide
+ * @param {function()} onHide
  * @extends {WebInspector.HelpScreen}
  */
 WebInspector.SettingsScreen = function(onHide)
@@ -41,19 +41,20 @@ WebInspector.SettingsScreen = function(onHide)
     /** @type {function()} */
     this._onHide = onHide;
 
-    this._tabbedPane = new WebInspector.TabbedPane();
-    this._tabbedPane.element.classList.add("help-window-main");
+    this._contentElement = this.element.createChild("div", "help-window-main");
     var settingsLabelElement = createElementWithClass("div", "help-window-label");
     settingsLabelElement.createTextChild(WebInspector.UIString("Settings"));
-    this._tabbedPane.element.insertBefore(settingsLabelElement, this._tabbedPane.element.firstChild);
-    this._tabbedPane.element.appendChild(this._createCloseButton());
+    this._contentElement.appendChild(this._createCloseButton());
+
+    this._tabbedPane = new WebInspector.TabbedPane();
+    this._tabbedPane.insertBeforeTabStrip(settingsLabelElement);
     this._tabbedPane.appendTab(WebInspector.SettingsScreen.Tabs.General, WebInspector.UIString("General"), new WebInspector.GenericSettingsTab());
     this._tabbedPane.appendTab(WebInspector.SettingsScreen.Tabs.Workspace, WebInspector.UIString("Workspace"), new WebInspector.WorkspaceSettingsTab());
     if (Runtime.experiments.supportEnabled())
         this._tabbedPane.appendTab(WebInspector.SettingsScreen.Tabs.Experiments, WebInspector.UIString("Experiments"), new WebInspector.ExperimentsSettingsTab());
     this._tabbedPane.appendTab(WebInspector.SettingsScreen.Tabs.Shortcuts, WebInspector.UIString("Shortcuts"), WebInspector.shortcutsScreen.createShortcutsTabView());
-    this._tabbedPane.shrinkableTabs = false;
-    this._tabbedPane.verticalTabLayout = true;
+    this._tabbedPane.setShrinkableTabs(false);
+    this._tabbedPane.setVerticalTabLayout(true);
 
     this._lastSelectedTabSetting = WebInspector.settings.createSetting("lastSelectedSettingsTab", WebInspector.SettingsScreen.Tabs.General);
     this.selectTab(this._lastSelectedTabSetting.get());
@@ -108,7 +109,7 @@ WebInspector.SettingsScreen.prototype = {
      */
     wasShown: function()
     {
-        this._tabbedPane.show(this.element);
+        this._tabbedPane.show(this._contentElement);
         WebInspector.HelpScreen.prototype.wasShown.call(this);
     },
 
@@ -214,10 +215,7 @@ WebInspector.GenericSettingsTab = function()
 
     this._populateSectionsFromExtensions();
 
-    var restoreDefaults = this._appendSection().createChild("input", "text-button");
-    restoreDefaults.type = "button";
-    restoreDefaults.value = WebInspector.UIString("Restore defaults and reload");
-    restoreDefaults.addEventListener("click", restoreAndReload, false);
+    this._appendSection().appendChild(createTextButton(WebInspector.UIString("Restore defaults and reload"), restoreAndReload));
 
     function restoreAndReload()
     {
@@ -289,7 +287,7 @@ WebInspector.GenericSettingsTab.prototype = {
                 return;
 
             if (descriptor["settingType"] === "custom") {
-                extension.instancePromise().then(appendCustomSetting).done();
+                extension.instancePromise().then(appendCustomSetting);
                 return;
             }
 
@@ -340,12 +338,12 @@ WebInspector.GenericSettingsTab.prototype = {
             case "checkbox":
                 return WebInspector.SettingsUI.createSettingCheckbox(uiTitle, setting);
             case "select":
-                var descriptorOptions = descriptor["options"]
+                var descriptorOptions = descriptor["options"];
                 var options = new Array(descriptorOptions.length);
                 for (var i = 0; i < options.length; ++i) {
                     // The third array item flags that the option name is "raw" (non-i18n-izable).
                     var optionName = descriptorOptions[i][2] ? descriptorOptions[i][0] : WebInspector.UIString(descriptorOptions[i][0]);
-                    options[i] = [WebInspector.UIString(descriptorOptions[i][0]), descriptorOptions[i][1]];
+                    options[i] = [optionName, descriptorOptions[i][1]];
                 }
                 return this._createSelectSetting(uiTitle, options, setting);
             default:
@@ -373,12 +371,7 @@ WebInspector.SettingsScreen.SkipStackFramePatternSettingDelegate.prototype = {
      */
     settingElement: function()
     {
-        var button = createElementWithClass("input", "text-button");
-        button.type = "button";
-        button.value = WebInspector.manageBlackboxingButtonLabel();
-        button.title = WebInspector.UIString("Skip stepping through sources with particular names");
-        button.addEventListener("click", this._onManageButtonClick.bind(this), false);
-        return button;
+        return createTextButton(WebInspector.manageBlackboxingButtonLabel(), this._onManageButtonClick.bind(this), "", WebInspector.UIString("Skip stepping through sources with particular names"));
     },
 
     _onManageButtonClick: function()
@@ -407,15 +400,10 @@ WebInspector.WorkspaceSettingsTab = function()
     this._fileSystemsListContainer = this._fileSystemsSection.createChild("p", "settings-list-container");
 
     this._addFileSystemRowElement = this._fileSystemsSection.createChild("div");
-    var addFileSystemButton = this._addFileSystemRowElement.createChild("input", "text-button");
-    addFileSystemButton.type = "button";
-    addFileSystemButton.value = WebInspector.UIString("Add folder\u2026");
-    addFileSystemButton.addEventListener("click", this._addFileSystemClicked.bind(this), false);
+    this._addFileSystemRowElement.appendChild(createTextButton(WebInspector.UIString("Add folder\u2026"), this._addFileSystemClicked.bind(this)));
 
-    this._editFileSystemButton = this._addFileSystemRowElement.createChild("input", "text-button");
-    this._editFileSystemButton.type = "button";
-    this._editFileSystemButton.value = WebInspector.UIString("Folder options\u2026");
-    this._editFileSystemButton.addEventListener("click", this._editFileSystemClicked.bind(this), false);
+    this._editFileSystemButton = createTextButton(WebInspector.UIString("Folder options\u2026"), this._editFileSystemClicked.bind(this));
+    this._addFileSystemRowElement.appendChild(this._editFileSystemButton);
     this._updateEditFileSystemButtonState();
 
     this._reset();
@@ -549,7 +537,6 @@ WebInspector.WorkspaceSettingsTab.prototype = {
     _fileSystemRemoved: function(event)
     {
         var fileSystem = /** @type {!WebInspector.IsolatedFileSystem} */ (event.data);
-        var selectedFileSystemPath = this._selectedFileSystemPath();
         if (this._fileSystemsList.itemForId(fileSystem.path()))
             this._fileSystemsList.removeItem(fileSystem.path());
         if (!this._fileSystemsList.itemIds().length)
@@ -600,10 +587,9 @@ WebInspector.ExperimentsSettingsTab.prototype = {
 
     _createExperimentCheckbox: function(experiment)
     {
-        var input = createElement("input");
-        input.type = "checkbox";
+        var label = createCheckboxLabel(WebInspector.UIString(experiment.title), experiment.isEnabled());
+        var input = label.checkboxElement;
         input.name = experiment.name;
-        input.checked = experiment.isEnabled();
         function listener()
         {
             experiment.setEnabled(input.checked);
@@ -612,9 +598,6 @@ WebInspector.ExperimentsSettingsTab.prototype = {
 
         var p = createElement("p");
         p.className = experiment.hidden && !experiment.isEnabled() ? "settings-experiment-hidden" : "";
-        var label = p.createChild("label");
-        label.appendChild(input);
-        label.createTextChild(WebInspector.UIString(experiment.title));
         p.appendChild(label);
         return p;
     },
@@ -672,6 +655,7 @@ WebInspector.SettingsController.SettingsScreenActionDelegate = function() { }
 
 WebInspector.SettingsController.SettingsScreenActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -881,6 +865,7 @@ WebInspector.EditableSettingsList = function(columns, valuesProvider, validateHa
 
 WebInspector.EditableSettingsList.prototype = {
     /**
+     * @override
      * @param {?string} itemId
      * @param {?string=} beforeId
      * @return {!Element}

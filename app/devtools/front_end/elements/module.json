@@ -13,38 +13,6 @@
             "className": "WebInspector.ElementsPanel.ContextMenuProvider"
         },
         {
-            "type": "@WebInspector.ActionDelegate",
-            "actionId": "elements.undo",
-            "className": "WebInspector.ElementsPanel.UndoActionDelegate",
-            "contextTypes": ["WebInspector.ElementsPanel"],
-            "bindings": [
-                {
-                    "platform": "windows,linux",
-                    "shortcut": "Ctrl+Z"
-                },
-                {
-                    "platform": "mac",
-                    "shortcut": "Meta+Z"
-                }
-            ]
-        },
-        {
-            "type": "@WebInspector.ActionDelegate",
-            "actionId": "elements.redo",
-            "className": "WebInspector.ElementsPanel.RedoActionDelegate",
-            "contextTypes": ["WebInspector.ElementsPanel"],
-            "bindings": [
-                {
-                    "platform": "windows,linux",
-                    "shortcut": "Ctrl+Y"
-                },
-                {
-                    "platform": "mac",
-                    "shortcut": "Meta+Shift+Z"
-                }
-            ]
-        },
-        {
             "type": "@WebInspector.Renderer",
             "contextTypes": ["WebInspector.DOMNode", "WebInspector.RemoteObject"],
             "className": "WebInspector.ElementsTreeOutline.Renderer"
@@ -111,11 +79,13 @@
         "Spectrum.js",
         "ElementsBreadcrumbs.js",
         "ElementsSidebarPane.js",
+        "ElementsTreeElement.js",
         "ElementsTreeOutline.js",
         "EventListenersSidebarPane.js",
         "MetricsSidebarPane.js",
         "PlatformFontsSidebarPane.js",
         "PropertiesSidebarPane.js",
+        "StylesSectionModel.js",
         "StylesSidebarPane.js",
         "ElementsPanel.js",
         "AnimationsSidebarPane.js"

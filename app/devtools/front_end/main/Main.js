@@ -42,6 +42,7 @@ WebInspector.Main = function()
 
 WebInspector.Main.prototype = {
     /**
+     * @override
      * @return {!Promise.<undefined>}
      */
     showConsole: function()
@@ -55,7 +56,7 @@ WebInspector.Main.prototype = {
         var promises = [];
         for (var i = 0; i < extensions.length; ++i)
             promises.push(resolveItem(extensions[i]));
-        Promise.all(promises).then(appendItemsInOrder).done();
+        Promise.all(promises).then(appendItemsInOrder);
 
         /**
          * @param {!Runtime.Extension} extension
@@ -133,33 +134,32 @@ WebInspector.Main.prototype = {
         Runtime.experiments.register("animationInspection", "Animation Inspection", true);
         Runtime.experiments.register("applyCustomStylesheet", "Allow custom UI themes");
         Runtime.experiments.register("canvasInspection", "Canvas inspection");
+        Runtime.experiments.register("composedShadowDOM", "Composed Shadow DOM view.", true);
+        Runtime.experiments.register("customObjectFormatters", "Custom object formatters", true);
         Runtime.experiments.register("devicesPanel", "Devices panel");
-        Runtime.experiments.register("disableAgentsWhenProfile", "Disable other agents and UI when profiler is active", true);
-        Runtime.experiments.register("dockToLeft", "Dock to left", true);
-        Runtime.experiments.register("documentation", "JavaScript documentation", true);
         Runtime.experiments.register("fileSystemInspection", "FileSystem inspection");
         Runtime.experiments.register("gpuTimeline", "GPU data on timeline", true);
         Runtime.experiments.register("layersPanel", "Layers panel");
-        Runtime.experiments.register("promiseTracker", "Enable Promise inspection");
+        Runtime.experiments.register("privateScriptInspection", "Private script inspection");
+        Runtime.experiments.register("promiseTracker", "Promise inspector");
+        Runtime.experiments.register("requestTimingInNetworkTimeline", "Request timing directly in Network timeline", true);
+        Runtime.experiments.register("stepIntoAsync", "Step into async");
+        Runtime.experiments.register("timelineInvalidationTracking", "Timeline invalidation tracking");
         Runtime.experiments.register("timelinePowerProfiler", "Timeline power profiler");
-        Runtime.experiments.register("timelineJSCPUProfile", "Timeline with JS sampling");
-        Runtime.experiments.register("timelineInvalidationTracking", "Timeline with full invalidation tracking.");
+        Runtime.experiments.register("timelineFlowEvents", "Timeline flow events", true);
         Runtime.experiments.cleanUpStaleExperiments();
 
         if (InspectorFrontendHost.isUnderTest()) {
             // Enable experiments for testing.
-            Runtime.experiments.enableForTest("disableAgentsWhenProfile");
             var testPath = WebInspector.settings.testPath.get();
             if (testPath.indexOf("timeline/") !== -1 || testPath.indexOf("layers/") !== -1)
                 Runtime.experiments.enableForTest("layersPanel");
-            if (testPath.indexOf("documentation/") !== -1)
-                Runtime.experiments.enableForTest("documentation");
             if (testPath.indexOf("elements/") !== -1)
                 Runtime.experiments.enableForTest("animationInspection");
+            if (testPath.indexOf("debugger/promise") !== -1)
+                Runtime.experiments.enableForTest("promiseTracker");
         } else {
             Runtime.experiments.setDefaultExperiments([
-                "disableAgentsWhenProfile",
-                "timelineJSCPUProfile",
             ]);
         }
     },
@@ -204,13 +204,13 @@ WebInspector.Main.prototype = {
 
         WebInspector.isolatedFileSystemManager = new WebInspector.IsolatedFileSystemManager();
         WebInspector.workspace = new WebInspector.Workspace(WebInspector.isolatedFileSystemManager.mapping());
-        WebInspector.networkWorkspaceBinding = new WebInspector.NetworkWorkspaceBinding(WebInspector.workspace);
-        new WebInspector.NetworkUISourceCodeProvider(WebInspector.networkWorkspaceBinding, WebInspector.workspace);
+        WebInspector.networkMapping = new WebInspector.NetworkMapping(WebInspector.workspace, WebInspector.isolatedFileSystemManager.mapping());
+        WebInspector.networkProject = new WebInspector.NetworkProject(WebInspector.workspace, WebInspector.networkMapping);
         WebInspector.presentationConsoleMessageHelper = new WebInspector.PresentationConsoleMessageHelper(WebInspector.workspace);
-        WebInspector.cssWorkspaceBinding = new WebInspector.CSSWorkspaceBinding();
-        WebInspector.debuggerWorkspaceBinding = new WebInspector.DebuggerWorkspaceBinding(WebInspector.targetManager, WebInspector.workspace, WebInspector.networkWorkspaceBinding);
-        WebInspector.fileSystemWorkspaceBinding = new WebInspector.FileSystemWorkspaceBinding(WebInspector.isolatedFileSystemManager, WebInspector.workspace);
-        WebInspector.breakpointManager = new WebInspector.BreakpointManager(WebInspector.settings.breakpoints, WebInspector.workspace, WebInspector.targetManager, WebInspector.debuggerWorkspaceBinding);
+        WebInspector.cssWorkspaceBinding = new WebInspector.CSSWorkspaceBinding(WebInspector.workspace, WebInspector.networkMapping, WebInspector.networkProject);
+        WebInspector.debuggerWorkspaceBinding = new WebInspector.DebuggerWorkspaceBinding(WebInspector.targetManager, WebInspector.workspace, WebInspector.networkMapping, WebInspector.networkProject);
+        WebInspector.fileSystemWorkspaceBinding = new WebInspector.FileSystemWorkspaceBinding(WebInspector.isolatedFileSystemManager, WebInspector.workspace, WebInspector.networkMapping);
+        WebInspector.breakpointManager = new WebInspector.BreakpointManager(WebInspector.settings.breakpoints, WebInspector.workspace, WebInspector.networkMapping, WebInspector.targetManager, WebInspector.debuggerWorkspaceBinding);
         WebInspector.scriptSnippetModel = new WebInspector.ScriptSnippetModel(WebInspector.workspace);
         WebInspector.extensionServer = new WebInspector.ExtensionServer();
 
@@ -352,7 +352,7 @@ WebInspector.Main.prototype = {
 
     _registerForwardedShortcuts: function()
     {
-        /** @const */ var forwardedActions = ["main.reload", "main.hard-reload"];
+        /** @const */ var forwardedActions = ["main.reload", "main.hard-reload", "main.toggle-dock"];
         var actionKeys = WebInspector.shortcutRegistry.keysForActions(forwardedActions).map(WebInspector.KeyboardShortcut.keyCodeAndModifiersFromKey);
 
         actionKeys.push({keyCode: WebInspector.KeyboardShortcut.Keys.F8.code});
@@ -399,7 +399,7 @@ WebInspector.Main.prototype = {
             if (WebInspector.openAnchorLocationRegistry.dispatch({ url: anchor.href, lineNumber: anchor.lineNumber}))
                 return;
 
-            var uiSourceCode = WebInspector.workspace.uiSourceCodeForURL(anchor.href);
+            var uiSourceCode = WebInspector.networkMapping.uiSourceCodeForURL(anchor.href);
             if (uiSourceCode) {
                 WebInspector.Revealer.reveal(uiSourceCode.uiLocation(anchor.lineNumber || 0, anchor.columnNumber || 0));
                 return;
@@ -454,6 +454,8 @@ WebInspector.Main.prototype = {
         section.addKey(shortcut.makeDescriptor(shortcut.Keys.Esc), WebInspector.UIString("Toggle drawer"));
         if (WebInspector.overridesSupport.responsiveDesignAvailable())
             section.addKey(shortcut.makeDescriptor("M", shortcut.Modifiers.CtrlOrMeta | shortcut.Modifiers.Shift), WebInspector.UIString("Toggle device mode"));
+        if (WebInspector.dockController.canDock())
+            section.addKey(shortcut.makeDescriptor("D", shortcut.Modifiers.CtrlOrMeta | shortcut.Modifiers.Shift), WebInspector.UIString("Toggle dock side"));
         section.addKey(shortcut.makeDescriptor("f", shortcut.Modifiers.CtrlOrMeta), WebInspector.UIString("Search"));
 
         var advancedSearchShortcutModifier = WebInspector.isMac()
@@ -550,7 +552,7 @@ WebInspector.Main.prototype = {
     {
         var object = WebInspector.runtimeModel.createRemoteObject(payload);
         if (object.isNode()) {
-            WebInspector.Revealer.revealPromise(object).thenOrCatch(object.release.bind(object)).done();
+            WebInspector.Revealer.revealPromise(object).then(object.release.bind(object));
             return;
         }
 
@@ -624,6 +626,7 @@ WebInspector.Main.ReloadActionDelegate = function()
 
 WebInspector.Main.ReloadActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -642,6 +645,7 @@ WebInspector.Main.HardReloadActionDelegate = function()
 
 WebInspector.Main.HardReloadActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -660,6 +664,7 @@ WebInspector.Main.DebugReloadActionDelegate = function()
 
 WebInspector.Main.DebugReloadActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -679,6 +684,7 @@ WebInspector.Main.ZoomInActionDelegate = function()
 
 WebInspector.Main.ZoomInActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -701,6 +707,7 @@ WebInspector.Main.ZoomOutActionDelegate = function()
 
 WebInspector.Main.ZoomOutActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -723,6 +730,7 @@ WebInspector.Main.ZoomResetActionDelegate = function()
 
 WebInspector.Main.ZoomResetActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()
@@ -831,6 +839,7 @@ WebInspector.Main.WarningErrorCounter.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.StatusBarItem}
      */
     item: function()

@@ -54,11 +54,17 @@ WebInspector.TimelineOverviewPane.Events = {
 };
 
 WebInspector.TimelineOverviewPane.prototype = {
+    /**
+     * @override
+     */
     wasShown: function()
     {
         this.update();
     },
 
+    /**
+     * @override
+     */
     onResize: function()
     {
         this.update();
@@ -103,21 +109,16 @@ WebInspector.TimelineOverviewPane.prototype = {
 
     _updateEventDividers: function()
     {
-        var records = this._model.eventDividerRecords();
         this._overviewGrid.removeEventDividers();
-        var dividers = [];
-        for (var i = 0; i < records.length; ++i) {
-            var record = records[i];
-            var positions = this._overviewCalculator.computeBarGraphPercentages(record);
-            var dividerPosition = Math.round(positions.start * 10);
-            if (dividers[dividerPosition])
+        var dividers = new Map();
+        for (var record of this._model.eventDividerRecords()) {
+            var dividerPosition = Math.round(this._overviewCalculator.computePosition(record.startTime()));
+            // Limit the number of dividers to one per pixel.
+            if (dividers.has(dividerPosition))
                 continue;
-            var title = WebInspector.TimelineUIUtils.titleForRecord(record);
-            var divider = WebInspector.TimelineUIUtils.createEventDivider(record.type(), title);
-            divider.style.left = positions.start + "%";
-            dividers[dividerPosition] = divider;
+            dividers.set(dividerPosition, WebInspector.TimelineUIUtils.createDividerForRecord(record, dividerPosition));
         }
-        this._overviewGrid.addEventDividers(dividers);
+        this._overviewGrid.addEventDividers(dividers.valuesArray());
     },
 
     _reset: function()
@@ -185,6 +186,7 @@ WebInspector.TimelineOverviewCalculator = function()
 
 WebInspector.TimelineOverviewCalculator.prototype = {
     /**
+     * @override
      * @return {number}
      */
     paddingLeft: function()
@@ -193,22 +195,13 @@ WebInspector.TimelineOverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @param {number} time
      * @return {number}
      */
     computePosition: function(time)
     {
         return (time - this._minimumBoundary) / this.boundarySpan() * this._workingArea + this._paddingLeft;
-    },
-
-    /**
-     * @return {!{start: number, end: number}}
-     */
-    computeBarGraphPercentages: function(record)
-    {
-        var start = (record.startTime() - this._minimumBoundary) / this.boundarySpan() * 100;
-        var end = (record.endTime() - this._minimumBoundary) / this.boundarySpan() * 100;
-        return {start: start, end: end};
     },
 
     /**
@@ -237,6 +230,7 @@ WebInspector.TimelineOverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @param {number} value
      * @param {number=} precision
      * @return {string}
@@ -247,6 +241,7 @@ WebInspector.TimelineOverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     maximumBoundary: function()
@@ -255,6 +250,7 @@ WebInspector.TimelineOverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     minimumBoundary: function()
@@ -263,6 +259,7 @@ WebInspector.TimelineOverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     zeroTime: function()
@@ -271,6 +268,7 @@ WebInspector.TimelineOverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     boundarySpan: function()
@@ -336,21 +334,31 @@ WebInspector.TimelineOverviewBase = function(model)
 
 WebInspector.TimelineOverviewBase.prototype = {
     /**
+     * @override
      * @param {!WebInspector.OverviewGrid} grid
      */
     setOverviewGrid: function(grid)
     {
     },
 
+    /**
+     * @override
+     */
     update: function()
     {
         this.resetCanvas();
     },
 
+    /**
+     * @override
+     */
     dispose: function()
     {
     },
 
+    /**
+     * @override
+     */
     reset: function()
     {
     },
@@ -364,6 +372,7 @@ WebInspector.TimelineOverviewBase.prototype = {
     },
 
     /**
+     * @override
      * @param {number} windowLeft
      * @param {number} windowRight
      * @return {!{startTime: number, endTime: number}}
@@ -379,6 +388,7 @@ WebInspector.TimelineOverviewBase.prototype = {
     },
 
     /**
+     * @override
      * @param {number} startTime
      * @param {number} endTime
      * @return {!{left: number, right: number}}
@@ -391,7 +401,7 @@ WebInspector.TimelineOverviewBase.prototype = {
         return {
             left: haveRecords && startTime ? Math.min((startTime - absoluteMin) / timeSpan, 1) : 0,
             right: haveRecords && endTime < Infinity ? (endTime - absoluteMin) / timeSpan : 1
-        }
+        };
     },
 
     resetCanvas: function()

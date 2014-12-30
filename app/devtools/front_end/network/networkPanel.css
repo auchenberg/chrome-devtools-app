@@ -27,40 +27,23 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-.network-larger-resources-status-bar-item .glyph {
-    -webkit-mask-position: -224px 0;
-}
-
-#network-views {
+.network-details-view {
     background: rgb(203, 203, 203);
 }
 
-#network-close-button {
-    position: absolute;
-    top: 8px;
-    left: 5px;
-    z-index: 10;
-    display: none;
+.network-close-button {
+    margin: auto -1px auto 4px;
 }
 
-#network-views.small #network-close-button {
-    top: 4px;
-}
-
-.network.panel.viewing-resource #network-close-button {
-    display: block;
-}
-
-#network-views .network-item-view .tabbed-pane-header {
-    flex: 0 0 31px;
-    padding-top: 8px;
-    padding-left: 13px;
+.network-details-view .network-item-view::shadow .tabbed-pane-header {
+    flex: 0 0 23px;
+    padding-top: 0;
     white-space: nowrap;
 }
 
-#network-views.small .network-item-view .tabbed-pane-header {
-    flex-basis: 23px;
-    padding-top: 0;
+.network-details-view-tall-header .network-item-view::shadow .tabbed-pane-header {
+    flex-basis: 31px;
+    padding-top: 8px;
 }
 
 .network-item-view {
@@ -69,20 +52,16 @@
 }
 
 .network-item-view.visible {
-    display: -webkit-flex;
+    display: flex;
 }
 
-.network-item-view .tabbed-pane-header {
+.network-item-view::shadow .tabbed-pane-header {
     border-bottom: 1px solid rgb(205, 205, 205);
+    background-color: transparent;
 }
 
 .resource-timing-view {
     display: none;
-    position: absolute;
-    top: 0;
-    right: 0;
-    left: 0;
-    bottom: 0;
     margin: 6px;
     color: rgb(30%, 30%, 30%);
 }
@@ -137,31 +116,35 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.network-timing-bar.blocking,
+.network-timing-bar.blocking {
+    background-color: hsl(0, 0%, 80%);
+}
+
 .network-timing-bar.proxy {
-    background-color: rgb(205, 205, 205);
+    background-color: hsl(60, 80%, 80%);
 }
 
 .network-timing-bar.dns {
-    background-color: rgb(31, 124, 131);
+    background-color: hsl(180, 80%, 80%);
 }
 
 .network-timing-bar.connecting,
-.network-timing-bar.ssl,
-.network-timing-bar.serviceworker {
-    background-color: rgb(229, 130, 38);
+.network-timing-bar.serviceworker,
+.network-timing-bar.serviceworker-preparation {
+    background-color: hsl(30, 80%, 80%);
 }
 
-.network-timing-bar.sending {
-    background-color: rgb(95, 221, 95);
+.network-timing-bar.ssl {
+    background-color: hsl(270, 80%, 80%);
 }
 
+.network-timing-bar.sending,
 .network-timing-bar.waiting {
-    background-color: rgb(95, 221, 95);
+    background-color: hsl(120, 80%, 80%);
 }
 
 .network-timing-bar.receiving {
-    background-color: rgb(65, 137, 215);
+    background-color: hsl(210, 80%, 80%);
 }
 
 .resource-timing-view.visible {
@@ -170,11 +153,6 @@
 
 .resource-timing-view .network-timing-table {
     width: 100%;
-}
-
-.panel.network .split-view {
-    flex: auto;
-    position: relative;
 }
 
 .network-filters-header {

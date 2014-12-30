@@ -56,6 +56,7 @@ WebInspector.ConsoleViewMessage = function(consoleMessage, linkifier, nestingLev
         "map": this._formatParameterAsObject,
         "set": this._formatParameterAsObject,
         "iterator": this._formatParameterAsObject,
+        "generator": this._formatParameterAsObject,
         "string": this._formatParameterAsString
     };
 }
@@ -70,6 +71,7 @@ WebInspector.ConsoleViewMessage.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     element: function()
@@ -77,6 +79,9 @@ WebInspector.ConsoleViewMessage.prototype = {
         return this.toMessageElement();
     },
 
+    /**
+     * @override
+     */
     wasShown: function()
     {
         for (var i = 0; this._dataGrids && i < this._dataGrids.length; ++i) {
@@ -87,11 +92,17 @@ WebInspector.ConsoleViewMessage.prototype = {
         }
     },
 
+    /**
+     * @override
+     */
     cacheFastHeight: function()
     {
         this._cachedHeight = this.contentElement().offsetHeight;
     },
 
+    /**
+     * @override
+     */
     willHide: function()
     {
         for (var i = 0; this._dataGrids && i < this._dataGrids.length; ++i) {
@@ -137,7 +148,7 @@ WebInspector.ConsoleViewMessage.prototype = {
          */
         function linkifyRequest(title)
         {
-            return WebInspector.Linkifier.linkifyUsingRevealer(/** @type {!WebInspector.NetworkRequest} */ (this.request), title, this.url);
+            return WebInspector.Linkifier.linkifyUsingRevealer(/** @type {!WebInspector.NetworkRequest} */ (this.request), title, this.request.url);
         }
 
         var consoleMessage = this._message;
@@ -190,7 +201,7 @@ WebInspector.ConsoleViewMessage.prototype = {
                 } else {
                     var url = consoleMessage.url;
                     if (url) {
-                        var isExternal = !WebInspector.resourceForURL(url) && !WebInspector.workspace.uiSourceCodeForURL(url);
+                        var isExternal = !WebInspector.resourceForURL(url) && !WebInspector.networkMapping.uiSourceCodeForURL(url);
                         this._anchorElement = WebInspector.linkifyURLAsNode(url, url, "console-message-url", isExternal);
                     }
                     this._messageElement = this._format([consoleMessage.messageText]);
@@ -216,7 +227,8 @@ WebInspector.ConsoleViewMessage.prototype = {
 
         this._formattedMessage.appendChild(this._messageElement);
         if (this._anchorElement) {
-            this._formattedMessage.insertBefore(createTextNode(" "), this._formattedMessage.firstChild);
+            // Append a space to prevent the anchor text from being glued to the console message when the user selects and copies the console messages.
+            this._anchorElement.appendChild(createTextNode(" "));
             this._formattedMessage.insertBefore(this._anchorElement, this._formattedMessage.firstChild);
         }
 
@@ -404,6 +416,11 @@ WebInspector.ConsoleViewMessage.prototype = {
      */
     _formatParameter: function(output, forceObjectFormat, includePreview)
     {
+        if (output.customPreview()) {
+            var customSection = new WebInspector.CustomPreviewSection(output);
+            return customSection.element();
+        }
+
         var type = forceObjectFormat ? "object" : (output.subtype || output.type);
         var formatter = this._customFormatters[type] || this._formatParameterAsValue;
         var span = createElement("span");
@@ -599,7 +616,7 @@ WebInspector.ConsoleViewMessage.prototype = {
      */
     _formatParameterAsNode: function(object, elem)
     {
-        WebInspector.Renderer.renderPromise(object).then(appendRenderer, failedToRender.bind(this)).done();
+        WebInspector.Renderer.renderPromise(object).then(appendRenderer, failedToRender.bind(this));
         /**
          * @param {!Element} rendererElement
          */
@@ -678,7 +695,7 @@ WebInspector.ConsoleViewMessage.prototype = {
 
                 if (columnRendered) {
                     var cellElement = this._renderPropertyPreviewOrAccessor(table, [rowProperty, cellProperty]);
-                    cellElement.classList.add("nowrap-below");
+                    cellElement.classList.add("console-message-nowrap-below");
                     rowValue[cellProperty.name] = cellElement;
                 }
             }
@@ -1114,7 +1131,7 @@ WebInspector.ConsoleViewMessage.prototype = {
                 var frame = stackTrace[i];
 
                 var content = createElementWithClass("div", "stacktrace-entry");
-                var functionName = frame.functionName || WebInspector.UIString("(anonymous function)");
+                var functionName = WebInspector.beautifyFunctionName(frame.functionName);
                 if (frame.scriptId) {
                     var urlElement = this._linkifyCallFrame(frame);
                     if (!urlElement)
@@ -1173,6 +1190,7 @@ WebInspector.ConsoleViewMessage.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     toString: function()
@@ -1375,6 +1393,7 @@ WebInspector.ConsoleGroupViewMessage.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     toMessageElement: function()

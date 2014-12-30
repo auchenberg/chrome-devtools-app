@@ -61,6 +61,7 @@ WebInspector.TimelineFrameOverview = function(model, frameModel)
 
 WebInspector.TimelineFrameOverview.prototype = {
     /**
+     * @override
      * @param {!WebInspector.OverviewGrid} grid
      */
     setOverviewGrid: function(grid)
@@ -69,11 +70,17 @@ WebInspector.TimelineFrameOverview.prototype = {
         this._overviewGrid.element.classList.add("timeline-overview-frames-mode");
     },
 
+    /**
+     * @override
+     */
     dispose: function()
     {
         this._overviewGrid.element.classList.remove("timeline-overview-frames-mode");
     },
 
+    /**
+     * @override
+     */
     reset: function()
     {
         this._recordsPerBar = 1;
@@ -81,6 +88,9 @@ WebInspector.TimelineFrameOverview.prototype = {
         this._barTimes = [];
     },
 
+    /**
+     * @override
+     */
     update: function()
     {
         this.resetCanvas();
@@ -285,6 +295,7 @@ WebInspector.TimelineFrameOverview.prototype = {
     },
 
     /**
+     * @override
      * @param {number} windowLeft
      * @param {number} windowRight
      * @return {!{startTime: number, endTime: number}}
@@ -305,10 +316,11 @@ WebInspector.TimelineFrameOverview.prototype = {
         return {
             startTime: leftOffset > snapTolerancePixels ? this._barTimes[firstBar].startTime : this._model.minimumRecordTime(),
             endTime: (rightOffset + snapTolerancePixels > windowSpan) || (lastBar >= this._barTimes.length) ? this._model.maximumRecordTime() : this._barTimes[lastBar].endTime
-        }
+        };
     },
 
     /**
+     * @override
      * @param {number} startTime
      * @param {number} endTime
      * @return {!{left: number, right: number}}
@@ -341,7 +353,7 @@ WebInspector.TimelineFrameOverview.prototype = {
         return {
             left: this._windowBoundaryFromTime(startTime, barEndComparator),
             right: this._windowBoundaryFromTime(endTime, barStartComparator)
-        }
+        };
     },
 
     /**

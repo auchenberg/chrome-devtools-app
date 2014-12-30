@@ -154,6 +154,7 @@ WebInspector.SubProgress = function(composite, weight)
 
 WebInspector.SubProgress.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     isCanceled: function()
@@ -162,6 +163,7 @@ WebInspector.SubProgress.prototype = {
     },
 
     /**
+     * @override
      * @param {string} title
      */
     setTitle: function(title)
@@ -169,6 +171,9 @@ WebInspector.SubProgress.prototype = {
         this._composite._parent.setTitle(title);
     },
 
+    /**
+     * @override
+     */
     done: function()
     {
         this.setWorked(this._totalWork);
@@ -177,6 +182,7 @@ WebInspector.SubProgress.prototype = {
     },
 
     /**
+     * @override
      * @param {number} totalWork
      */
     setTotalWork: function(totalWork)
@@ -186,6 +192,7 @@ WebInspector.SubProgress.prototype = {
     },
 
     /**
+     * @override
      * @param {number} worked
      * @param {string=} title
      */
@@ -198,6 +205,7 @@ WebInspector.SubProgress.prototype = {
     },
 
     /**
+     * @override
      * @param {number=} worked
      */
     worked: function(worked)

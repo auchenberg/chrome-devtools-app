@@ -22,7 +22,7 @@ WebInspector.LiveLocation.prototype = {
     },
 
     /**
-     * @return {!WebInspector.UILocation}
+     * @return {?WebInspector.UILocation}
      */
     uiLocation: function()
     {

@@ -25,6 +25,7 @@ WebInspector.ThreadsSidebarPane = function()
 WebInspector.ThreadsSidebarPane.prototype = {
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -42,6 +43,7 @@ WebInspector.ThreadsSidebarPane.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)

@@ -49,6 +49,7 @@ WebInspector.RenderingOptions = function()
 
 WebInspector.RenderingOptions.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -64,6 +65,7 @@ WebInspector.RenderingOptions.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)

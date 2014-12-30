@@ -16,14 +16,24 @@
             "type": "@WebInspector.Revealer",
             "contextTypes": ["WebInspector.NetworkRequest"],
             "className": "WebInspector.NetworkPanel.RequestRevealer"
+        },
+        {
+            "type": "ui-setting",
+            "section": "Network",
+            "title": "Show request timing directly in timeline",
+            "settingName": "networkShowRequestTimingInTimeline",
+            "settingType": "checkbox",
+            "experiment": "requestTimingInNetworkTimeline"
         }
     ],
     "dependencies": ["source_frame"],
     "scripts": [
         "FilterSuggestionBuilder.js",
+        "HARWriter.js",
         "RequestView.js",
         "NetworkDataGridNode.js",
         "NetworkItemView.js",
+        "NetworkTimeCalculator.js",
         "NetworkLogView.js",
         "RequestCookiesView.js",
         "RequestHeadersView.js",

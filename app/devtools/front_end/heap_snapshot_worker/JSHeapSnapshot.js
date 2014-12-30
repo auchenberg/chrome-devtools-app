@@ -52,12 +52,13 @@ WebInspector.JSHeapSnapshot = function(profile, progress, showHiddenData)
 
 WebInspector.JSHeapSnapshot.prototype = {
     /**
-     * @param {number} nodeIndex
+     * @override
+     * @param {number=} nodeIndex
      * @return {!WebInspector.JSHeapSnapshotNode}
      */
     createNode: function(nodeIndex)
     {
-        return new WebInspector.JSHeapSnapshotNode(this, nodeIndex);
+        return new WebInspector.JSHeapSnapshotNode(this, nodeIndex === undefined ? -1 : nodeIndex);
     },
 
     /**
@@ -82,7 +83,7 @@ WebInspector.JSHeapSnapshot.prototype = {
 
     /**
      * @override
-     * @return {?function(!WebInspector.JSHeapSnapshotNode):boolean}
+     * @return {?function(!WebInspector.HeapSnapshotNode):boolean}
      */
     classNodesFilter: function()
     {
@@ -92,7 +93,7 @@ WebInspector.JSHeapSnapshot.prototype = {
         var map = mapAndFlag.map;
         var flag = mapAndFlag.flag;
         /**
-         * @param {!WebInspector.JSHeapSnapshotNode} node
+         * @param {!WebInspector.HeapSnapshotNode} node
          * @return {boolean}
          */
         function filter(node)
@@ -103,6 +104,7 @@ WebInspector.JSHeapSnapshot.prototype = {
     },
 
     /**
+     * @override
      * @return {function(!WebInspector.HeapSnapshotEdge):boolean}
      */
     containmentEdgesFilter: function()
@@ -120,6 +122,7 @@ WebInspector.JSHeapSnapshot.prototype = {
     },
 
     /**
+     * @override
      * @return {function(!WebInspector.HeapSnapshotEdge):boolean}
      */
     retainingEdgesFilter: function()
@@ -176,15 +179,18 @@ WebInspector.JSHeapSnapshot.prototype = {
     },
 
     /**
+     * @override
+     * @protected
      * @param {!WebInspector.HeapSnapshotNode} node
-     * @return {!boolean}
+     * @return {boolean}
      */
-    _isUserRoot: function(node)
+    isUserRoot: function(node)
     {
         return node.isUserRoot() || node.isDocumentDOMTreesRoot();
     },
 
     /**
+     * @override
      * @param {function(!WebInspector.HeapSnapshotNode)} action
      * @param {boolean=} userRootsOnly
      */
@@ -225,7 +231,7 @@ WebInspector.JSHeapSnapshot.prototype = {
         if (userRootsOnly) {
             for (var iter = this.rootNode().edges(); iter.hasNext(); iter.next()) {
                 var node = iter.edge.node();
-                if (this._isUserRoot(node))
+                if (this.isUserRoot(node))
                     doAction(node);
             }
         } else {
@@ -236,7 +242,7 @@ WebInspector.JSHeapSnapshot.prototype = {
                 doAction(subRoot);
             }
             for (var iter = this.rootNode().edges(); iter.hasNext(); iter.next())
-                doAction(iter.edge.node())
+                doAction(iter.edge.node());
         }
     },
 
@@ -295,8 +301,6 @@ WebInspector.JSHeapSnapshot.prototype = {
         var edgeTypeOffset = this._edgeTypeOffset;
         var edgeFieldsCount = this._edgeFieldsCount;
         var containmentEdges = this.containmentEdges;
-        var nodes = this.nodes;
-        var nodeCount = this.nodeCount;
         var nodeFieldCount = this._nodeFieldCount;
         var firstEdgeIndexes = this._firstEdgeIndexes;
 
@@ -338,8 +342,6 @@ WebInspector.JSHeapSnapshot.prototype = {
         var edgeWeakType = this._edgeWeakType;
         var firstEdgeIndexes = this._firstEdgeIndexes;
         var containmentEdges = this.containmentEdges;
-        var containmentEdgesLength = containmentEdges.length;
-        var nodes = this.nodes;
         var nodeFieldCount = this._nodeFieldCount;
         var nodesCount = this.nodeCount;
 
@@ -390,6 +392,9 @@ WebInspector.JSHeapSnapshot.prototype = {
         }
     },
 
+    /**
+     * @override
+     */
     _calculateStatistics: function()
     {
         var nodeFieldCount = this._nodeFieldCount;
@@ -401,15 +406,22 @@ WebInspector.JSHeapSnapshot.prototype = {
         var nodeCodeType = this._nodeCodeType;
         var nodeConsStringType = this._nodeConsStringType;
         var nodeSlicedStringType = this._nodeSlicedStringType;
+        var distances = this._nodeDistances;
         var sizeNative = 0;
         var sizeCode = 0;
         var sizeStrings = 0;
         var sizeJSArrays = 0;
+        var sizeSystem = 0;
         var node = this.rootNode();
         for (var nodeIndex = 0; nodeIndex < nodesLength; nodeIndex += nodeFieldCount) {
-            node.nodeIndex = nodeIndex;
-            var nodeType = nodes[nodeIndex + nodeTypeOffset];
             var nodeSize = nodes[nodeIndex + nodeSizeOffset];
+            var ordinal = nodeIndex / nodeFieldCount;
+            if (distances[ordinal] >= WebInspector.HeapSnapshotCommon.baseSystemDistance) {
+                sizeSystem += nodeSize;
+                continue;
+            }
+            var nodeType = nodes[nodeIndex + nodeTypeOffset];
+            node.nodeIndex = nodeIndex;
             if (nodeType === nodeNativeType)
                 sizeNative += nodeSize;
             else if (nodeType === nodeCodeType)
@@ -426,6 +438,7 @@ WebInspector.JSHeapSnapshot.prototype = {
         this._statistics.code = sizeCode;
         this._statistics.jsArrays = sizeJSArrays;
         this._statistics.strings = sizeStrings;
+        this._statistics.system = sizeSystem;
     },
 
     /**
@@ -479,7 +492,7 @@ WebInspector.JSHeapSnapshot.prototype = {
  */
 WebInspector.JSHeapSnapshotNode = function(snapshot, nodeIndex)
 {
-    WebInspector.HeapSnapshotNode.call(this, snapshot, nodeIndex)
+    WebInspector.HeapSnapshotNode.call(this, snapshot, nodeIndex);
 }
 
 WebInspector.JSHeapSnapshotNode.prototype = {
@@ -498,6 +511,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     rawName: WebInspector.HeapSnapshotNode.prototype.name,
 
     /**
+     * @override
      * @return {string}
      */
     name: function()
@@ -565,6 +579,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     className: function()
@@ -584,6 +599,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     classIndex: function()
@@ -597,6 +613,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     id: function()
@@ -630,7 +647,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     },
 
     /**
-     * @return {!boolean}
+     * @return {boolean}
      */
     isUserRoot: function()
     {
@@ -638,7 +655,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     },
 
     /**
-     * @return {!boolean}
+     * @return {boolean}
      */
     isDocumentDOMTreesRoot: function()
     {
@@ -646,6 +663,7 @@ WebInspector.JSHeapSnapshotNode.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.HeapSnapshotCommon.Node}
      */
     serialize: function()
@@ -675,6 +693,7 @@ WebInspector.JSHeapSnapshotEdge = function(snapshot, edgeIndex)
 
 WebInspector.JSHeapSnapshotEdge.prototype = {
     /**
+     * @override
      * @return {!WebInspector.JSHeapSnapshotEdge}
      */
     clone: function()
@@ -684,6 +703,7 @@ WebInspector.JSHeapSnapshotEdge.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     hasStringName: function()
@@ -742,17 +762,20 @@ WebInspector.JSHeapSnapshotEdge.prototype = {
     },
 
     /**
-     * @return {string|number}
+     * @override
+     * @return {string}
      */
     name: function()
     {
+        var name = this._name();
         if (!this.isShortcut())
-            return this._name();
-        var numName = parseInt(this._name(), 10);
-        return isNaN(numName) ? this._name() : numName;
+            return String(name);
+        var numName = parseInt(name, 10);
+        return String(isNaN(numName) ? name : numName);
     },
 
     /**
+     * @override
      * @return {string}
      */
     toString: function()
@@ -828,6 +851,7 @@ WebInspector.JSHeapSnapshotRetainerEdge = function(snapshot, retainerIndex)
 
 WebInspector.JSHeapSnapshotRetainerEdge.prototype = {
     /**
+     * @override
      * @return {!WebInspector.JSHeapSnapshotRetainerEdge}
      */
     clone: function()

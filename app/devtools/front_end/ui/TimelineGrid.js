@@ -153,7 +153,7 @@ WebInspector.TimelineGrid.drawCanvasGrid = function(canvas, calculator, dividerO
         lastPosition = position;
     }
     context.restore();
-},
+}
 
 WebInspector.TimelineGrid.prototype = {
     get dividersElement()
@@ -248,18 +248,22 @@ WebInspector.TimelineGrid.prototype = {
         return true;
     },
 
+    /**
+     * @param {!Element} divider
+     */
     addEventDivider: function(divider)
     {
         this._eventDividersElement.appendChild(divider);
     },
 
+    /**
+     * @param {!Array.<!Element>} dividers
+     */
     addEventDividers: function(dividers)
     {
         this._gridHeaderElement.removeChild(this._eventDividersElement);
-        for (var i = 0; i < dividers.length; ++i) {
-            if (dividers[i])
-                this._eventDividersElement.appendChild(dividers[i]);
-        }
+        for (var divider of dividers)
+            this._eventDividersElement.appendChild(divider);
         this._gridHeaderElement.appendChild(this._eventDividersElement);
     },
 
@@ -306,7 +310,10 @@ WebInspector.TimelineGrid.prototype = {
         this._rightCurtainElement.classList.remove("hidden");
     },
 
-    setScrollAndDividerTop: function(scrollTop, dividersTop)
+    /**
+     * @param {number} scrollTop
+     */
+    setScrollTop: function(scrollTop)
     {
         this._dividersLabelBarElement.style.top = scrollTop + "px";
         this._eventDividersElement.style.top = scrollTop + "px";

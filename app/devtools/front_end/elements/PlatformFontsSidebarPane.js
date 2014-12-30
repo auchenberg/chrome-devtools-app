@@ -45,6 +45,7 @@ WebInspector.PlatformFontsSidebarPane = function()
 
 WebInspector.PlatformFontsSidebarPane.prototype = {
     /**
+     * @override
      * @param {?WebInspector.DOMNode} node
      */
     setNode: function(node)
@@ -80,6 +81,7 @@ WebInspector.PlatformFontsSidebarPane.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Throttler.FinishCallback} finishedCallback
      * @protected
      */

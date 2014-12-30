@@ -225,7 +225,7 @@ TestSuite.prototype.addSniffer = function(receiver, methodName, override, opt_st
 /**
  * Waits for current throttler invocations, if any.
  * @param {!WebInspector.Throttler} throttler
- * @param {!function} callback
+ * @param {function} callback
  */
 TestSuite.prototype.waitForThrottler = function(throttler, callback)
 {
@@ -363,9 +363,9 @@ TestSuite.prototype.testNoScriptDuplicatesOnPanelSwitch = function()
     function checkNoDuplicates() {
         var uiSourceCodes = test.nonAnonymousUISourceCodes_();
         for (var i = 0; i < uiSourceCodes.length; i++) {
-            var scriptName = uiSourceCodes[i].url;
+            var scriptName = WebInspector.networkMapping.networkURL(uiSourceCodes[i]);
             for (var j = i + 1; j < uiSourceCodes.length; j++)
-                test.assertTrue(scriptName !== uiSourceCodes[j].url, "Found script duplicates: " + test.uiSourceCodesToString_(uiSourceCodes));
+                test.assertTrue(scriptName !== WebInspector.networkMapping.networkURL(uiSourceCodes[j]), "Found script duplicates: " + test.uiSourceCodesToString_(uiSourceCodes));
         }
     }
 
@@ -759,7 +759,7 @@ TestSuite.prototype.uiSourceCodesToString_ = function(uiSourceCodes)
 {
     var names = [];
     for (var i = 0; i < uiSourceCodes.length; i++)
-        names.push('"' + uiSourceCodes[i].url + '"');
+        names.push('"' + WebInspector.networkMapping.networkURL(uiSourceCodes[i]) + '"');
     return names.join(",");
 };
 
@@ -772,7 +772,7 @@ TestSuite.prototype.nonAnonymousUISourceCodes_ = function()
 {
     function filterOutAnonymous(uiSourceCode)
     {
-        return !!uiSourceCode.url;
+        return !!WebInspector.networkMapping.networkURL(uiSourceCode);
     }
 
     function filterOutService(uiSourceCode)

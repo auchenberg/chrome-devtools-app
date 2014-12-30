@@ -75,7 +75,7 @@ WebInspector.AuditController.prototype = {
             if (++categoriesDone !== categories.length)
                 return;
             this._progress.done();
-            resultCallback(mainResourceURL, results)
+            resultCallback(mainResourceURL, results);
         }
 
         var requests = target.networkLog.requests.slice();

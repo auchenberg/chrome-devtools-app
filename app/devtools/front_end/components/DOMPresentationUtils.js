@@ -111,16 +111,43 @@ WebInspector.DOMPresentationUtils.linkifyNodeReference = function(node)
 }
 
 /**
- * @param {string} imageURL
+ * @param {!WebInspector.DeferredDOMNode} deferredNode
+ * @return {!Node}
+ */
+WebInspector.DOMPresentationUtils.linkifyDeferredNodeReference = function(deferredNode)
+{
+    var link = createElement("span");
+    link.className = "node-link";
+
+    link.addEventListener("click", deferredNode.resolve.bind(deferredNode, onDeferredNodeResolved), false);
+
+    /**
+     * @param {?WebInspector.DOMNode} node
+     */
+    function onDeferredNodeResolved(node)
+    {
+        WebInspector.Revealer.reveal(node);
+    }
+
+    return link;
+}
+
+/**
  * @param {!WebInspector.Target} target
+ * @param {string} originalImageURL
  * @param {boolean} showDimensions
  * @param {function(!Element=)} userCallback
- * @param {!Object=} precomputedDimensions
+ * @param {!Object=} precomputedFeatures
  */
-WebInspector.DOMPresentationUtils.buildImagePreviewContents = function(target, imageURL, showDimensions, userCallback, precomputedDimensions)
+WebInspector.DOMPresentationUtils.buildImagePreviewContents = function(target, originalImageURL, showDimensions, userCallback, precomputedFeatures)
 {
-    var resource = target.resourceTreeModel.resourceForURL(imageURL);
-    if (!resource) {
+    var resource = target.resourceTreeModel.resourceForURL(originalImageURL);
+    var imageURL = originalImageURL;
+    if (!isImageResource(resource) && precomputedFeatures && precomputedFeatures.currentSrc) {
+        imageURL = precomputedFeatures.currentSrc;
+        resource = target.resourceTreeModel.resourceForURL(imageURL);
+    }
+    if (!isImageResource(resource)) {
         userCallback();
         return;
     }
@@ -136,14 +163,23 @@ WebInspector.DOMPresentationUtils.buildImagePreviewContents = function(target, i
         userCallback();
     }
 
+    /**
+     * @param {?WebInspector.Resource} resource
+     * @return {boolean}
+     */
+    function isImageResource(resource)
+    {
+        return !!resource && resource.resourceType() === WebInspector.resourceTypes.Image;
+    }
+
     function buildContent()
     {
         var container = createElement("table");
         container.className = "image-preview-container";
-        var naturalWidth = precomputedDimensions ? precomputedDimensions.naturalWidth : imageElement.naturalWidth;
-        var naturalHeight = precomputedDimensions ? precomputedDimensions.naturalHeight : imageElement.naturalHeight;
-        var offsetWidth = precomputedDimensions ? precomputedDimensions.offsetWidth : naturalWidth;
-        var offsetHeight = precomputedDimensions ? precomputedDimensions.offsetHeight : naturalHeight;
+        var naturalWidth = precomputedFeatures ? precomputedFeatures.naturalWidth : imageElement.naturalWidth;
+        var naturalHeight = precomputedFeatures ? precomputedFeatures.naturalHeight : imageElement.naturalHeight;
+        var offsetWidth = precomputedFeatures ? precomputedFeatures.offsetWidth : naturalWidth;
+        var offsetHeight = precomputedFeatures ? precomputedFeatures.offsetHeight : naturalHeight;
         var description;
         if (showDimensions) {
             if (offsetHeight === naturalHeight && offsetWidth === naturalWidth)
@@ -155,8 +191,53 @@ WebInspector.DOMPresentationUtils.buildImagePreviewContents = function(target, i
         container.createChild("tr").createChild("td", "image-container").appendChild(imageElement);
         if (description)
             container.createChild("tr").createChild("td").createChild("span", "description").textContent = description;
+        if (imageURL !== originalImageURL)
+            container.createChild("tr").createChild("td").createChild("span", "description").textContent = String.sprintf("currentSrc: %s", imageURL.trimMiddle(100));
         userCallback(container);
     }
+}
+
+/**
+ * @param {!WebInspector.Target} target
+ * @param {!WebInspector.Linkifier} linkifier
+ * @param {!Array.<!ConsoleAgent.CallFrame>=} stackTrace
+ * @param {!ConsoleAgent.AsyncStackTrace=} asyncStackTrace
+ * @return {!Element}
+ */
+WebInspector.DOMPresentationUtils.buildStackTracePreviewContents = function(target, linkifier, stackTrace, asyncStackTrace)
+{
+    var element = createElementWithClass("table", "stack-preview-container");
+
+    /**
+     * @param {!Array.<!ConsoleAgent.CallFrame>} stackTrace
+     */
+    function appendStackTrace(stackTrace)
+    {
+        for (var stackFrame of stackTrace) {
+            var row = createElement("tr");
+            row.createChild("td").textContent = WebInspector.beautifyFunctionName(stackFrame.functionName);
+            row.createChild("td").textContent = " @ ";
+            row.createChild("td").appendChild(linkifier.linkifyConsoleCallFrame(target, stackFrame));
+            element.appendChild(row);
+        }
+    }
+
+    if (stackTrace)
+        appendStackTrace(stackTrace);
+
+    while (asyncStackTrace) {
+        var callFrames = asyncStackTrace.callFrames;
+        if (!callFrames || !callFrames.length)
+            break;
+        var row = element.createChild("tr");
+        row.createChild("td", "stack-preview-async-description").textContent = WebInspector.asyncStackTraceLabel(asyncStackTrace.description);
+        row.createChild("td");
+        row.createChild("td");
+        appendStackTrace(callFrames);
+        asyncStackTrace = asyncStackTrace.asyncStackTrace;
+    }
+
+    return element;
 }
 
 /**
@@ -447,7 +528,7 @@ WebInspector.DOMPresentationUtils._xPathValue = function(node, optimized)
         ownValue += "[" + ownIndex + "]";
 
     return new WebInspector.DOMNodePathStep(ownValue, node.nodeType() === Node.DOCUMENT_NODE);
-},
+}
 
 /**
  * @param {!WebInspector.DOMNode} node
@@ -509,6 +590,7 @@ WebInspector.DOMNodePathStep = function(value, optimized)
 
 WebInspector.DOMNodePathStep.prototype = {
     /**
+     * @override
      * @return {string}
      */
     toString: function()

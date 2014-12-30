@@ -56,7 +56,7 @@
     top: 50%;
     left: 50%;
     -webkit-transform-style: flat;
-    -webkit-box-shadow: inset 0px 0px 15px rgba(0, 0, 0, 0.7);
+    -webkit-box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
 }
 
 .accelerometer-box .front {
@@ -64,14 +64,14 @@
     width: 80px;
     height: 107px;
     background-color: gray;
-    transform: translate3d(0px, 0px, 10px);
+    transform: translate3d(0, 0, 10px);
 }
 
 .accelerometer-box .back {
     width: 80px;
     height: 107px;
     background-color: black;
-    transform: rotateY(-180deg) translate3d(0px, 0px, 10px);
+    transform: rotateY(-180deg) translate3d(0, 0, 10px);
 }
 
 .accelerometer-box .top {
@@ -79,7 +79,7 @@
     width: 80px;
     height: 20px;
     background-color: #75CE89;
-    transform: rotateX(-90deg) translate3d(0px, 0px, -10px);
+    transform: rotateX(-90deg) translate3d(0, 0, -10px);
 }
 
 .accelerometer-box .bottom {
@@ -87,21 +87,21 @@
     width: 80px;
     height: 20px;
     background-color: #865C6C;
-    transform: rotateX(90deg) translate3d(0px, 0px, -97px);
+    transform: rotateX(90deg) translate3d(0, 0, -97px);
 }
 
 .accelerometer-box .left {
     width: 20px;
     height: 107px;
     background-color: #7992CB;
-    transform: rotateY(90deg) translate3d(0px, 0px, 70px);
+    transform: rotateY(90deg) translate3d(0, 0, 70px);
 }
 
 .accelerometer-box .right {
     width: 20px;
     height: 107px;
     background-color: #7992CB;
-    transform: rotateY(-90deg) translate3d(0px, 0px, 10px);
+    transform: rotateY(-90deg) translate3d(0, 0, 10px);
 }
 
 .accelerometer-axis-input-container {

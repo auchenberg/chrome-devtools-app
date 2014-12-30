@@ -142,9 +142,7 @@ WebInspector.DatabaseModel = function(target)
     WebInspector.SDKModel.call(this, WebInspector.DatabaseModel, target);
 
     this._databases = [];
-    target.registerDatabaseDispatcher(new WebInspector.DatabaseDispatcher(this));
     this._agent = target.databaseAgent();
-    this._agent.enable();
 }
 
 WebInspector.DatabaseModel.Events = {
@@ -152,6 +150,15 @@ WebInspector.DatabaseModel.Events = {
 }
 
 WebInspector.DatabaseModel.prototype = {
+    enable: function()
+    {
+        if (this._enabled)
+            return;
+        this.target().registerDatabaseDispatcher(new WebInspector.DatabaseDispatcher(this));
+        this._agent.enable();
+        this._enabled = true;
+    },
+
     /**
      * @return {!Array.<!WebInspector.Database>}
      */
@@ -196,6 +203,7 @@ WebInspector.DatabaseDispatcher = function(model)
 
 WebInspector.DatabaseDispatcher.prototype = {
     /**
+     * @override
      * @param {!DatabaseAgent.Database} payload
      */
     addDatabase: function(payload)

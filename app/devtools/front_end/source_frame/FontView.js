@@ -36,7 +36,7 @@ WebInspector.FontView = function(url)
     WebInspector.VBox.call(this);
     this.registerRequiredCSS("source_frame/fontView.css");
     this.element.classList.add("font-view");
-    this._url = url
+    this._url = url;
 }
 
 WebInspector.FontView._fontPreviewLines = [ "ABCDEFGHIJKLM", "NOPQRSTUVWXYZ", "abcdefghijklm", "nopqrstuvwxyz", "1234567890" ];

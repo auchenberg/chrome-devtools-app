@@ -45,6 +45,7 @@ WebInspector.CPUFlameChartDataProvider = function(cpuProfile, target)
 
 WebInspector.CPUFlameChartDataProvider.prototype = {
     /**
+     * @override
      * @return {number}
      */
     barHeight: function()
@@ -53,6 +54,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     textBaseline: function()
@@ -61,6 +63,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     textPadding: function()
@@ -69,6 +72,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} startTime
      * @param {number} endTime
      * @return {?Array.<number>}
@@ -79,6 +83,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     minimumBoundary: function()
@@ -87,6 +92,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     totalTime: function()
@@ -95,6 +101,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     maxStackDepth: function()
@@ -103,38 +110,12 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.FlameChart.TimelineData}
      */
     timelineData: function()
     {
         return this._timelineData || this._calculateTimelineData();
-    },
-
-    /**
-     * @param {number} index
-     * @return {string}
-     */
-    markerColor: function(index)
-    {
-        throw new Error("Unreachable.");
-    },
-
-    /**
-     * @param {number} index
-     * @return {string}
-     */
-    markerTitle: function(index)
-    {
-        throw new Error("Unreachable.");
-    },
-
-    /**
-     * @param {number} index
-     * @return {boolean}
-     */
-    isTallMarker: function(index)
-    {
-        throw new Error("Unreachable.");
     },
 
     /**
@@ -222,6 +203,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {?Array.<!{title: string, text: string}>}
      */
@@ -241,7 +223,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
             entryInfo.push(row);
         }
 
-        var name = WebInspector.CPUProfileDataModel.beautifyFunctionName(node.functionName);
+        var name = WebInspector.beautifyFunctionName(node.functionName);
         pushEntryInfoRow(WebInspector.UIString("Name"), name);
         var selfTime = this._millisecondsToString(this._entrySelfTimes[entryIndex]);
         var totalTime = this._millisecondsToString(timelineData.entryTotalTimes[entryIndex]);
@@ -258,6 +240,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {boolean}
      */
@@ -267,16 +250,18 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {string}
      */
     entryTitle: function(entryIndex)
     {
         var node = this._entryNodes[entryIndex];
-        return WebInspector.CPUProfileDataModel.beautifyFunctionName(node.functionName);
+        return WebInspector.beautifyFunctionName(node.functionName);
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {?string}
      */
@@ -292,6 +277,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {string}
      */
@@ -302,6 +288,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @param {!CanvasRenderingContext2D} context
      * @param {?string} text
@@ -309,15 +296,15 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
      * @param {number} barY
      * @param {number} barWidth
      * @param {number} barHeight
-     * @param {function(number):number} timeToPosition
      * @return {boolean}
      */
-    decorateEntry: function(entryIndex, context, text, barX, barY, barWidth, barHeight, timeToPosition)
+    decorateEntry: function(entryIndex, context, text, barX, barY, barWidth, barHeight)
     {
         return false;
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {boolean}
      */
@@ -327,6 +314,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {!{startTime: number, endTime: number}}
      */
@@ -340,6 +328,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     paddingLeft: function()
@@ -348,6 +337,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} entryIndex
      * @return {string}
      */
@@ -416,8 +406,8 @@ WebInspector.CPUProfileFlameChart.prototype = {
     },
 
     /**
-     * @param {!number} timeLeft
-     * @param {!number} timeRight
+     * @param {number} timeLeft
+     * @param {number} timeRight
      */
     selectRange: function(timeLeft, timeRight)
     {
@@ -439,6 +429,7 @@ WebInspector.CPUProfileFlameChart.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {boolean} shouldJump
      * @param {boolean=} jumpBackwards
@@ -467,6 +458,9 @@ WebInspector.CPUProfileFlameChart.prototype = {
         return this._searchResults.length;
     },
 
+    /**
+     * @override
+     */
     searchCanceled: function()
     {
         this._mainPane.setSelectedEntry(-1);
@@ -474,12 +468,18 @@ WebInspector.CPUProfileFlameChart.prototype = {
         this._searchResultIndex = -1;
     },
 
+    /**
+     * @override
+     */
     jumpToNextSearchResult: function()
     {
         this._searchResultIndex = (this._searchResultIndex + 1) % this._searchResults.length;
         this._mainPane.setSelectedEntry(this._searchResults[this._searchResultIndex]);
     },
 
+    /**
+     * @override
+     */
     jumpToPreviousSearchResult: function()
     {
         this._searchResultIndex = (this._searchResultIndex - 1 + this._searchResults.length) % this._searchResults.length;
@@ -487,6 +487,7 @@ WebInspector.CPUProfileFlameChart.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     currentSearchResultIndex: function()
@@ -507,6 +508,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator = function()
 
 WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     /**
+     * @override
      * @return {number}
      */
     paddingLeft: function()
@@ -526,6 +528,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @param {number} time
      * @return {number}
      */
@@ -535,6 +538,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @param {number} value
      * @param {number=} precision
      * @return {string}
@@ -545,6 +549,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     maximumBoundary: function()
@@ -553,6 +558,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     minimumBoundary: function()
@@ -561,6 +567,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     zeroTime: function()
@@ -569,6 +576,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     boundarySpan: function()
@@ -599,6 +607,7 @@ WebInspector.CPUProfileFlameChart.OverviewPane = function(dataProvider)
 
 WebInspector.CPUProfileFlameChart.OverviewPane.prototype = {
     /**
+     * @override
      * @param {number} windowStartTime
      * @param {number} windowEndTime
      */
@@ -608,6 +617,7 @@ WebInspector.CPUProfileFlameChart.OverviewPane.prototype = {
     },
 
     /**
+     * @override
      * @param {number} startTime
      * @param {number} endTime
      */
@@ -616,8 +626,8 @@ WebInspector.CPUProfileFlameChart.OverviewPane.prototype = {
     },
 
     /**
-     * @param {!number} timeLeft
-     * @param {!number} timeRight
+     * @param {number} timeLeft
+     * @param {number} timeRight
      */
     _selectRange: function(timeLeft, timeRight)
     {
@@ -657,7 +667,7 @@ WebInspector.CPUProfileFlameChart.OverviewPane.prototype = {
     {
         if (this._updateTimerId)
             return;
-        this._updateTimerId = requestAnimationFrame(this.update.bind(this));
+        this._updateTimerId = this.element.window().requestAnimationFrame(this.update.bind(this));
     },
 
     update: function()
@@ -727,8 +737,8 @@ WebInspector.CPUProfileFlameChart.OverviewPane.prototype = {
     },
 
     /**
-     * @param {!number} width
-     * @param {!number} height
+     * @param {number} width
+     * @param {number} height
      */
     _resetCanvas: function(width, height)
     {

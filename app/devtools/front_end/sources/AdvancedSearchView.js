@@ -8,16 +8,17 @@
  */
 WebInspector.AdvancedSearchView = function()
 {
-    WebInspector.VBox.call(this);
+    WebInspector.VBox.call(this, true);
+    this.registerRequiredCSS("sources/sourcesSearch.css");
 
     this._searchId = 0;
 
-    this.element.classList.add("search-view");
+    this.contentElement.classList.add("search-view");
 
-    this._searchPanelElement = this.element.createChild("div", "search-drawer-header");
+    this._searchPanelElement = this.contentElement.createChild("div", "search-drawer-header");
     this._searchPanelElement.addEventListener("keydown", this._onKeyDown.bind(this), false);
 
-    this._searchResultsElement = this.element.createChild("div");
+    this._searchResultsElement = this.contentElement.createChild("div");
     this._searchResultsElement.className = "search-results";
 
     this._search = this._searchPanelElement.createChild("input");
@@ -27,23 +28,21 @@ WebInspector.AdvancedSearchView = function()
     this._search.setAttribute("results", "0");
     this._search.setAttribute("size", 30);
 
-    this._ignoreCaseLabel = this._searchPanelElement.createChild("label");
+    this._ignoreCaseLabel = createCheckboxLabel(WebInspector.UIString("Ignore case"));
     this._ignoreCaseLabel.classList.add("search-config-label");
-    this._ignoreCaseCheckbox = this._ignoreCaseLabel.createChild("input");
-    this._ignoreCaseCheckbox.setAttribute("type", "checkbox");
+    this._searchPanelElement.appendChild(this._ignoreCaseLabel);
+    this._ignoreCaseCheckbox = this._ignoreCaseLabel.checkboxElement;
     this._ignoreCaseCheckbox.classList.add("search-config-checkbox");
-    this._ignoreCaseLabel.createTextChild(WebInspector.UIString("Ignore case"));
 
-    this._regexLabel = this._searchPanelElement.createChild("label");
+    this._regexLabel = createCheckboxLabel(WebInspector.UIString("Regular expression"));
     this._regexLabel.classList.add("search-config-label");
-    this._regexCheckbox = this._regexLabel.createChild("input");
-    this._regexCheckbox.setAttribute("type", "checkbox");
+    this._searchPanelElement.appendChild(this._regexLabel);
+    this._regexCheckbox = this._regexLabel.checkboxElement;
     this._regexCheckbox.classList.add("search-config-checkbox");
-    this._regexLabel.createTextChild(WebInspector.UIString("Regular expression"));
 
-    this._searchStatusBarElement = this.element.createChild("div", "search-status-bar-summary");
+    this._searchStatusBarElement = this.contentElement.createChild("div", "search-status-bar-summary");
     this._searchMessageElement = this._searchStatusBarElement.createChild("div", "search-message");
-    this._searchProgressPlaceholderElement = this._searchStatusBarElement.createChild("div");
+    this._searchProgressPlaceholderElement = this._searchStatusBarElement.createChild("div", "flex-centered");
     this._searchStatusBarElement.createChild("div", "search-message-spacer");
     this._searchResultsMessageElement = this._searchStatusBarElement.createChild("div", "search-message");
 
@@ -52,7 +51,7 @@ WebInspector.AdvancedSearchView = function()
     WebInspector.AdvancedSearchView._instance = this;
     /** @type {!WebInspector.SearchScope} */
     this._searchScope = new WebInspector.SourcesSearchScope();
-    if (WebInspector.AdvancedSearchView._pendingQuery) {
+    if (WebInspector.AdvancedSearchView._pendingQuery !== undefined) {
         this._toggle(WebInspector.AdvancedSearchView._pendingQuery);
         delete WebInspector.AdvancedSearchView._pendingQuery;
     }
@@ -353,6 +352,7 @@ WebInspector.AdvancedSearchView.ToggleDrawerViewActionDelegate = function()
 
 WebInspector.AdvancedSearchView.ToggleDrawerViewActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      * // FIXME: remove this suppression.
      * @suppressGlobalPropertiesCheck

@@ -86,33 +86,16 @@ FormatterWorker.format = function(params)
 }
 
 /**
- * @param {number} totalLength
- * @param {number} chunkSize
- */
-FormatterWorker._chunkCount = function(totalLength, chunkSize)
-{
-    if (totalLength <= chunkSize)
-        return 1;
-
-    var remainder = totalLength % chunkSize;
-    var partialLength = totalLength - remainder;
-    return (partialLength / chunkSize) + (remainder ? 1 : 0);
-}
-
-/**
  * @param {!Object} params
  */
 FormatterWorker.javaScriptOutline = function(params)
 {
     var chunkSize = 100000; // characters per data chunk
-    var totalLength = params.content.length;
     var lines = params.content.split("\n");
-    var chunkCount = FormatterWorker._chunkCount(totalLength, chunkSize);
     var outlineChunk = [];
     var previousIdentifier = null;
     var previousToken = null;
     var previousTokenType = null;
-    var currentChunk = 1;
     var processedChunkCharacters = 0;
     var addedFunction = false;
     var isReadingArguments = false;
@@ -188,13 +171,13 @@ FormatterWorker.javaScriptOutline = function(params)
         processedChunkCharacters += newColumn - column;
 
         if (processedChunkCharacters >= chunkSize) {
-            postMessage({ chunk: outlineChunk, total: chunkCount, index: currentChunk++ });
+            postMessage({ chunk: outlineChunk, isLastChunk: false });
             outlineChunk = [];
             processedChunkCharacters = 0;
         }
     }
 
-    postMessage({ chunk: outlineChunk, total: chunkCount, index: chunkCount });
+    postMessage({ chunk: outlineChunk, isLastChunk: true });
 }
 
 FormatterWorker.CSSParserStates = {
@@ -233,7 +216,7 @@ FormatterWorker.parseCSS = function(params)
                 rule = {
                     selectorText: tokenValue,
                     lineNumber: lineNumber,
-                    columNumber: column,
+                    columnNumber: column,
                     properties: [],
                 };
                 state = FormatterWorker.CSSParserStates.Selector;
@@ -241,7 +224,7 @@ FormatterWorker.parseCSS = function(params)
                 rule = {
                     atRule: tokenValue,
                     lineNumber: lineNumber,
-                    columNumber: column,
+                    columnNumber: column,
                 };
                 state = FormatterWorker.CSSParserStates.AtRule;
             }
@@ -395,7 +378,6 @@ FormatterWorker.HTMLFormatter.prototype = {
         function processToken(tokenValue, tokenType, tokenStart, tokenEnd) {
             if (!tokenType)
                 return;
-            var oldType = tokenType;
             tokenType = tokenType.split(" ").keySet();
             if (!tokenType["tag"])
                 return;

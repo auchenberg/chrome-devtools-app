@@ -33,7 +33,7 @@
 WebInspector.Spectrum = function()
 {
     WebInspector.VBox.call(this, true);
-    this.contentElement.appendChild(WebInspector.View.createStyleElement("elements/spectrum.css"));
+    this.registerRequiredCSS("elements/spectrum.css");
     this.contentElement.tabIndex = 0;
 
     this._draggerElement = this.contentElement.createChild("div", "spectrum-color");
@@ -230,22 +230,22 @@ WebInspector.Spectrum.prototype = {
         var cf = WebInspector.Color.Format;
         var format = this._originalFormat;
         var color = this.color();
-        var originalFormatString = color.toString(this._originalFormat);
+        var originalFormatString = color.asString(this._originalFormat);
         if (originalFormatString)
             return originalFormatString;
 
         if (color.hasAlpha()) {
             // Everything except HSL(A) should be returned as RGBA if transparency is involved.
             if (format === cf.HSLA || format === cf.HSL)
-                return color.toString(cf.HSLA);
+                return color.asString(cf.HSLA);
             else
-                return color.toString(cf.RGBA);
+                return color.asString(cf.RGBA);
         }
 
         if (format === cf.ShortHEX)
-            return color.toString(cf.HEX);
+            return color.asString(cf.HEX);
         console.assert(format === cf.Nickname);
-        return color.toString(cf.RGB);
+        return color.asString(cf.RGB);
     },
 
 
@@ -288,8 +288,8 @@ WebInspector.Spectrum.prototype = {
     {
         this._updateHelperLocations();
 
-        this._draggerElement.style.backgroundColor = /** @type {string} */ (WebInspector.Color.fromHSVA([this._hsv[0], 1, 1, 1]).toString(WebInspector.Color.Format.RGB));
-        this._swatchInnerElement.style.backgroundColor = /** @type {string} */ (this.color().toString(WebInspector.Color.Format.RGBA));
+        this._draggerElement.style.backgroundColor = /** @type {string} */ (WebInspector.Color.fromHSVA([this._hsv[0], 1, 1, 1]).asString(WebInspector.Color.Format.RGB));
+        this._swatchInnerElement.style.backgroundColor = /** @type {string} */ (this.color().asString(WebInspector.Color.Format.RGBA));
 
         this._alphaElement.value = this._hsv[3] * 100;
     },

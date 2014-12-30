@@ -32,8 +32,9 @@
  * @constructor
  * @extends {WebInspector.TabbedPane}
  * @param {!WebInspector.NetworkRequest} request
+ * @param {!WebInspector.NetworkTimeCalculator} calculator
  */
-WebInspector.NetworkItemView = function(request)
+WebInspector.NetworkItemView = function(request, calculator)
 {
     WebInspector.TabbedPane.call(this);
     this.element.classList.add("network-item-view");
@@ -58,10 +59,8 @@ WebInspector.NetworkItemView = function(request)
         this.appendTab("cookies", WebInspector.UIString("Cookies"), this._cookiesView);
     }
 
-    if (request.timing) {
-        var timingView = new WebInspector.RequestTimingView(request);
-        this.appendTab("timing", WebInspector.UIString("Timing"), timingView);
-    }
+    this.appendTab("timing", WebInspector.UIString("Timing"), new WebInspector.RequestTimingView(request, calculator));
+
     this._request = request;
 }
 

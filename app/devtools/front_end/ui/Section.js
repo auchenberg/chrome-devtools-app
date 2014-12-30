@@ -29,7 +29,7 @@
 
 /**
  * @constructor
- * @param {string|!Element} title
+ * @param {string|!Node} title
  * @param {string=} subtitle
  */
 WebInspector.Section = function(title, subtitle)
@@ -54,8 +54,20 @@ WebInspector.Section = function(title, subtitle)
     this.element.appendChild(this.headerElement);
 
     this.title = title;
-    this.subtitle = subtitle;
+    if (subtitle) {
+        this._subtitle = subtitle;
+        this.subtitleElement.textContent = subtitle;
+    }
     this._expanded = false;
+
+    this.headerElement.classList.add("monospace");
+    this.propertiesElement = createElement("ol");
+    this.propertiesElement.className = "properties properties-tree monospace";
+    this.propertiesTreeOutline = new TreeOutline(this.propertiesElement, true);
+    this.propertiesTreeOutline.setFocusable(false);
+    this.propertiesTreeOutline.section = this;
+
+    this.element.appendChild(this.propertiesElement);
 }
 
 WebInspector.Section.prototype = {
@@ -82,14 +94,6 @@ WebInspector.Section.prototype = {
         return this._subtitle;
     },
 
-    set subtitle(x)
-    {
-        if (this._subtitle === x)
-            return;
-        this._subtitle = x;
-        this.subtitleElement.textContent = x;
-    },
-
     get subtitleAsTextForTest()
     {
         var result = this.subtitleElement.textContent;
@@ -107,83 +111,21 @@ WebInspector.Section.prototype = {
         return this._expanded;
     },
 
-    set expanded(x)
+    repopulate: function()
     {
-        if (x)
-            this.expand();
-        else
-            this.collapse();
-    },
-
-    get populated()
-    {
-        return this._populated;
-    },
-
-    set populated(x)
-    {
-        this._populated = x;
-        if (!x && this._expanded) {
+        this._populated = false;
+        if (this._expanded) {
             this.onpopulate();
             this._populated = true;
         }
     },
 
+    /**
+     * @protected
+     */
     onpopulate: function()
     {
-        // Overriden by subclasses.
-    },
-
-    get firstSibling()
-    {
-        var parent = this.element.parentElement;
-        if (!parent)
-            return null;
-
-        var childElement = parent.firstChild;
-        while (childElement) {
-            if (childElement._section)
-                return childElement._section;
-            childElement = childElement.nextSibling;
-        }
-
-        return null;
-    },
-
-    get lastSibling()
-    {
-        var parent = this.element.parentElement;
-        if (!parent)
-            return null;
-
-        var childElement = parent.lastChild;
-        while (childElement) {
-            if (childElement._section)
-                return childElement._section;
-            childElement = childElement.previousSibling;
-        }
-
-        return null;
-    },
-
-    get nextSibling()
-    {
-        var curElement = this.element;
-        do {
-            curElement = curElement.nextSibling;
-        } while (curElement && !curElement._section);
-
-        return curElement ? curElement._section : null;
-    },
-
-    get previousSibling()
-    {
-        var curElement = this.element;
-        do {
-            curElement = curElement.previousSibling;
-        } while (curElement && !curElement._section);
-
-        return curElement ? curElement._section : null;
+        // Overridden by subclasses.
     },
 
     expand: function()
@@ -207,38 +149,16 @@ WebInspector.Section.prototype = {
         this.element.classList.remove("expanded");
     },
 
-    toggleExpanded: function()
-    {
-        this.expanded = !this.expanded;
-    },
-
+    /**
+     * @param {!Event} event
+     * @protected
+     */
     handleClick: function(event)
     {
-        this.toggleExpanded();
+        if (this._expanded)
+            this.collapse();
+        else
+            this.expand();
         event.consume();
     }
-}
-
-/**
- * @constructor
- * @extends {WebInspector.Section}
- * @param {string|!Element} title
- * @param {string=} subtitle
- */
-WebInspector.PropertiesSection = function(title, subtitle)
-{
-    WebInspector.Section.call(this, title, subtitle);
-
-    this.headerElement.classList.add("monospace");
-    this.propertiesElement = createElement("ol");
-    this.propertiesElement.className = "properties properties-tree monospace";
-    this.propertiesTreeOutline = new TreeOutline(this.propertiesElement, true);
-    this.propertiesTreeOutline.setFocusable(false);
-    this.propertiesTreeOutline.section = this;
-
-    this.element.appendChild(this.propertiesElement);
-}
-
-WebInspector.PropertiesSection.prototype = {
-    __proto__: WebInspector.Section.prototype
 }

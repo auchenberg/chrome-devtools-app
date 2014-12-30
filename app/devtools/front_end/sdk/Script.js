@@ -81,6 +81,7 @@ WebInspector.Script.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -89,6 +90,7 @@ WebInspector.Script.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -97,6 +99,7 @@ WebInspector.Script.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -124,6 +127,7 @@ WebInspector.Script.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex
@@ -252,7 +256,7 @@ WebInspector.Script.prototype = {
      */
     isInlineScriptWithSourceURL: function()
     {
-        return !!this.hasSourceURL && this.isInlineScript()
+        return !!this.hasSourceURL && this.isInlineScript();
     },
 
     __proto__: WebInspector.SDKObject.prototype

@@ -135,7 +135,7 @@ public final class ProtoFollowsExtendsChecker extends ContextTrackingChecker {
             }
             JSTypeExpression extendedType = record.getExtendedType();
             if (extendedType != null) {
-                Node rootNode = extendedType.getRootNode();
+                Node rootNode = extendedType.getRoot();
                 if (rootNode.getType() == Token.BANG && rootNode.getFirstChild() != null) {
                     rootNode = rootNode.getFirstChild();
                 }

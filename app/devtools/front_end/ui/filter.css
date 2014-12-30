@@ -143,14 +143,14 @@
     background-position: -129px -110px;
 }
 
-.filters-toggle > .glyph {
-    -webkit-mask-position: -32px -48px;
-}
-
-.filters-toggle.toggled-shown .glyph {
-    background-color: rgb(66, 129, 235);
-}
-
-.filters-toggle.toggled-active .glyph {
-    background-color: rgb(216, 0, 0);
+.filter-input-field {
+    -webkit-appearance: none;
+    border: 1px solid rgb(163, 163, 163);
+    border-radius: 2px;
+    padding: 1px 3px 0;
+    margin: 0 0 0 1px;
+    width: 253px;
+    height: 20px;
+    line-height: 17px;
+    flex: 1;
 }

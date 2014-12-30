@@ -3,6 +3,7 @@
   "version" : "0.0.1",
   "main": "index.html",
   "window": {
+    "title": "Chrome DevTools",
     "toolbar": false,
     "width": 800,
     "height": 600,

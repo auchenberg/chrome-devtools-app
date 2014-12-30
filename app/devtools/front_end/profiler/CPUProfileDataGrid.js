@@ -44,7 +44,7 @@ WebInspector.ProfileDataGridNode = function(profileNode, owningTree, hasChildren
     this.callUID = profileNode.callUID;
     this.selfTime = profileNode.selfTime;
     this.totalTime = profileNode.totalTime;
-    this.functionName = WebInspector.CPUProfileDataModel.beautifyFunctionName(profileNode.functionName);
+    this.functionName = WebInspector.beautifyFunctionName(profileNode.functionName);
     this._deoptReason = (!profileNode.deoptReason || profileNode.deoptReason === "no reason") ? "" : profileNode.deoptReason;
     this.url = profileNode.url;
 }
@@ -197,24 +197,26 @@ WebInspector.ProfileDataGridNode.prototype = {
     },
 
     /**
-     * @param {!WebInspector.ProfileDataGridNode} profileDataGridNode
+     * @override
+     * @param {!WebInspector.DataGridNode} profileDataGridNode
      * @param {number} index
      */
     insertChild: function(profileDataGridNode, index)
     {
         WebInspector.DataGridNode.prototype.insertChild.call(this, profileDataGridNode, index);
 
-        this.childrenByCallUID[profileDataGridNode.callUID] = profileDataGridNode;
+        this.childrenByCallUID[profileDataGridNode.callUID] = /** @type {!WebInspector.ProfileDataGridNode} */ (profileDataGridNode);
     },
 
     /**
-     * @param {!WebInspector.ProfileDataGridNode} profileDataGridNode
+     * @override
+     * @param {!WebInspector.DataGridNode} profileDataGridNode
      */
     removeChild: function(profileDataGridNode)
     {
         WebInspector.DataGridNode.prototype.removeChild.call(this, profileDataGridNode);
 
-        delete this.childrenByCallUID[profileDataGridNode.callUID];
+        delete this.childrenByCallUID[/** @type {!WebInspector.ProfileDataGridNode} */ (profileDataGridNode).callUID];
     },
 
     removeChildren: function()
@@ -440,6 +442,7 @@ WebInspector.ProfileDataGridTree.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {boolean} shouldJump
      * @param {boolean=} jumpBackwards
@@ -546,6 +549,9 @@ WebInspector.ProfileDataGridTree.prototype = {
         return this._searchResults.length;
     },
 
+    /**
+     * @override
+     */
     searchCanceled: function()
     {
         if (this._searchResults) {
@@ -562,6 +568,9 @@ WebInspector.ProfileDataGridTree.prototype = {
         this._searchResultIndex = -1;
     },
 
+    /**
+     * @override
+     */
     jumpToNextSearchResult: function()
     {
         if (!this._searchResults || !this._searchResults.length)
@@ -570,6 +579,9 @@ WebInspector.ProfileDataGridTree.prototype = {
         this._jumpToSearchResult(this._searchResultIndex);
     },
 
+    /**
+     * @override
+     */
     jumpToPreviousSearchResult: function()
     {
         if (!this._searchResults || !this._searchResults.length)
@@ -579,6 +591,7 @@ WebInspector.ProfileDataGridTree.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     currentSearchResultIndex: function()
@@ -619,7 +632,7 @@ WebInspector.ProfileDataGridTree.propertyComparator = function(property, isAscen
                     return 1;
 
                 return 0;
-            }
+            };
         } else {
             comparator = function(lhs, rhs)
             {
@@ -630,7 +643,7 @@ WebInspector.ProfileDataGridTree.propertyComparator = function(property, isAscen
                     return 1;
 
                 return 0;
-            }
+            };
         }
 
         WebInspector.ProfileDataGridTree.propertyComparators[(isAscending ? 1 : 0)][property] = comparator;

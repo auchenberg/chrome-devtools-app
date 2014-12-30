@@ -39,7 +39,7 @@ WebInspector.OverviewGrid = function(prefix)
 
     this._grid = new WebInspector.TimelineGrid();
     this._grid.element.id = prefix + "-overview-grid";
-    this._grid.setScrollAndDividerTop(0, 0);
+    this._grid.setScrollTop(0);
 
     this.element.appendChild(this._grid.element);
 
@@ -126,8 +126,8 @@ WebInspector.OverviewGrid.prototype = {
     },
 
     /**
-     * @param {!number} zoomFactor
-     * @param {!number} referencePoint
+     * @param {number} zoomFactor
+     * @param {number} referencePoint
      */
     zoom: function(zoomFactor, referencePoint)
     {

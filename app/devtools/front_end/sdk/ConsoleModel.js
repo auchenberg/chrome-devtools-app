@@ -158,7 +158,7 @@ WebInspector.ConsoleModel.evaluateCommandInConsole = function(executionContext, 
         if (!result)
             return;
 
-        WebInspector.console.showPromise().then(reportUponEvaluation).done();
+        WebInspector.console.showPromise().then(reportUponEvaluation);
         function reportUponEvaluation()
         {
             target.consoleModel.dispatchEventToListeners(WebInspector.ConsoleModel.Events.CommandEvaluated, {result: result, wasThrown: wasThrown, text: text, commandMessage: commandMessage, exceptionDetails: exceptionDetails});
@@ -431,24 +431,6 @@ WebInspector.ConsoleMessage.MessageLevel = {
     Debug: "debug"
 };
 
-WebInspector.ConsoleMessage._messageLevelPriority = {
-    "debug": 0,
-    "log": 1,
-    "info": 2,
-    "warning": 3,
-    "error": 4
-};
-
-/**
- * @param {!WebInspector.ConsoleMessage} a
- * @param {!WebInspector.ConsoleMessage} b
- * @return {number}
- */
-WebInspector.ConsoleMessage.messageLevelComparator = function(a, b)
-{
-    return WebInspector.ConsoleMessage._messageLevelPriority[a.level] - WebInspector.ConsoleMessage._messageLevelPriority[b.level];
-}
-
 /**
  * @param {!WebInspector.ConsoleMessage} a
  * @param {!WebInspector.ConsoleMessage} b
@@ -471,6 +453,7 @@ WebInspector.ConsoleDispatcher = function(console)
 
 WebInspector.ConsoleDispatcher.prototype = {
     /**
+     * @override
      * @param {!ConsoleAgent.ConsoleMessage} payload
      */
     messageAdded: function(payload)
@@ -496,12 +479,16 @@ WebInspector.ConsoleDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {number} count
      */
     messageRepeatCountUpdated: function(count)
     {
     },
 
+    /**
+     * @override
+     */
     messagesCleared: function()
     {
         if (!WebInspector.settings.preserveConsoleLog.get())
@@ -523,6 +510,7 @@ WebInspector.MultitargetConsoleModel = function()
 
 WebInspector.MultitargetConsoleModel.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -534,6 +522,7 @@ WebInspector.MultitargetConsoleModel.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)

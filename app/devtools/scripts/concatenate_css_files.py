@@ -78,7 +78,10 @@ def main(argv):
     if os.path.exists(output_file_name):
         os.remove(output_file_name);
     with open(output_file_name, 'w') as output_file:
-        output_file.write(output.getvalue())
+        value = output.getvalue()
+        # Strip newlines and indentation.
+        value = re.sub('\r?\n(\r?\n|\s)*', '', value)
+        output_file.write(value)
     output.close()
 
     # Touch output file directory to make sure that Xcode will copy

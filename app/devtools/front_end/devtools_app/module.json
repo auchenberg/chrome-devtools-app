@@ -6,6 +6,8 @@
     ],
     "scripts": [
         "UITests.js",
+        "DevToolsAPI.js",
+        "InspectorFrontendHostImpl.js",
         "DevToolsApp.js"
     ],
     "skip_compilation": [

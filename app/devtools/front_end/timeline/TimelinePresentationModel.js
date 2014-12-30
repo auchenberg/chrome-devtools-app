@@ -454,6 +454,7 @@ WebInspector.TimelinePresentationModel.ActualRecord = function(record, parentRec
 
 WebInspector.TimelinePresentationModel.ActualRecord.prototype = {
     /**
+     * @override
      * @return {number}
      */
     startTime: function()
@@ -462,6 +463,7 @@ WebInspector.TimelinePresentationModel.ActualRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     endTime: function()
@@ -470,6 +472,7 @@ WebInspector.TimelinePresentationModel.ActualRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     selfTime: function()
@@ -478,6 +481,7 @@ WebInspector.TimelinePresentationModel.ActualRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.TimelineModel.Record}
      */
     record: function()
@@ -486,6 +490,7 @@ WebInspector.TimelinePresentationModel.ActualRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     hasWarnings: function()
@@ -510,6 +515,7 @@ WebInspector.TimelinePresentationModel.CoalescedRecord = function(record)
 
 WebInspector.TimelinePresentationModel.CoalescedRecord.prototype = {
     /**
+     * @override
      * @return {number}
      */
     startTime: function()
@@ -518,6 +524,7 @@ WebInspector.TimelinePresentationModel.CoalescedRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     endTime: function()
@@ -526,6 +533,7 @@ WebInspector.TimelinePresentationModel.CoalescedRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     selfTime: function()
@@ -534,6 +542,7 @@ WebInspector.TimelinePresentationModel.CoalescedRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.TimelineModel.Record}
      */
     record: function()
@@ -542,6 +551,7 @@ WebInspector.TimelinePresentationModel.CoalescedRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     coalesced: function()
@@ -550,6 +560,7 @@ WebInspector.TimelinePresentationModel.CoalescedRecord.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     hasWarnings: function()
@@ -571,6 +582,7 @@ WebInspector.TimelinePresentationModel.RootRecord = function()
 
 WebInspector.TimelinePresentationModel.RootRecord.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     hasWarnings: function()

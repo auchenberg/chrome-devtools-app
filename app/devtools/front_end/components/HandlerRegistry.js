@@ -114,7 +114,7 @@ WebInspector.HandlerRegistry.prototype = {
         // Skip 0th handler, as it's 'Use default panel' one.
         for (var i = 1; i < this.handlerNames.length; ++i) {
             var handler = this.handlerNames[i];
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Open using %s" : "Open Using %s", handler),
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Open ^using %s", handler),
                 this.dispatchToHandler.bind(this, handler, { url: contentProvider.contentURL() }));
         }
         contextMenu.appendItem(WebInspector.copyLinkAddressLabel(), InspectorFrontendHost.copyText.bind(InspectorFrontendHost, contentProvider.contentURL()));
@@ -158,7 +158,7 @@ WebInspector.HandlerRegistry.prototype = {
         if (contentProvider instanceof WebInspector.UISourceCode) {
             var uiSourceCode = /** @type {!WebInspector.UISourceCode} */ (contentProvider);
             if (uiSourceCode.project().type() !== WebInspector.projectTypes.FileSystem && uiSourceCode.project().type() !== WebInspector.projectTypes.Snippets)
-                contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Save as..." : "Save As..."), save.bind(null, true));
+                contextMenu.appendItem(WebInspector.UIString.capitalize("Save ^as..."), save.bind(null, true));
         }
     },
 
@@ -192,7 +192,7 @@ WebInspector.HandlerRegistry.prototype = {
                 InspectorFrontendHost.openInNewTab(resourceURL);
         }
         if (WebInspector.resourceForURL(resourceURL))
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Open link in Resources panel" : "Open Link in Resources Panel"), openInResourcesPanel.bind(null, resourceURL));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Open ^link in Resources ^panel"), openInResourcesPanel.bind(null, resourceURL));
         contextMenu.appendItem(WebInspector.copyLinkAddressLabel(), InspectorFrontendHost.copyText.bind(InspectorFrontendHost, resourceURL));
     },
 
@@ -250,6 +250,7 @@ WebInspector.HandlerRegistry.ContextMenuProvider = function()
 
 WebInspector.HandlerRegistry.ContextMenuProvider.prototype = {
     /**
+     * @override
      * @param {!Event} event
      * @param {!WebInspector.ContextMenu} contextMenu
      * @param {!Object} target
@@ -271,6 +272,7 @@ WebInspector.HandlerRegistry.LinkHandler = function()
 
 WebInspector.HandlerRegistry.LinkHandler.prototype = {
     /**
+     * @override
      * @param {string} url
      * @param {number=} lineNumber
      * @return {boolean}

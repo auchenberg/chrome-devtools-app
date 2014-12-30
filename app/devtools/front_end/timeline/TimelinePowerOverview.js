@@ -101,6 +101,9 @@ WebInspector.TimelinePowerOverview = function(model)
 }
 
 WebInspector.TimelinePowerOverview.prototype = {
+    /**
+     * @override
+     */
     dispose: function()
     {
         this._dataProvider.dispose();
@@ -124,6 +127,9 @@ WebInspector.TimelinePowerOverview.prototype = {
         this._minPowerLabel.textContent = "";
     },
 
+    /**
+     * @override
+     */
     update: function()
     {
         this.resetCanvas();
@@ -213,5 +219,3 @@ WebInspector.TimelinePowerOverview.prototype = {
 
     __proto__: WebInspector.TimelineOverviewBase.prototype
 }
-
-

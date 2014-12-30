@@ -11,7 +11,7 @@ WebInspector.BlackboxSupport = {}
 WebInspector.BlackboxSupport._urlToRegExpString = function(url)
 {
     var parsedURL = new WebInspector.ParsedURL(url);
-    if (parsedURL.isAboutBlank() || parsedURL.isDataURL())
+    if (parsedURL.isAboutBlank() || parsedURL.isDataURL() || !url)
         return "";
     if (!parsedURL.isValid)
         return "^" + url.escapeForRegExp() + "$";

@@ -41,7 +41,6 @@ WebInspector.ExtensionPanel = function(server, id, pageURL)
     WebInspector.Panel.call(this, id);
     this._server = server;
     this.setHideOnDetach();
-    this.element.classList.add("extension-panel");
     this._panelStatusBar = new WebInspector.StatusBar(this.element);
     this._panelStatusBar.element.classList.add("hidden");
 
@@ -55,6 +54,7 @@ WebInspector.ExtensionPanel = function(server, id, pageURL)
 
 WebInspector.ExtensionPanel.prototype = {
     /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -71,6 +71,9 @@ WebInspector.ExtensionPanel.prototype = {
         this._panelStatusBar.appendStatusBarItem(item);
     },
 
+    /**
+     * @override
+     */
     searchCanceled: function()
     {
         this._server.notifySearchAction(this.name, WebInspector.extensionAPI.panels.SearchAction.CancelSearch);
@@ -78,6 +81,7 @@ WebInspector.ExtensionPanel.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.SearchableView}
      */
     searchableView: function()
@@ -86,6 +90,7 @@ WebInspector.ExtensionPanel.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {boolean} shouldJump
      * @param {boolean=} jumpBackwards
@@ -96,17 +101,24 @@ WebInspector.ExtensionPanel.prototype = {
         this._server.notifySearchAction(this.name, WebInspector.extensionAPI.panels.SearchAction.PerformSearch, query);
     },
 
+    /**
+     * @override
+     */
     jumpToNextSearchResult: function()
     {
         this._server.notifySearchAction(this.name, WebInspector.extensionAPI.panels.SearchAction.NextSearchResult);
     },
 
+    /**
+     * @override
+     */
     jumpToPreviousSearchResult: function()
     {
         this._server.notifySearchAction(this.name, WebInspector.extensionAPI.panels.SearchAction.PreviousSearchResult);
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsCaseSensitiveSearch: function()
@@ -115,6 +127,7 @@ WebInspector.ExtensionPanel.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsRegexSearch: function()
@@ -295,7 +308,7 @@ WebInspector.ExtensionSidebarPane.prototype = {
         var section = new WebInspector.ObjectPropertiesSection(object, title);
         if (!title)
             section.headerElement.classList.add("hidden");
-        section.expanded = true;
+        section.expand();
         section.editable = false;
         this._objectPropertiesView.element.appendChild(section.element);
         callback();

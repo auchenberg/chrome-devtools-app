@@ -22,6 +22,9 @@ public final class DisallowedGlobalPropertiesChecker extends ContextTrackingChec
         DISALLOWED_PROPERTIES.add("document");
         DISALLOWED_PROPERTIES.add("addEventListener");
         DISALLOWED_PROPERTIES.add("removeEventListener");
+        DISALLOWED_PROPERTIES.add("requestAnimationFrame");
+        DISALLOWED_PROPERTIES.add("cancelAnimationFrame");
+        DISALLOWED_PROPERTIES.add("getSelection");
     }
 
     private static final FunctionRecord TOP_LEVEL_FUNCTION = new FunctionRecord();

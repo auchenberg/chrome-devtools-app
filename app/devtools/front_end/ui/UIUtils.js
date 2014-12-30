@@ -73,10 +73,14 @@ WebInspector.elementDragStart = function(elementDragStart, elementDrag, elementD
     WebInspector._elementDraggingEventListener = elementDrag;
     WebInspector._elementEndDraggingEventListener = elementDragEnd;
     WebInspector._mouseOutWhileDraggingTargetDocument = targetDocument;
+    WebInspector._dragEventsTargetDocument = targetDocument;
+    WebInspector._dragEventsTargetDocumentTop = targetDocument.defaultView.top.document;
 
     targetDocument.addEventListener("mousemove", WebInspector._elementDragMove, true);
     targetDocument.addEventListener("mouseup", WebInspector._elementDragEnd, true);
     targetDocument.addEventListener("mouseout", WebInspector._mouseOutWhileDragging, true);
+    if (targetDocument !== WebInspector._dragEventsTargetDocumentTop)
+        WebInspector._dragEventsTargetDocumentTop.addEventListener("mouseup", WebInspector._elementDragEnd, true);
 
     var targetElement = /** @type {!Element} */ (event.target);
     if (typeof cursor === "string") {
@@ -108,6 +112,18 @@ WebInspector._unregisterMouseOutWhileDragging = function()
     delete WebInspector._mouseOutWhileDraggingTargetDocument;
 }
 
+WebInspector._unregisterDragEvents = function()
+{
+    if (!WebInspector._dragEventsTargetDocument)
+        return;
+    WebInspector._dragEventsTargetDocument.removeEventListener("mousemove", WebInspector._elementDragMove, true);
+    WebInspector._dragEventsTargetDocument.removeEventListener("mouseup", WebInspector._elementDragEnd, true);
+    if (WebInspector._dragEventsTargetDocument !== WebInspector._dragEventsTargetDocumentTop)
+        WebInspector._dragEventsTargetDocumentTop.removeEventListener("mouseup", WebInspector._elementDragEnd, true);
+    delete WebInspector._dragEventsTargetDocument;
+    delete WebInspector._dragEventsTargetDocumentTop;
+}
+
 /**
  * @param {!Event} event
  */
@@ -122,9 +138,7 @@ WebInspector._elementDragMove = function(event)
  */
 WebInspector._cancelDragEvents = function(event)
 {
-    var targetDocument = event.target.ownerDocument;
-    targetDocument.removeEventListener("mousemove", WebInspector._elementDragMove, true);
-    targetDocument.removeEventListener("mouseup", WebInspector._elementDragEnd, true);
+    WebInspector._unregisterDragEvents();
     WebInspector._unregisterMouseOutWhileDragging();
 
     if (WebInspector._restoreCursorAfterDrag)
@@ -363,7 +377,7 @@ WebInspector.handleElementValueModifications = function(event, element, finishHa
     if (!arrowKeyOrMouseWheelEvent && !pageKeyPressed)
         return false;
 
-    var selection = window.getSelection();
+    var selection = element.window().getSelection();
     if (!selection.rangeCount)
         return false;
 
@@ -540,14 +554,6 @@ Number.withThousandsSeparator = function(num)
 }
 
 /**
- * @return {boolean}
- */
-WebInspector.useLowerCaseMenuTitles = function()
-{
-    return WebInspector.platform() === "windows";
-}
-
-/**
  * @param {string} format
  * @param {?ArrayLike} substitutions
  * @param {!Object.<string, function(string, ...):*>} formatters
@@ -565,7 +571,7 @@ WebInspector.formatLocalized = function(format, substitutions, formatters, initi
  */
 WebInspector.openLinkExternallyLabel = function()
 {
-    return WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Open link in new tab" : "Open Link in New Tab");
+    return WebInspector.UIString.capitalize("Open ^link in ^new ^tab");
 }
 
 /**
@@ -573,7 +579,7 @@ WebInspector.openLinkExternallyLabel = function()
  */
 WebInspector.copyLinkAddressLabel = function()
 {
-    return WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Copy link address" : "Copy Link Address");
+    return WebInspector.UIString.capitalize("Copy ^link ^address");
 }
 
 /**
@@ -621,7 +627,7 @@ WebInspector.installComponentRootStyles = function(element)
  */
 WebInspector.uninstallComponentRootStyles = function(element)
 {
-    var wasInstalled = element.classList.remove("component-root", "platform-" + WebInspector.platform());
+    element.classList.remove("component-root", "platform-" + WebInspector.platform());
 }
 
 /**
@@ -697,6 +703,9 @@ WebInspector._isTextEditingElement = function(element)
     return false;
 }
 
+/**
+ * @param {?Node} x
+ */
 WebInspector.setCurrentFocusElement = function(x)
 {
     if (WebInspector._glassPane && x && !WebInspector._glassPane.element.isAncestor(x))
@@ -711,7 +720,7 @@ WebInspector.setCurrentFocusElement = function(x)
         // Make a caret selection inside the new element if there isn't a range selection and there isn't already a caret selection inside.
         // This is needed (at least) to remove caret from console when focus is moved to some element in the panel.
         // The code below should not be applied to text fields and text areas, hence _isTextEditingElement check.
-        var selection = window.getSelection();
+        var selection = x.window().getSelection();
         if (!WebInspector._isTextEditingElement(WebInspector._currentFocusElement) && selection.isCollapsed && !WebInspector._currentFocusElement.isInsertionCaretInside()) {
             var selectionRange = WebInspector._currentFocusElement.ownerDocument.createRange();
             selectionRange.setStart(WebInspector._currentFocusElement, 0);
@@ -741,24 +750,27 @@ WebInspector.setToolbarColors = function(document, backgroundColor, color)
         WebInspector._themeStyleElement = createElement("style");
         document.head.appendChild(WebInspector._themeStyleElement);
     }
-    var parsedColor = WebInspector.Color.parse(color);
-    var shadowColor = parsedColor ? parsedColor.invert().setAlpha(0.33).toString(WebInspector.Color.Format.RGBA) : "white";
-    var prefix = WebInspector.isMac() ? "body:not(.undocked)" : "";
+    var colorWithAlpha = WebInspector.Color.parse(color).setAlpha(0.8).asString(WebInspector.Color.Format.RGBA);
+    var prefix = WebInspector.isMac() ? "body:not(.undocked)" : "body";
     WebInspector._themeStyleElement.textContent =
         String.sprintf(
-            "%s .toolbar-colors {" +
+            "%s .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {" +
             "    background-image: none !important;" +
             "    background-color: %s !important;" +
             "    color: %s !important;" +
-            "}", prefix, backgroundColor, color) +
+            "}", prefix, backgroundColor, colorWithAlpha) +
         String.sprintf(
-             "%s .toolbar-colors button.status-bar-item .glyph, %s .toolbar-colors button.status-bar-item .long-click-glyph {" +
-             "   background-color: %s;" +
-             "}", prefix, prefix, color) +
+            "%s .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header-tab:hover {" +
+             "   color: %s;" +
+             "}", prefix, color) +
         String.sprintf(
-             "%s .toolbar-colors button.status-bar-item .glyph.shadow, %s .toolbar-colors button.status-bar-item .long-click-glyph.shadow {" +
+             "%s .inspector-view-toolbar.status-bar::shadow .status-bar-item {" +
+             "   color: %s;" +
+             "}", prefix, colorWithAlpha) +
+        String.sprintf(
+             "%s .inspector-view-toolbar.status-bar::shadow .status-bar-button-theme {" +
              "   background-color: %s;" +
-             "}", prefix, prefix, shadowColor);
+             "}", prefix, colorWithAlpha);
 }
 
 WebInspector.resetToolbarColors = function()
@@ -947,13 +959,10 @@ WebInspector.measurePreferredSize = function(element, containerElement)
 {
     containerElement = containerElement || element.ownerDocument.body;
     containerElement.appendChild(element);
-    var fakingComponentRoot = WebInspector.installComponentRootStyles(element);
     element.positionAt(0, 0);
     var result = new Size(element.offsetWidth, element.offsetHeight);
     element.positionAt(undefined, undefined);
     element.remove();
-    if (fakingComponentRoot)
-        WebInspector.uninstallComponentRootStyles(element);
     return result;
 }
 
@@ -987,6 +996,9 @@ WebInspector.InvokeOnceHandlers.prototype = {
         methods.add(method);
     },
 
+    /**
+     * @suppressGlobalPropertiesCheck
+     */
     scheduleInvoke: function()
     {
         if (this._handlers)
@@ -1036,13 +1048,14 @@ WebInspector.invokeOnceAfterBatchUpdate = function(object, method)
 }
 
 /**
+ * @param {!Window} window
  * @param {!Function} func
  * @param {!Array.<{from:number, to:number}>} params
  * @param {number} frames
  * @param {function()=} animationComplete
  * @return {function()}
  */
-WebInspector.animateFunction = function(func, params, frames, animationComplete)
+WebInspector.animateFunction = function(window, func, params, frames, animationComplete)
 {
     var values = new Array(params.length);
     var deltas = new Array(params.length);
@@ -1051,7 +1064,7 @@ WebInspector.animateFunction = function(func, params, frames, animationComplete)
         deltas[i] = (params[i].to - params[i].from) / frames;
     }
 
-    var raf = requestAnimationFrame(animationStep);
+    var raf = window.requestAnimationFrame(animationStep);
 
     var framesLeft = frames;
 
@@ -1228,3 +1241,153 @@ WebInspector.initializeUIUtils = function(window)
     window.document.addEventListener("focus", WebInspector._focusChanged.bind(WebInspector, window.document), true);
     window.document.addEventListener("blur", WebInspector._documentBlurred.bind(WebInspector, window.document), true);
 }
+
+/**
+ * @param {string} name
+ * @return {string}
+ */
+WebInspector.beautifyFunctionName = function(name)
+{
+    return name || WebInspector.UIString("(anonymous function)");
+}
+
+/**
+ * @param {string} localName
+ * @param {string} typeExtension
+ * @param {function(new:T)} extendedType
+ * @param {!Object.<string, function(...*)>} protoTemplate
+ * @param {string=} styleSheet
+ * @suppressGlobalPropertiesCheck
+ * @template T
+ */
+function registerCustomElement(localName, typeExtension, extendedType, protoTemplate, styleSheet)
+{
+    var proto = Object.create(extendedType.prototype);
+    for (var p in protoTemplate)
+        proto[p] = protoTemplate[p];
+
+    if (!protoTemplate["createdCallback"]) {
+        /**
+         * @this {Element}
+         */
+        proto.createdCallback = function() {
+            var root = this.createShadowRoot();
+            root.appendChild(createElement("content"));
+            if (styleSheet)
+                root.appendChild(WebInspector.View.createStyleElement(styleSheet));
+        };
+    }
+    document.registerElement(typeExtension, {
+        prototype: proto,
+        extends: localName
+    });
+}
+
+/**
+ * @param {string} text
+ * @param {function(!Event)=} clickHandler
+ * @param {string=} className
+ * @param {string=} title
+ * @return {!Element}
+ */
+function createTextButton(text, clickHandler, className, title)
+{
+    var element = createElementWithClass("button", className || "", "text-button");
+    element.textContent = text;
+    if (clickHandler)
+        element.addEventListener("click", clickHandler, false);
+    if (title)
+        element.title = title;
+    return element;
+}
+
+/**
+ * @param {string} name
+ * @param {string} title
+ * @param {boolean=} checked
+ * @return {!Element}
+ */
+function createRadioLabel(name, title, checked)
+{
+    var element = createElement("label", "dt-radio");
+    element.radioElement.name = name;
+    element.radioElement.checked = !!checked;
+    element.createTextChild(title);
+    return element;
+}
+
+/**
+ * @param {string=} title
+ * @param {boolean=} checked
+ * @return {!Element}
+ */
+function createCheckboxLabel(title, checked)
+{
+    var element = createElement("label", "dt-checkbox");
+    element.checkboxElement.checked = !!checked;
+    if (title !== undefined) {
+        element.textElement = element.createChild("div", "dt-checkbox-text");
+        element.textElement.textContent = title;
+    }
+    return element;
+}
+
+;(function() {
+    registerCustomElement("button", "text-button", HTMLButtonElement, {
+        /**
+         * @this {Element}
+         */
+        createdCallback: function()
+        {
+            this.type = "button";
+            var root = this.createShadowRoot();
+            root.appendChild(WebInspector.View.createStyleElement("ui/textButton.css"));
+            root.createChild("content");
+        }
+    }, "ui/textButton.css");
+
+    registerCustomElement("label", "dt-radio", HTMLLabelElement, {
+        /**
+         * @this {Element}
+         */
+        createdCallback: function()
+        {
+            this.radioElement = this.createChild("input", "dt-radio-button");
+            this.radioElement.type = "radio";
+
+            var root = this.createShadowRoot();
+            root.appendChild(WebInspector.View.createStyleElement("ui/radioButton.css"));
+            root.createChild("content").select = ".dt-radio-button";
+            root.createChild("content");
+            this.addEventListener("click", radioClickHandler, false);
+        }
+    });
+
+    /**
+     * @param {!Event} event
+     * @suppressReceiverCheck
+     * @this {Element}
+     */
+    function radioClickHandler(event)
+    {
+        if (this.radioElement.checked || this.radioElement.disabled)
+            return;
+        this.radioElement.checked = true;
+        this.radioElement.dispatchEvent(new Event("change"));
+    }
+
+    registerCustomElement("label", "dt-checkbox", HTMLLabelElement, {
+        /**
+         * @this {Element}
+         */
+        createdCallback: function()
+        {
+            var root = this.createShadowRoot();
+            root.appendChild(WebInspector.View.createStyleElement("ui/checkboxTextLabel.css"));
+            this.checkboxElement = this.createChild("input", "dt-checkbox-button");
+            this.checkboxElement.type = "checkbox";
+            root.createChild("content").select = ".dt-checkbox-button";
+            root.createChild("content");
+        }
+    });
+})();

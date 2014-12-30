@@ -8,10 +8,10 @@
 }
 
 .CodeMirror .source-frame-eval-expression {
-  outline: 0px;
+  outline: 0;
   border: 1px solid rgb(163, 41, 34);
-  border-left-width: 0px;
-  border-right-width: 0px;
+  border-left-width: 0;
+  border-right-width: 0;
 }
 
 .CodeMirror .source-frame-eval-expression-end {
@@ -61,7 +61,7 @@
   color: white;
   border-width: 1px 4px 1px 1px !important;
   -webkit-border-image: url(Images/breakpoint.png) 1 4 1 1;
-  margin: 0px 0px 0px 3px !important;
+  margin: 0 0 0 3px !important;
   padding-right: 3px;
   padding-left: 1px;
   height: 11px;
@@ -148,10 +148,10 @@
     position: absolute;
     border: 1px solid gray;
     border-radius: 3px;
-    top: 0px;
+    top: 0;
     bottom: -1px;
-    left: 0px;
-    right: 0px;
+    left: 0;
+    right: 0;
     content: "";
 }
 
@@ -172,9 +172,9 @@
     border-top-width: 1px;
     border-bottom-width: 1px;
     top: -1px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
+    bottom: 0;
+    left: 0;
+    right: 0;
     content: "";
 }
 
@@ -235,7 +235,7 @@
 }
 
 .text-editor-row-message:first-child {
-  border-top-width: 0px;
+  border-top-width: 0;
 }
 
 .text-editor-row-message {

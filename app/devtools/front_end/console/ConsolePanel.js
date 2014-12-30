@@ -49,6 +49,7 @@ WebInspector.ConsolePanel._view = function()
 
 WebInspector.ConsolePanel.prototype = {
     /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -84,8 +85,6 @@ WebInspector.ConsolePanel.WrapperView = function()
     WebInspector.ConsolePanel.WrapperView._instance = this;
 
     this._view = WebInspector.ConsolePanel._view();
-    // FIXME: this won't be needed once drawer becomes a view.
-    this.wasShown();
 }
 
 WebInspector.ConsolePanel.WrapperView.prototype = {
@@ -96,6 +95,7 @@ WebInspector.ConsolePanel.WrapperView.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -126,6 +126,7 @@ WebInspector.ConsolePanel.ConsoleRevealer = function()
 
 WebInspector.ConsolePanel.ConsoleRevealer.prototype = {
     /**
+     * @override
      * @param {!Object} object
      * @return {!Promise}
      */
@@ -166,6 +167,7 @@ WebInspector.ConsolePanelFactory = function()
 
 WebInspector.ConsolePanelFactory.prototype = {
     /**
+     * @override
      * @return {!WebInspector.Panel}
      */
     createPanel: function()

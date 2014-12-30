@@ -91,7 +91,9 @@ WebInspector.ShowMoreDataGridNode.prototype = {
         this.showAll.textContent = WebInspector.UIString("Show all %d", totalSize);
     },
 
-    /** override */
+    /**
+     * @override
+     */
     createCells: function()
     {
         this._hasCells = false;

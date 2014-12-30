@@ -62,6 +62,7 @@ WebInspector.FrameworkBlackboxDialog.show = function(element)
 
 WebInspector.FrameworkBlackboxDialog.prototype = {
     /**
+     * @override
      * @param {!Element} element
      */
     show: function(element)
@@ -89,6 +90,7 @@ WebInspector.FrameworkBlackboxDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {!Element} element
      * @param {!Element} relativeToElement
      */
@@ -166,7 +168,7 @@ WebInspector.FrameworkBlackboxDialog.prototype = {
         WebInspector.settings.skipStackFramesPattern.setAsArray(patterns);
 
         if (oldPattern && oldPattern === newPattern) {
-            this._entries.set(newPattern, disabled ? this._disabledLabel : this._blackboxLabel)
+            this._entries.set(newPattern, disabled ? this._disabledLabel : this._blackboxLabel);
             this._patternsList.itemForId(oldPattern).classList.toggle("disabled", disabled);
             this._patternsList.refreshItem(newPattern);
             return;

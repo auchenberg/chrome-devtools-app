@@ -128,7 +128,7 @@ WebInspector.TempFile.create = function(dirPath, name)
 WebInspector.TempFile.prototype = {
     /**
      * @param {!Array.<string>} strings
-     * @param {!function(boolean)} callback
+     * @param {function(number)} callback
      */
     write: function(strings, callback)
     {
@@ -136,11 +136,11 @@ WebInspector.TempFile.prototype = {
         this._writer.onerror = function(e)
         {
             WebInspector.console.error("Failed to write into a temp file: " + e.target.error.message);
-            callback(false);
+            callback(-1);
         }
         this._writer.onwriteend = function(e)
         {
-            callback(true);
+            callback(e.target.length);
         }
         this._writer.write(blob);
     },
@@ -180,11 +180,11 @@ WebInspector.TempFile.prototype = {
             reader.onloadend = function(e)
             {
                 callback(/** @type {?string} */ (this.result));
-            }
+            };
             reader.onerror = function(error)
             {
                 WebInspector.console.error("Failed to read from temp file: " + error.message);
-            }
+            };
             reader.readAsText(file);
         }
         function didFailToGetFile(error)
@@ -228,12 +228,12 @@ WebInspector.TempFile.prototype = {
 
 /**
  * @constructor
- * @param {!string} dirPath
- * @param {!string} name
+ * @param {string} dirPath
+ * @param {string} name
  */
 WebInspector.DeferredTempFile = function(dirPath, name)
 {
-    /** @type {?Array.<string>} */
+    /** @type {!Array.<!{strings: !Array.<string>, callback: function(number)}>} */
     this._chunks = [];
     this._tempFile = null;
     this._isWriting = false;
@@ -248,20 +248,21 @@ WebInspector.DeferredTempFile = function(dirPath, name)
 WebInspector.DeferredTempFile.prototype = {
     /**
      * @param {!Array.<string>} strings
+     * @param {function(number)=} callback
      */
-    write: function(strings)
+    write: function(strings, callback)
     {
         if (!this._chunks)
             return;
         if (this._finishCallback)
             throw new Error("No writes are allowed after close.");
-        this._chunks.push.apply(this._chunks, strings);
+        this._chunks.push({strings: strings, callback: callback});
         if (this._tempFile && !this._isWriting)
             this._writeNextChunk();
     },
 
     /**
-     * @param {!function(?WebInspector.TempFile)} callback
+     * @param {function(?WebInspector.TempFile)} callback
      */
     finishWriting: function(callback)
     {
@@ -278,7 +279,6 @@ WebInspector.DeferredTempFile.prototype = {
     _failedToCreateTempFile: function(e)
     {
         WebInspector.console.error("Failed to create temp file " + e.code + " : " + e.message);
-        this._chunks = null;
         this._notifyFinished();
     },
 
@@ -298,21 +298,25 @@ WebInspector.DeferredTempFile.prototype = {
 
     _writeNextChunk: function()
     {
-        var chunks = this._chunks;
-        this._chunks = [];
+        var chunk = this._chunks.shift();
         this._isWriting = true;
-        this._tempFile.write(/** @type {!Array.<string>} */(chunks), this._didWriteChunk.bind(this));
+        this._tempFile.write(/** @type {!Array.<string>} */(chunk.strings), this._didWriteChunk.bind(this, chunk.callback));
     },
 
-    _didWriteChunk: function(success)
+    /**
+     * @param {?function(number)} callback
+     * @param {number} size
+     */
+    _didWriteChunk: function(callback, size)
     {
         this._isWriting = false;
-        if (!success) {
+        if (size === -1) {
             this._tempFile = null;
-            this._chunks = null;
             this._notifyFinished();
             return;
         }
+        if (callback)
+            callback(size);
         if (this._chunks.length)
             this._writeNextChunk();
         else if (this._finishCallback)
@@ -324,12 +328,18 @@ WebInspector.DeferredTempFile.prototype = {
         this._finishedWriting = true;
         if (this._tempFile)
             this._tempFile.finishWriting();
+        var chunks = this._chunks;
+        this._chunks = [];
+        for (var i = 0; i < chunks.length; ++i) {
+            if (chunks[i].callback)
+                chunks[i].callback(-1);
+        }
         if (this._finishCallback)
             this._finishCallback(this._tempFile);
         var pendingReads = this._pendingReads;
-        for (var i = 0; i < this._pendingReads.length; ++i)
-            this._pendingReads[i]();
         this._pendingReads = [];
+        for (var i = 0; i < pendingReads.length; ++i)
+            pendingReads[i]();
     },
 
     /**

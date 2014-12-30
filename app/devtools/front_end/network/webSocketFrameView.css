@@ -8,13 +8,8 @@
     -webkit-user-select: text;
 }
 
-.websocket-frame-view,
 .websocket-frame-view .data-grid {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    flex: auto;
     border: none;
 }
 
@@ -26,7 +21,7 @@
     border-bottom: 1px solid #ccc;
 }
 
-.websocket-frame-view tr.selected {
+.websocket-frame-view .data-grid tr.selected {
     background-color: #def;
 }
 

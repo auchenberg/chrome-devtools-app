@@ -180,6 +180,7 @@ WebInspector.ContextSubMenuItem.prototype = {
     },
 
     /**
+     * @override
      * @return {!InspectorFrontendHostAPI.ContextMenuDescriptor}
      */
     _buildDescriptor: function()
@@ -253,7 +254,7 @@ WebInspector.ContextMenu.prototype = {
 
     show: function()
     {
-        Promise.all(this._pendingPromises).then(populateAndShow.bind(this)).done();
+        Promise.all(this._pendingPromises).then(populateAndShow.bind(this));
         WebInspector.ContextMenu._pendingMenu = this;
 
         /**
@@ -288,7 +289,7 @@ WebInspector.ContextMenu.prototype = {
 
     _innerShow: function()
     {
-        var menuObject = this._buildDescriptor();
+        var menuObject = this._buildDescriptors();
 
         WebInspector._contextMenu = this;
         if (WebInspector.ContextMenu._useSoftMenu || InspectorFrontendHost.isHostedMode()) {
@@ -314,7 +315,7 @@ WebInspector.ContextMenu.prototype = {
     /**
      * @return {!Array.<!InspectorFrontendHostAPI.ContextMenuDescriptor>}
      */
-    _buildDescriptor: function()
+    _buildDescriptors: function()
     {
         var result = [];
         for (var i = 0; i < this._items.length; ++i)

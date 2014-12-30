@@ -35,6 +35,7 @@
         "WorkerTargetManager.js",
         "RuntimeModel.js",
         "Script.js",
+        "ServiceWorkerCacheModel.js",
         "SnippetStorage.js",
         "RemoteObject.js",
         "Resource.js",

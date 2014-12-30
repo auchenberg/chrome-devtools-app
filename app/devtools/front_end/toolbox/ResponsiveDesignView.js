@@ -13,10 +13,10 @@ WebInspector.ResponsiveDesignView = function(inspectedPagePlaceholder)
 {
     WebInspector.VBox.call(this);
     this.setMinimumSize(150, 150);
-    this.element.classList.add("overflow-hidden");
+    this.element.classList.add("responsive-design-view");
+    this.registerRequiredCSS("toolbox/responsiveDesignView.css");
 
     this._responsiveDesignContainer = new WebInspector.VBox();
-    this._responsiveDesignContainer.registerRequiredCSS("toolbox/responsiveDesignView.css");
 
     this._createToolbar();
 
@@ -54,19 +54,20 @@ WebInspector.ResponsiveDesignView = function(inspectedPagePlaceholder)
 
     // Page scale controls.
     this._pageScaleContainer = this._canvasContainer.element.createChild("div", "hbox responsive-design-page-scale-container");
-    this._decreasePageScaleButton = new WebInspector.StatusBarButton(WebInspector.UIString(""), "responsive-design-page-scale-button responsive-design-page-scale-decrease");
-    this._decreasePageScaleButton.element.tabIndex = -1;
-    this._decreasePageScaleButton.addEventListener("click", this._pageScaleButtonClicked.bind(this, false), this);
-    this._pageScaleContainer.appendChild(this._decreasePageScaleButton.element);
+    this._decreasePageScaleButton = this._pageScaleContainer.createChild("button", "responsive-design-page-scale-button responsive-design-page-scale-decrease");
+    this._decreasePageScaleButton.createChild("div", "glyph");
+    this._decreasePageScaleButton.tabIndex = -1;
+    this._decreasePageScaleButton.addEventListener("click", this._pageScaleButtonClicked.bind(this, false), false);
 
     this._pageScaleLabel = this._pageScaleContainer.createChild("label", "responsive-design-page-scale-label");
     this._pageScaleLabel.title = WebInspector.UIString("For a simpler way to change the current page scale, hold down Shift and drag with your mouse.");
     this._pageScaleLabel.addEventListener("dblclick", this._resetPageScale.bind(this), false);
 
-    this._increasePageScaleButton = new WebInspector.StatusBarButton(WebInspector.UIString(""), "responsive-design-page-scale-button responsive-design-page-scale-increase");
-    this._increasePageScaleButton.element.tabIndex = -1;
-    this._increasePageScaleButton.addEventListener("click", this._pageScaleButtonClicked.bind(this, true), this);
-    this._pageScaleContainer.appendChild(this._increasePageScaleButton.element);
+
+    this._increasePageScaleButton = this._pageScaleContainer.createChild("button", "responsive-design-page-scale-button responsive-design-page-scale-increase");
+    this._increasePageScaleButton.tabIndex = -1;
+    this._increasePageScaleButton.createChild("div", "glyph");
+    this._increasePageScaleButton.addEventListener("click", this._pageScaleButtonClicked.bind(this, true), false);
 
     this._inspectedPagePlaceholder = inspectedPagePlaceholder;
     inspectedPagePlaceholder.show(this.element);
@@ -96,6 +97,7 @@ WebInspector.ResponsiveDesignView.RulerBottomHeight = 9;
 WebInspector.ResponsiveDesignView.prototype = {
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -108,6 +110,7 @@ WebInspector.ResponsiveDesignView.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)
@@ -158,6 +161,7 @@ WebInspector.ResponsiveDesignView.prototype = {
     },
 
     /**
+     * @override
      * WebInspector.OverridesSupport.PageResizer override.
      * @param {number} dipWidth
      * @param {number} dipHeight
@@ -495,10 +499,10 @@ WebInspector.ResponsiveDesignView.prototype = {
 
         if (viewportChanged) {
             this._pageScaleLabel.textContent = WebInspector.UIString("%.1f", this._viewport.pageScaleFactor);
-            this._decreasePageScaleButton.setTitle(WebInspector.UIString("Scale down (minimum %.1f)", this._viewport.minimumPageScaleFactor));
-            this._decreasePageScaleButton.setEnabled(this._viewport.pageScaleFactor > this._viewport.minimumPageScaleFactor);
-            this._increasePageScaleButton.setTitle(WebInspector.UIString("Scale up (maximum %.1f)", this._viewport.maximumPageScaleFactor));
-            this._increasePageScaleButton.setEnabled(this._viewport.pageScaleFactor < this._viewport.maximumPageScaleFactor);
+            this._decreasePageScaleButton.title = WebInspector.UIString("Scale down (minimum %.1f)", this._viewport.minimumPageScaleFactor);
+            this._decreasePageScaleButton.disabled = this._viewport.pageScaleFactor <= this._viewport.minimumPageScaleFactor;
+            this._increasePageScaleButton.title = WebInspector.UIString("Scale up (maximum %.1f)", this._viewport.maximumPageScaleFactor);
+            this._increasePageScaleButton.disabled = this._viewport.pageScaleFactor >= this._viewport.maximumPageScaleFactor;
         }
 
         this._cachedScale = this._scale;
@@ -552,26 +556,30 @@ WebInspector.ResponsiveDesignView.prototype = {
 
     _createButtonsSection: function()
     {
-        var buttonsSection = this._toolbarElement.createChild("div", "responsive-design-section responsive-design-section-buttons");
+        var buttonsStatusBar = new WebInspector.StatusBar(this._toolbarElement);
+        buttonsStatusBar.makeVertical();
+        buttonsStatusBar.setColor("white");
+        buttonsStatusBar.setToggledColor("rgb(105, 194, 236)");
+        buttonsStatusBar.element.classList.add("responsive-design-section", "responsive-design-section-buttons");
 
         var resetButton = new WebInspector.StatusBarButton(WebInspector.UIString("Reset all overrides."), "clear-status-bar-item");
-        buttonsSection.appendChild(resetButton.element);
+        buttonsStatusBar.appendStatusBarItem(resetButton);
         resetButton.addEventListener("click", WebInspector.overridesSupport.reset, WebInspector.overridesSupport);
 
         // Media Query Inspector.
-        this._toggleMediaInspectorButton = new WebInspector.StatusBarButton(WebInspector.UIString("Media queries not found"), "responsive-design-toggle-media-inspector");
+        this._toggleMediaInspectorButton = new WebInspector.StatusBarButton(WebInspector.UIString("Media queries not found"), "waterfall-status-bar-item");
         this._toggleMediaInspectorButton.setToggled(WebInspector.settings.showMediaQueryInspector.get());
         this._toggleMediaInspectorButton.setEnabled(false);
         this._toggleMediaInspectorButton.addEventListener("click", this._onToggleMediaInspectorButtonClick, this);
         WebInspector.settings.showMediaQueryInspector.addChangeListener(this._updateMediaQueryInspector, this);
-        buttonsSection.appendChild(this._toggleMediaInspectorButton.element);
+        buttonsStatusBar.appendStatusBarItem(this._toggleMediaInspectorButton);
     },
 
     _createDeviceSection: function()
     {
         var deviceSection = this._toolbarElement.createChild("div", "responsive-design-section responsive-design-section-device");
 
-        var separator = deviceSection.createChild("div", "responsive-design-section-decorator");
+        deviceSection.createChild("div", "responsive-design-section-decorator");
 
         // Device.
         var deviceElement = deviceSection.createChild("div", "responsive-design-suite responsive-design-suite-top").createChild("div");
@@ -588,12 +596,11 @@ WebInspector.ResponsiveDesignView.prototype = {
         var screenElement = detailsElement.createChild("div", "");
         fieldsetElement = screenElement.createChild("fieldset");
 
-        var emulateResolutionCheckbox = WebInspector.SettingsUI.createSettingCheckbox("", WebInspector.overridesSupport.settings.emulateResolution, true, undefined, WebInspector.UIString("Emulate screen resolution"));
+        var emulateResolutionCheckbox = WebInspector.SettingsUI.createSettingCheckbox("", WebInspector.overridesSupport.settings.emulateResolution, true, WebInspector.UIString("Emulate screen resolution"));
         fieldsetElement.appendChild(emulateResolutionCheckbox);
 
-        var resolutionButton = new WebInspector.StatusBarButton(WebInspector.UIString("Screen resolution"), "responsive-design-icon responsive-design-icon-resolution");
-        resolutionButton.setEnabled(false);
-        fieldsetElement.appendChild(resolutionButton.element);
+        var resolutionIcon = fieldsetElement.createChild("div", "responsive-design-icon responsive-design-icon-resolution");
+        resolutionIcon.title = WebInspector.UIString("Screen resolution");
         var resolutionFieldset = WebInspector.SettingsUI.createSettingFieldset(WebInspector.overridesSupport.settings.emulateResolution);
         fieldsetElement.appendChild(resolutionFieldset);
 
@@ -601,10 +608,9 @@ WebInspector.ResponsiveDesignView.prototype = {
         resolutionFieldset.createTextChild("\u00D7");
         resolutionFieldset.appendChild(WebInspector.SettingsUI.createSettingInputField("", WebInspector.overridesSupport.settings.deviceHeight, true, 4, "3em", WebInspector.OverridesSupport.deviceSizeValidator, true, true, WebInspector.UIString("\u2013")));
 
-        var swapButton = new WebInspector.StatusBarButton(WebInspector.UIString("Swap dimensions"), "responsive-design-icon responsive-design-icon-swap");
-        swapButton.element.tabIndex = -1;
-        swapButton.addEventListener("click", WebInspector.overridesSupport.swapDimensions, WebInspector.overridesSupport);
-        resolutionFieldset.appendChild(swapButton.element);
+        var swapButton = resolutionFieldset.createChild("div", "responsive-design-icon responsive-design-icon-swap");
+        swapButton.title = WebInspector.UIString("Swap dimensions");
+        swapButton.addEventListener("click", WebInspector.overridesSupport.swapDimensions.bind(WebInspector.overridesSupport), false);
 
         // Device pixel ratio.
         detailsElement.createChild("div", "responsive-design-suite-separator");
@@ -612,23 +618,22 @@ WebInspector.ResponsiveDesignView.prototype = {
         var dprElement = detailsElement.createChild("div", "");
         var resolutionFieldset2 = WebInspector.SettingsUI.createSettingFieldset(WebInspector.overridesSupport.settings.emulateResolution);
         dprElement.appendChild(resolutionFieldset2);
-        var dprButton = new WebInspector.StatusBarButton(WebInspector.UIString("Device pixel ratio"), "responsive-design-icon responsive-design-icon-dpr");
-        dprButton.setEnabled(false);
-        resolutionFieldset2.appendChild(dprButton.element);
+        var dprButton = resolutionFieldset2.createChild("div", "responsive-design-icon responsive-design-icon-dpr");
+        dprButton.title = WebInspector.UIString("Device pixel ratio");
         resolutionFieldset2.appendChild(WebInspector.SettingsUI.createSettingInputField("", WebInspector.overridesSupport.settings.deviceScaleFactor, true, 4, "1.9em", WebInspector.OverridesSupport.deviceScaleFactorValidator, true, true, WebInspector.UIString("\u2013")));
 
         // Fit to window.
         detailsElement.createChild("div", "responsive-design-suite-separator");
         var fitToWindowElement = detailsElement.createChild("div", "");
         fieldsetElement = fitToWindowElement.createChild("fieldset");
-        fieldsetElement.appendChild(WebInspector.SettingsUI.createSettingCheckbox(WebInspector.UIString("Fit"), WebInspector.overridesSupport.settings.deviceFitWindow, true, undefined, WebInspector.UIString("Zoom to fit available space")));
+        fieldsetElement.appendChild(WebInspector.SettingsUI.createSettingCheckbox(WebInspector.UIString("Fit"), WebInspector.overridesSupport.settings.deviceFitWindow, true, WebInspector.UIString("Zoom to fit available space")));
     },
 
     _createNetworkSection: function()
     {
         var networkSection = this._toolbarElement.createChild("div", "responsive-design-section responsive-design-section-network");
 
-        var separator = networkSection.createChild("div", "responsive-design-section-decorator");
+        networkSection.createChild("div", "responsive-design-section-decorator");
 
         // Bandwidth.
         var bandwidthElement = networkSection.createChild("div", "responsive-design-suite responsive-design-suite-top").createChild("div");
@@ -720,7 +725,7 @@ WebInspector.ResponsiveDesignView.prototype = {
 
     /**
      * @param {boolean} increase
-     * @param {!WebInspector.Event} event
+     * @param {!Event} event
      */
     _pageScaleButtonClicked: function(increase, event)
     {
@@ -736,7 +741,7 @@ WebInspector.ResponsiveDesignView.prototype = {
                 var value = this._viewport.pageScaleFactor;
                 value = increase ? value * 1.1 : value / 1.1;
                 value = Math.min(this._viewport.maximumPageScaleFactor, value);
-                value = Math.max(this._viewport.minimumPageScaleFactor, value)
+                value = Math.max(this._viewport.minimumPageScaleFactor, value);
                 this._target.pageAgent().setPageScaleFactor(value);
             }
             finishCallback();

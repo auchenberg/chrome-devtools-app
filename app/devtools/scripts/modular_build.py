@@ -33,6 +33,14 @@ def bail_error(message):
     raise Exception(message)
 
 
+def load_and_parse_json(filename):
+    try:
+        return json.loads(read_file(filename))
+    except:
+        print 'ERROR: Failed to parse %s' % filename
+        raise
+
+
 def concatenate_scripts(file_names, module_dir, output_dir, output):
     for file_name in file_names:
         output.write('/* %s */\n' % file_name)
@@ -143,8 +151,8 @@ class DescriptorLoader:
         for application_descriptor_name in application_descriptor_names:
             module_descriptors = {}
             application_descriptor_filename = path.join(self.application_dir, application_descriptor_name)
-            application_descriptor_json = read_file(application_descriptor_filename)
-            application_descriptor = {desc['name']: desc for desc in json.loads(application_descriptor_json)}
+            application_descriptor = {desc['name']: desc for desc in load_and_parse_json(application_descriptor_filename)}
+
             for name in application_descriptor:
                 merged_application_descriptor[name] = application_descriptor[name]
 
@@ -167,6 +175,6 @@ class DescriptorLoader:
         json_filename = path.join(self.application_dir, module_name, 'module.json')
         if not path.exists(json_filename):
             bail_error('Module descriptor %s referenced in %s is missing' % (json_filename, application_descriptor_filename))
-        module_json = json.loads(read_file(json_filename))
+        module_json = load_and_parse_json(json_filename)
         module_json['name'] = module_name
         return module_json

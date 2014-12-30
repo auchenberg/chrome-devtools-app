@@ -5,9 +5,16 @@
 /**
  * @constructor
  * @implements {WebInspector.TargetManager.Observer}
+ * @param {!WebInspector.Workspace} workspace
+ * @param {!WebInspector.NetworkMapping} networkMapping
+ * @param {!WebInspector.NetworkProject} networkProject
  */
-WebInspector.CSSWorkspaceBinding = function()
+WebInspector.CSSWorkspaceBinding = function(workspace, networkMapping, networkProject)
 {
+    this._workspace = workspace;
+    this._networkMapping = networkMapping;
+    this._networkProject = networkProject;
+
     /** @type {!Map.<!WebInspector.Target, !WebInspector.CSSWorkspaceBinding.TargetInfo>} */
     this._targetToTargetInfo = new Map();
     WebInspector.targetManager.observeTargets(this);
@@ -17,14 +24,16 @@ WebInspector.CSSWorkspaceBinding = function()
 
 WebInspector.CSSWorkspaceBinding.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
     {
-        this._targetToTargetInfo.set(target, new WebInspector.CSSWorkspaceBinding.TargetInfo(target, WebInspector.workspace, WebInspector.networkWorkspaceBinding));
+        this._targetToTargetInfo.set(target, new WebInspector.CSSWorkspaceBinding.TargetInfo(target, this._workspace, this._networkMapping, this._networkProject));
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)
@@ -59,7 +68,7 @@ WebInspector.CSSWorkspaceBinding.prototype = {
     {
         var targetInfo = this._targetToTargetInfo.get(header.target());
         if (!targetInfo) {
-            targetInfo = new WebInspector.CSSWorkspaceBinding.TargetInfo(header.target(), WebInspector.workspace, WebInspector.networkWorkspaceBinding);
+            targetInfo = new WebInspector.CSSWorkspaceBinding.TargetInfo(header.target(), this._workspace, this._networkMapping, this._networkProject);
             this._targetToTargetInfo.set(header.target(), targetInfo);
         }
         return targetInfo._ensureInfoForHeader(header);
@@ -92,7 +101,7 @@ WebInspector.CSSWorkspaceBinding.prototype = {
     createLiveLocation: function(rawLocation, updateDelegate)
     {
         var header = rawLocation.styleSheetId ? rawLocation.target().cssModel.styleSheetHeaderForId(rawLocation.styleSheetId) : null;
-        return new WebInspector.CSSWorkspaceBinding.LiveLocation(rawLocation.target().cssModel, header, rawLocation, updateDelegate);
+        return new WebInspector.CSSWorkspaceBinding.LiveLocation(rawLocation.target().cssModel, header, rawLocation, this, updateDelegate);
     },
 
     /**
@@ -171,16 +180,16 @@ WebInspector.CSSWorkspaceBinding.prototype = {
  * @constructor
  * @param {!WebInspector.Target} target
  * @param {!WebInspector.Workspace} workspace
- * @param {!WebInspector.NetworkWorkspaceBinding} networkWorkspaceBinding
+ * @param {!WebInspector.NetworkMapping} networkMapping
+ * @param {!WebInspector.NetworkProject} networkProject
  */
-WebInspector.CSSWorkspaceBinding.TargetInfo = function(target, workspace, networkWorkspaceBinding)
+WebInspector.CSSWorkspaceBinding.TargetInfo = function(target, workspace, networkMapping, networkProject)
 {
     this._target = target;
-    this._workspace = workspace;
 
     var cssModel = target.cssModel;
-    this._stylesSourceMapping = new WebInspector.StylesSourceMapping(cssModel, workspace);
-    this._sassSourceMapping = new WebInspector.SASSSourceMapping(cssModel, workspace, networkWorkspaceBinding);
+    this._stylesSourceMapping = new WebInspector.StylesSourceMapping(cssModel, workspace, networkMapping);
+    this._sassSourceMapping = new WebInspector.SASSSourceMapping(cssModel, workspace, networkMapping, networkProject);
 
     /** @type {!Map.<string, !WebInspector.CSSWorkspaceBinding.HeaderInfo>} */
     this._headerInfoById = new Map();
@@ -312,13 +321,15 @@ WebInspector.CSSWorkspaceBinding.HeaderInfo.prototype = {
  * @param {!WebInspector.CSSStyleModel} cssModel
  * @param {?WebInspector.CSSStyleSheetHeader} header
  * @param {!WebInspector.CSSLocation} rawLocation
+ * @param {!WebInspector.CSSWorkspaceBinding} binding
  * @param {function(!WebInspector.UILocation):(boolean|undefined)} updateDelegate
  */
-WebInspector.CSSWorkspaceBinding.LiveLocation = function(cssModel, header, rawLocation, updateDelegate)
+WebInspector.CSSWorkspaceBinding.LiveLocation = function(cssModel, header, rawLocation, binding, updateDelegate)
 {
     WebInspector.LiveLocation.call(this, updateDelegate);
     this._cssModel = cssModel;
     this._rawLocation = rawLocation;
+    this._binding = binding;
     if (!header)
         this._clearStyleSheet();
     else
@@ -346,7 +357,7 @@ WebInspector.CSSWorkspaceBinding.LiveLocation.prototype = {
         var header = /** @type {!WebInspector.CSSStyleSheetHeader} */ (event.data);
         if (this._header !== header)
             return;
-        WebInspector.cssWorkspaceBinding._removeLiveLocation(this);
+        this._binding._removeLiveLocation(this);
         this._clearStyleSheet();
     },
 
@@ -356,7 +367,7 @@ WebInspector.CSSWorkspaceBinding.LiveLocation.prototype = {
     _setStyleSheet: function(header)
     {
         this._header = header;
-        WebInspector.cssWorkspaceBinding._addLiveLocation(this);
+        this._binding._addLiveLocation(this);
         this._cssModel.removeEventListener(WebInspector.CSSStyleModel.Events.StyleSheetAdded, this._styleSheetAdded, this);
         this._cssModel.addEventListener(WebInspector.CSSStyleModel.Events.StyleSheetRemoved, this._styleSheetRemoved, this);
     },
@@ -369,16 +380,17 @@ WebInspector.CSSWorkspaceBinding.LiveLocation.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.UILocation}
      */
     uiLocation: function()
     {
         var cssLocation = this._rawLocation;
         if (this._header) {
-            var headerInfo = WebInspector.cssWorkspaceBinding._headerInfo(this._header);
+            var headerInfo = this._binding._headerInfo(this._header);
             return headerInfo._rawLocationToUILocation(cssLocation.lineNumber, cssLocation.columnNumber);
         }
-        var uiSourceCode = WebInspector.workspace.uiSourceCodeForURL(cssLocation.url);
+        var uiSourceCode = this._binding._networkMapping.uiSourceCodeForURL(cssLocation.url);
         if (!uiSourceCode)
             return null;
         return uiSourceCode.uiLocation(cssLocation.lineNumber, cssLocation.columnNumber);
@@ -388,7 +400,7 @@ WebInspector.CSSWorkspaceBinding.LiveLocation.prototype = {
     {
         WebInspector.LiveLocation.prototype.dispose.call(this);
         if (this._header)
-            WebInspector.cssWorkspaceBinding._removeLiveLocation(this);
+            this._binding._removeLiveLocation(this);
         this._cssModel.removeEventListener(WebInspector.CSSStyleModel.Events.StyleSheetAdded, this._styleSheetAdded, this);
         this._cssModel.removeEventListener(WebInspector.CSSStyleModel.Events.StyleSheetRemoved, this._styleSheetRemoved, this);
     },

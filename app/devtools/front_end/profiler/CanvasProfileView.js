@@ -48,11 +48,11 @@ WebInspector.CanvasProfileView = function(profile)
     this._replayInfoSplitView.show(this.element);
 
     this._imageSplitView = new WebInspector.SplitView(false, true, "canvasProfileViewSplitViewState", 300);
-    this._imageSplitView.show(this._replayInfoSplitView.mainElement());
+    this._replayInfoSplitView.setMainView(this._imageSplitView);
 
     var replayImageContainerView = new WebInspector.VBoxWithResizeCallback(this._onReplayImageResize.bind(this));
     replayImageContainerView.setMinimumSize(50, 28);
-    replayImageContainerView.show(this._imageSplitView.mainElement());
+    this._imageSplitView.setMainView(replayImageContainerView);
 
     var replayImageContainer = replayImageContainerView.element;
     replayImageContainer.id = "canvas-replay-image-container";
@@ -64,27 +64,27 @@ WebInspector.CanvasProfileView = function(profile)
 
     var replayLogContainerView = new WebInspector.VBox();
     replayLogContainerView.setMinimumSize(22, 22);
-    replayLogContainerView.show(this._imageSplitView.sidebarElement());
+    this._imageSplitView.setSidebarView(replayLogContainerView);
 
     var replayLogContainer = replayLogContainerView.element;
     var controlsToolbar = new WebInspector.StatusBar(replayLogContainer);
     var logGridContainer = replayLogContainer.createChild("div", "canvas-replay-log");
 
-    this._createControlButton(controlsToolbar, "canvas-replay-first-step", WebInspector.UIString("First call."), this._onReplayFirstStepClick.bind(this));
-    this._createControlButton(controlsToolbar, "canvas-replay-prev-step", WebInspector.UIString("Previous call."), this._onReplayStepClick.bind(this, false));
-    this._createControlButton(controlsToolbar, "canvas-replay-next-step", WebInspector.UIString("Next call."), this._onReplayStepClick.bind(this, true));
-    this._createControlButton(controlsToolbar, "canvas-replay-prev-draw", WebInspector.UIString("Previous drawing call."), this._onReplayDrawingCallClick.bind(this, false));
-    this._createControlButton(controlsToolbar, "canvas-replay-next-draw", WebInspector.UIString("Next drawing call."), this._onReplayDrawingCallClick.bind(this, true));
-    this._createControlButton(controlsToolbar, "canvas-replay-last-step", WebInspector.UIString("Last call."), this._onReplayLastStepClick.bind(this));
+    this._createControlButton(controlsToolbar, "first-step-status-bar-item", WebInspector.UIString("First call."), this._onReplayFirstStepClick.bind(this));
+    this._createControlButton(controlsToolbar, "step-out-status-bar-item", WebInspector.UIString("Previous call."), this._onReplayStepClick.bind(this, false));
+    this._createControlButton(controlsToolbar, "step-in-status-bar-item", WebInspector.UIString("Next call."), this._onReplayStepClick.bind(this, true));
+    this._createControlButton(controlsToolbar, "step-backwards-status-bar-item", WebInspector.UIString("Previous drawing call."), this._onReplayDrawingCallClick.bind(this, false));
+    this._createControlButton(controlsToolbar, "step-over-status-bar-item", WebInspector.UIString("Next drawing call."), this._onReplayDrawingCallClick.bind(this, true));
+    this._createControlButton(controlsToolbar, "last-step-status-bar-item", WebInspector.UIString("Last call."), this._onReplayLastStepClick.bind(this));
 
     this._replayContextSelector = new WebInspector.StatusBarComboBox(this._onReplayContextChanged.bind(this));
     this._replayContextSelector.createOption(WebInspector.UIString("<screenshot auto>"), WebInspector.UIString("Show screenshot of the last replayed resource."), "");
     controlsToolbar.appendStatusBarItem(this._replayContextSelector);
 
-    this._installReplayInfoSidebarWidgets(controlsToolbar);
+    this._installReplayInfoSidebarWidgets(replayLogContainer);
 
     this._replayStateView = new WebInspector.CanvasReplayStateView(this._traceLogPlayer);
-    this._replayStateView.show(this._replayInfoSplitView.sidebarElement());
+    this._replayInfoSplitView.setSidebarView(this._replayStateView);
 
     /** @type {!Object.<string, boolean>} */
     this._replayContexts = {};
@@ -136,8 +136,8 @@ WebInspector.CanvasProfileView.prototype = {
     _onReplayImageResize: function()
     {
         var parent = this._replayImageElement.parentElement;
-        this._replayImageElement.style.maxWidth = parent.clientWidth + "px";
-        this._replayImageElement.style.maxHeight = parent.clientHeight + "px";
+        this._replayImageElement.style.maxWidth = (parent.clientWidth - 1) + "px";
+        this._replayImageElement.style.maxHeight = (parent.clientHeight - 1) + "px";
     },
 
     /**
@@ -150,19 +150,14 @@ WebInspector.CanvasProfileView.prototype = {
     },
 
     /**
-     * @param {!WebInspector.StatusBar} controlsToolbar
+     * @param {!Element} replayLogElement
      */
-    _installReplayInfoSidebarWidgets: function(controlsToolbar)
+    _installReplayInfoSidebarWidgets: function(replayLogElement)
     {
-        this._replayInfoResizeWidgetElement = controlsToolbar.element.createChild("div", "resizer-widget");
+        this._replayInfoResizeWidgetElement = replayLogElement.createChild("div", "resizer-widget");
         this._replayInfoSplitView.addEventListener(WebInspector.SplitView.Events.ShowModeChanged, this._updateReplayInfoResizeWidget, this);
         this._updateReplayInfoResizeWidget();
         this._replayInfoSplitView.installResizer(this._replayInfoResizeWidgetElement);
-
-        this._toggleReplayStateSidebarButton = this._replayInfoSplitView.createShowHideSidebarButton("sidebar", "canvas-sidebar-show-hide-button");
-
-        controlsToolbar.element.appendChild(this._toggleReplayStateSidebarButton.element);
-        this._replayInfoSplitView.hideSidebar();
     },
 
     _updateReplayInfoResizeWidget: function()
@@ -606,7 +601,7 @@ WebInspector.CanvasProfileView.prototype = {
     _onHidePopover: function()
     {
         if (this._popoverAnchorElement) {
-            this._popoverAnchorElement.remove()
+            this._popoverAnchorElement.remove();
             delete this._popoverAnchorElement;
         }
     },
@@ -693,6 +688,7 @@ WebInspector.CanvasProfileType.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!WebInspector.StatusBarItem>}
      */
     statusBarItems: function()
@@ -814,10 +810,8 @@ WebInspector.CanvasProfileType.prototype = {
         this._decorationElement.removeChildren();
         this._decorationElement.createChild("div", "warning-icon-small");
         this._decorationElement.createTextChild(this._canvasAgentEnabled ? WebInspector.UIString("Canvas Profiler is enabled.") : WebInspector.UIString("Canvas Profiler is disabled."));
-        var button = this._decorationElement.createChild("button", "text-button");
-        button.type = "button";
-        button.textContent = this._canvasAgentEnabled ? WebInspector.UIString("Disable") : WebInspector.UIString("Enable");
-        button.addEventListener("click", this._onProfilerEnableButtonClick.bind(this, !this._canvasAgentEnabled), false);
+        var button = createTextButton(this._canvasAgentEnabled ? WebInspector.UIString("Disable") : WebInspector.UIString("Enable"), this._onProfilerEnableButtonClick.bind(this, !this._canvasAgentEnabled));
+        this._decorationElement.appendChild(button);
 
         var target = this._target;
         if (!target)
@@ -1012,6 +1006,7 @@ WebInspector.CanvasDispatcher = function(target, profileType)
 
 WebInspector.CanvasDispatcher.prototype = {
     /**
+     * @override
      * @param {string} frameId
      */
     contextCreated: function(frameId)
@@ -1020,6 +1015,7 @@ WebInspector.CanvasDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!PageAgent.FrameId=} frameId
      * @param {!CanvasAgent.TraceLogId=} traceLogId
      */
@@ -1075,7 +1071,7 @@ WebInspector.CanvasProfileHeader.prototype = {
 
     /**
      * @override
-     * @param {!WebInspector.ProfilesPanel} panel
+     * @param {!WebInspector.ProfileType.DataDisplayDelegate} panel
      * @return {!WebInspector.ProfileSidebarTreeElement}
      */
     createSidebarTreeElement: function(panel)

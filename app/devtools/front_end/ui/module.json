@@ -9,7 +9,6 @@
         "treeoutline.js",
         "ActionRegistry.js",
         "ShortcutRegistry.js",
-        "Checkbox.js",
         "CompletionDictionary.js",
         "Context.js",
         "ContextMenu.js",
@@ -41,7 +40,7 @@
         "SortableDataGrid.js",
         "SplitView.js",
         "StackView.js",
-        "StatusBarButton.js",
+        "StatusBar.js",
         "SuggestBox.js",
         "TabbedPane.js",
         "SidebarPane.js",
@@ -53,12 +52,22 @@
         "ZoomManager.js"
     ],
     "stylesheets": [
+        "checkboxTextLabel.css",
         "dataGrid.css",
         "filter.css",
         "flameChart.css",
         "helpScreen.css",
         "overviewGrid.css",
         "panelEnablerView.css",
-        "pieChart.css"
+        "pieChart.css",
+        "progressIndicator.css",
+        "radioButton.css",
+        "searchableView.css",
+        "softContextMenu.css",
+        "splitView.css",
+        "statusBar.css",
+        "suggestBox.css",
+        "tabbedPane.css",
+        "textButton.css"
     ]
 }

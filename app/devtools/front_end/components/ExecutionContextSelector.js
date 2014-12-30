@@ -19,6 +19,7 @@ WebInspector.ExecutionContextSelector = function()
 WebInspector.ExecutionContextSelector.prototype = {
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -32,6 +33,7 @@ WebInspector.ExecutionContextSelector.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)

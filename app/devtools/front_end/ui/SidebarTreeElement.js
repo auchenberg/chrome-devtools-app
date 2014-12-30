@@ -158,6 +158,7 @@ WebInspector.SidebarTreeElement.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isEventWithinDisclosureTriangle: function(event)

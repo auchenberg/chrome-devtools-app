@@ -80,6 +80,7 @@ WebInspector.AuditRules.GzipRule = function()
 
 WebInspector.AuditRules.GzipRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -159,6 +160,7 @@ WebInspector.AuditRules.CombineExternalResourcesRule = function(id, name, type, 
 
 WebInspector.AuditRules.CombineExternalResourcesRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -227,6 +229,7 @@ WebInspector.AuditRules.MinimizeDnsLookupsRule = function(hostCountThreshold) {
 
 WebInspector.AuditRules.MinimizeDnsLookupsRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -274,6 +277,7 @@ WebInspector.AuditRules.ParallelizeDownloadRule = function(optimalHostnameCount,
 
 WebInspector.AuditRules.ParallelizeDownloadRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -360,6 +364,7 @@ WebInspector.AuditRules.UnusedCssRule = function()
 
 WebInspector.AuditRules.UnusedCssRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -496,7 +501,7 @@ WebInspector.AuditRules.ParsedStyleSheet;
  * @constructor
  * @param {!Array.<!WebInspector.CSSStyleSheetHeader>} styleSheetHeaders
  * @param {!WebInspector.Progress} progress
- * @param {!function(!Array.<!WebInspector.AuditRules.ParsedStyleSheet>)} styleSheetsParsedCallback
+ * @param {function(!Array.<!WebInspector.AuditRules.ParsedStyleSheet>)} styleSheetsParsedCallback
  */
 WebInspector.AuditRules.StyleSheetProcessor = function(styleSheetHeaders, progress, styleSheetsParsedCallback)
 {
@@ -574,6 +579,7 @@ WebInspector.AuditRules.CacheControlRule.MillisPerMonth = 1000 * 60 * 60 * 24 * 
 
 WebInspector.AuditRules.CacheControlRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -869,6 +875,7 @@ WebInspector.AuditRules.ImageDimensionsRule = function()
 
 WebInspector.AuditRules.ImageDimensionsRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -1005,6 +1012,7 @@ WebInspector.AuditRules.CssInHeadRule = function()
 
 WebInspector.AuditRules.CssInHeadRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -1023,7 +1031,6 @@ WebInspector.AuditRules.CssInHeadRule.prototype = {
 
             var summary = result.addChild("");
 
-            var outputMessages = [];
             for (var url in evalResult) {
                 var urlViolations = evalResult[url];
                 if (urlViolations[0]) {
@@ -1108,6 +1115,7 @@ WebInspector.AuditRules.StylesScriptsOrderRule = function()
 
 WebInspector.AuditRules.StylesScriptsOrderRule.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -1210,6 +1218,7 @@ WebInspector.AuditRules.CSSRuleBase = function(id, name)
 
 WebInspector.AuditRules.CSSRuleBase.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -1224,7 +1233,7 @@ WebInspector.AuditRules.CSSRuleBase.prototype = {
             callback(null);
             return;
         }
-        var activeHeaders = []
+        var activeHeaders = [];
         for (var i = 0; i < headers.length; ++i) {
             if (!headers[i].disabled)
                 activeHeaders.push(headers[i]);
@@ -1345,6 +1354,7 @@ WebInspector.AuditRules.VendorPrefixedCSSProperties.supportedProperties = [
 
 WebInspector.AuditRules.VendorPrefixedCSSProperties.prototype = {
     /**
+     * @override
      * @param {!WebInspector.AuditRules.ParsedStyleSheet} styleSheet
      */
     didVisitStyleSheet: function(styleSheet)
@@ -1353,9 +1363,9 @@ WebInspector.AuditRules.VendorPrefixedCSSProperties.prototype = {
     },
 
     /**
-     * @param {!WebInspector.CSSParser.StyleRule} rule
+     * @override
      */
-    visitRule: function(rule)
+    visitRule: function()
     {
         this._mentionedProperties = {};
     },
@@ -1367,6 +1377,7 @@ WebInspector.AuditRules.VendorPrefixedCSSProperties.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.AuditRules.ParsedStyleSheet} styleSheet
      * @param {!WebInspector.CSSParser.StyleRule} rule
      * @param {!WebInspector.CSSParser.Property} property
@@ -1406,6 +1417,7 @@ WebInspector.AuditRules.CookieRuleBase = function(id, name)
 
 WebInspector.AuditRules.CookieRuleBase.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
@@ -1509,7 +1521,6 @@ WebInspector.AuditRules.CookieSizeRule.prototype = {
         var domainToResourcesMap = WebInspector.AuditRules.getDomainToResourcesMap(requests,
                 null,
                 true);
-        var matchingResourceData = {};
         this.mapResourceCookies(domainToResourcesMap, allCookies, collectorCallback);
 
         for (var requestDomain in cookiesPerResourceDomain) {
@@ -1541,7 +1552,6 @@ WebInspector.AuditRules.CookieSizeRule.prototype = {
         }
         result.addChild(WebInspector.UIString("The average cookie size for all requests on this page is %s", Number.bytesToString(avgAllCookiesSize)));
 
-        var message;
         if (hugeCookieDomains.length) {
             var entry = result.addChild(WebInspector.UIString("The following domains have a cookie size in excess of 1KB. This is harmful because requests with cookies larger than 1KB typically cannot fit into a single network packet."), true);
             entry.addURLs(hugeCookieDomains);
@@ -1587,7 +1597,7 @@ WebInspector.AuditRules.StaticCookielessRule.prototype = {
         var cookieBytes = 0;
         for (var url in matchingResourceData) {
             badUrls.push(url);
-            cookieBytes += matchingResourceData[url]
+            cookieBytes += matchingResourceData[url];
         }
         if (badUrls.length < this._minResources)
             return;

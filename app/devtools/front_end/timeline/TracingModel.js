@@ -48,6 +48,7 @@ WebInspector.TracingModel.MetadataEvent = {
 WebInspector.TracingModel.DevToolsMetadataEventCategory = "disabled-by-default-devtools.timeline";
 
 WebInspector.TracingModel.ConsoleEventCategory = "blink.console";
+WebInspector.TracingModel.TopLevelEventCategory = "disabled-by-default-devtools.timeline.top-level-task";
 
 WebInspector.TracingModel.FrameLifecycleEventCategory = "cc,devtools";
 
@@ -95,6 +96,148 @@ WebInspector.TracingModel.isAsyncPhase = function(phase)
 {
     return WebInspector.TracingModel._asyncEventsString.indexOf(phase) >= 0;
 }
+
+/**
+ * @constructor
+ * @param {string} dirName
+ * @param {string} fileName
+ */
+WebInspector.BackingStorage = function(dirName, fileName)
+{
+    this._file = new WebInspector.DeferredTempFile(dirName, fileName);
+    /**
+     * @type {!Array.<string>}
+     */
+    this._strings = [];
+    this._stringsLength = 0;
+    this._fileSize = 0;
+}
+
+/**
+ * @typedef {{
+        string: ?string,
+        startOffset: number,
+        endOffset: number
+   }}
+ */
+WebInspector.BackingStorage.Chunk;
+
+WebInspector.BackingStorage.prototype = {
+    /**
+     * @param {string} string
+     */
+    appendString: function(string)
+    {
+        this._strings.push(string);
+        this._stringsLength += string.length;
+        var flushStringLength = 10 * 1024 * 1024;
+        if (this._stringsLength > flushStringLength)
+            this._flush(false);
+    },
+
+    /**
+     * @param {string} string
+     * @return {function():!Promise.<?string>}
+     */
+    appendAccessibleString: function(string)
+    {
+        this._flush(false);
+        this._strings.push(string);
+        var chunk = /** @type {!WebInspector.BackingStorage.Chunk} */ (this._flush(true));
+
+        /**
+         * @param {!WebInspector.BackingStorage.Chunk} chunk
+         * @param {!WebInspector.DeferredTempFile} file
+         * @return {!Promise.<?string>}
+         */
+        function readString(chunk, file)
+        {
+            if (chunk.string)
+                return /** @type {!Promise.<?string>} */ (Promise.resolve(chunk.string));
+
+            console.assert(chunk.endOffset);
+            if (!chunk.endOffset)
+                return Promise.reject("Nor string nor offset to the string in the file were found.");
+
+            /**
+             * @param {function(?string)} fulfill
+             * @param {function(*)} reject
+             */
+            function readRange(fulfill, reject)
+            {
+                // FIXME: call reject for null strings.
+                file.readRange(chunk.startOffset, chunk.endOffset, fulfill);
+            }
+
+            return new Promise(readRange);
+        }
+
+        return readString.bind(null, chunk, this._file);
+    },
+
+    /**
+     * @param {boolean} createChunk
+     * @return {?WebInspector.BackingStorage.Chunk}
+     */
+    _flush: function(createChunk)
+    {
+        if (!this._strings.length)
+            return null;
+
+        var chunk = null;
+        if (createChunk) {
+            console.assert(this._strings.length === 1);
+            chunk = {
+                string: this._strings[0],
+                startOffset: 0,
+                endOffset: 0
+            };
+        }
+
+        /**
+         * @this {WebInspector.BackingStorage}
+         * @param {?WebInspector.BackingStorage.Chunk} chunk
+         * @param {number} fileSize
+         */
+        function didWrite(chunk, fileSize)
+        {
+            if (fileSize === -1)
+                return;
+            if (chunk) {
+                chunk.startOffset = this._fileSize;
+                chunk.endOffset = fileSize;
+                chunk.string = null;
+            }
+            this._fileSize = fileSize;
+        }
+
+        this._file.write(this._strings, didWrite.bind(this, chunk));
+        this._strings = [];
+        this._stringsLength = 0;
+        return chunk;
+    },
+
+    finishWriting: function()
+    {
+        this._flush(false);
+        this._file.finishWriting(function() {});
+    },
+
+    remove: function()
+    {
+        this._file.remove();
+    },
+
+    /**
+     * @param {!WebInspector.OutputStream} outputStream
+     * @param {!WebInspector.OutputStreamDelegate} delegate
+     */
+    writeToStream: function(outputStream, delegate)
+    {
+        this._file.writeToOutputStream(outputStream, delegate);
+    }
+}
+
 
 WebInspector.TracingModel.prototype = {
     /**
@@ -145,12 +288,14 @@ WebInspector.TracingModel.prototype = {
         this._processMetadataEvents();
         for (var process in this._processById)
             this._processById[process]._tracingComplete(this._maximumRecordTime);
-        this._backingStorage.finishWriting(function() {});
+        this._backingStorage.finishWriting();
     },
 
     reset: function()
     {
+        /** @type {!Object.<(number|string), !WebInspector.TracingModel.Process>} */
         this._processById = {};
+        this._processByName = new Map();
         this._minimumRecordTime = 0;
         this._maximumRecordTime = 0;
         this._sessionId = null;
@@ -158,8 +303,8 @@ WebInspector.TracingModel.prototype = {
         this._devtoolsWorkerMetadataEvents = [];
         if (this._backingStorage)
             this._backingStorage.remove();
-        this._backingStorage = new WebInspector.DeferredTempFile("tracing", String(Date.now()));
-        this._storageOffset = 0;
+        this._backingStorage = new WebInspector.BackingStorage("tracing", String(Date.now()));
+        this._appendDelimiter = false;
     },
 
     /**
@@ -168,7 +313,7 @@ WebInspector.TracingModel.prototype = {
      */
     writeToStream: function(outputStream, delegate)
     {
-        this._backingStorage.writeToOutputStream(outputStream, delegate);
+        this._backingStorage.writeToStream(outputStream, delegate);
     },
 
     /**
@@ -182,16 +327,18 @@ WebInspector.TracingModel.prototype = {
             this._processById[payload.pid] = process;
         }
 
+        var eventsDelimiter = ",\n";
+        if (this._appendDelimiter)
+            this._backingStorage.appendString(eventsDelimiter);
+        this._appendDelimiter = true;
         var stringPayload = JSON.stringify(payload);
-        var startOffset = this._storageOffset;
-        if (startOffset) {
-            var recordDelimiter = ",\n";
-            stringPayload = recordDelimiter + stringPayload;
-            startOffset += recordDelimiter.length;
-        }
-        var blob = new Blob([stringPayload]);
-        this._storageOffset += blob.size;
-        this._backingStorage.write([stringPayload]);
+        var isAccessible = payload.ph === WebInspector.TracingModel.Phase.SnapshotObject;
+        var backingStorage = null;
+        var keepStringsLessThan = 10000;
+        if (isAccessible && stringPayload.length > keepStringsLessThan)
+            backingStorage = this._backingStorage.appendAccessibleString(stringPayload);
+        else
+            this._backingStorage.appendString(stringPayload);
 
         if (payload.ph !== WebInspector.TracingModel.Phase.Metadata) {
             var timestamp = payload.ts / 1000;
@@ -204,7 +351,7 @@ WebInspector.TracingModel.prototype = {
             var event = process._addEvent(payload);
             if (!event)
                 return;
-            event._setBackingStorage(this._backingStorage, startOffset, this._storageOffset);
+            event._setBackingStorage(backingStorage);
             if (event.name === WebInspector.TracingModel.DevToolsMetadataEvent.TracingStartedInPage &&
                 event.category === WebInspector.TracingModel.DevToolsMetadataEventCategory) {
                 this._devtoolsPageMetadataEvents.push(event);
@@ -220,7 +367,9 @@ WebInspector.TracingModel.prototype = {
             process._setSortIndex(payload.args["sort_index"]);
             break;
         case WebInspector.TracingModel.MetadataEvent.ProcessName:
-            process._setName(payload.args["name"]);
+            var processName = payload.args["name"];
+            process._setName(processName);
+            this._processByName.set(processName, process);
             break;
         case WebInspector.TracingModel.MetadataEvent.ThreadSortIndex:
             process.threadById(payload.tid)._setSortIndex(payload.args["sort_index"]);
@@ -238,7 +387,7 @@ WebInspector.TracingModel.prototype = {
             WebInspector.console.error(WebInspector.TracingModel.DevToolsMetadataEvent.TracingStartedInPage + " event not found.");
             return;
         }
-        var sessionId = this._devtoolsPageMetadataEvents[0].args["sessionId"];
+        var sessionId = this._devtoolsPageMetadataEvents[0].args["sessionId"] || this._devtoolsPageMetadataEvents[0].args["data"]["sessionId"];
         this._sessionId = sessionId;
 
         var mismatchingIds = {};
@@ -284,7 +433,16 @@ WebInspector.TracingModel.prototype = {
     sortedProcesses: function()
     {
         return WebInspector.TracingModel.NamedObject._sort(Object.values(this._processById));
-    }
+    },
+
+    /**
+     * @param {string} name
+     * @return {?WebInspector.TracingModel.Process}
+     */
+    processByName: function(name)
+    {
+        return this._processByName.get(name);
+    },
 }
 
 
@@ -349,7 +507,7 @@ WebInspector.TracingModel.Event = function(category, name, phase, startTime, thr
     /** @type {?Element} */
     this.previewElement = null;
     /** @type {?string} */
-    this.imageURL = null;
+    this.url = null;
     /** @type {number} */
     this.backendNodeId = 0;
 
@@ -416,11 +574,9 @@ WebInspector.TracingModel.Event.prototype = {
     },
 
     /**
-     * @param {!WebInspector.DeferredTempFile} backingFile
-     * @param {number} startOffset
-     * @param {number} endOffset
+     * @param {function():!Promise.<?string>} backingStorage
      */
-    _setBackingStorage: function(backingFile, startOffset, endOffset)
+    _setBackingStorage: function(backingStorage)
     {
     }
 }
@@ -481,17 +637,17 @@ WebInspector.TracingModel.ObjectSnapshot.fromPayload = function(payload, thread)
 }
 
 WebInspector.TracingModel.ObjectSnapshot.prototype = {
-   /**
-    * @param {function(?Object)} callback
-    */
-   requestObject: function(callback)
-   {
+    /**
+     * @param {function(?Object)} callback
+     */
+    requestObject: function(callback)
+    {
        var snapshot = this.args["snapshot"];
        if (snapshot) {
            callback(snapshot);
            return;
        }
-       this._file.readRange(this._startOffset, this._endOffset, onRead);
+       this._backingStorage().then(onRead, callback.bind(null, null));
        /**
         * @param {?string} result
         */
@@ -513,18 +669,14 @@ WebInspector.TracingModel.ObjectSnapshot.prototype = {
     },
 
     /**
-     * @param {!WebInspector.DeferredTempFile} backingFile
-     * @param {number} startOffset
-     * @param {number} endOffset
      * @override
+     * @param {function():!Promise.<?string>} backingStorage
      */
-    _setBackingStorage: function(backingFile, startOffset, endOffset)
+    _setBackingStorage: function(backingStorage)
     {
-        if (endOffset - startOffset < 10000)
+        if (!backingStorage)
             return;
-        this._file = backingFile;
-        this._startOffset = startOffset;
-        this._endOffset = endOffset;
+        this._backingStorage = backingStorage;
         this.args = {};
     },
 
@@ -592,7 +744,9 @@ WebInspector.TracingModel.Process = function(id)
     WebInspector.TracingModel.NamedObject.call(this);
     this._setName("Process " + id);
     this._id = id;
+    /** @type {!Object.<number, !WebInspector.TracingModel.Thread>} */
     this._threads = {};
+    this._threadByName = new Map();
     this._objects = {};
     /** @type {!Array.<!WebInspector.TracingModel.Event>} */
     this._asyncEvents = [];
@@ -626,6 +780,24 @@ WebInspector.TracingModel.Process.prototype = {
     },
 
     /**
+     * @param {string} name
+     * @return {?WebInspector.TracingModel.Thread}
+     */
+    threadByName: function(name)
+    {
+        return this._threadByName.get(name);
+    },
+
+    /**
+     * @param {string} name
+     * @param {!WebInspector.TracingModel.Thread} thread
+     */
+    _setThreadByName: function(name, thread)
+    {
+        this._threadByName.set(name, thread);
+    },
+
+    /**
      * @param {!WebInspector.TracingManager.EventPayload} payload
      * @return {?WebInspector.TracingModel.Event} event
      */
@@ -647,7 +819,7 @@ WebInspector.TracingModel.Process.prototype = {
     },
 
     /**
-     * @param {!number} lastEventTimeMs
+     * @param {number} lastEventTimeMs
      */
     _tracingComplete: function(lastEventTimeMs)
     {
@@ -667,7 +839,7 @@ WebInspector.TracingModel.Process.prototype = {
             var startEvent = steps[0];
             var syntheticEndEvent = new WebInspector.TracingModel.Event(startEvent.category, startEvent.name, WebInspector.TracingModel.Phase.AsyncEnd, lastEventTimeMs, startEvent.thread);
             steps.push(syntheticEndEvent);
-            startEvent.setEndTime(lastEventTimeMs)
+            startEvent.setEndTime(lastEventTimeMs);
         }
         for (var key in this._openNestableAsyncEvents) {
             var openEvents = this._openNestableAsyncEvents[key];
@@ -849,6 +1021,16 @@ WebInspector.TracingModel.Thread.prototype = {
     _addAsyncEventSteps: function(eventSteps)
     {
         this._asyncEvents.push(eventSteps);
+    },
+
+    /**
+     * @override
+     * @param {string} name
+     */
+    _setName: function(name)
+    {
+        WebInspector.TracingModel.NamedObject.prototype._setName.call(this, name);
+        this._process._setThreadByName(name, this);
     },
 
     /**

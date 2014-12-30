@@ -107,6 +107,7 @@ WebInspector.RequestResponseView.ContentProvider = function(request) {
 
 WebInspector.RequestResponseView.ContentProvider.prototype = {
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -115,6 +116,7 @@ WebInspector.RequestResponseView.ContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -123,6 +125,7 @@ WebInspector.RequestResponseView.ContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -140,6 +143,7 @@ WebInspector.RequestResponseView.ContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex

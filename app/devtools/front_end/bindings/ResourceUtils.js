@@ -66,7 +66,7 @@ WebInspector.displayNameForURL = function(url)
     if (resource)
         return resource.displayName;
 
-    var uiSourceCode = WebInspector.workspace.uiSourceCodeForURL(url);
+    var uiSourceCode = WebInspector.networkMapping.uiSourceCodeForURL(url);
     if (uiSourceCode)
         return uiSourceCode.displayName();
 
@@ -145,7 +145,7 @@ WebInspector.linkifyStringAsFragment = function(string)
      */
     function linkifier(title, url, lineNumber, columnNumber)
     {
-        var isExternal = !WebInspector.resourceForURL(url) && !WebInspector.workspace.uiSourceCodeForURL(url);
+        var isExternal = !WebInspector.resourceForURL(url) && !WebInspector.networkMapping.uiSourceCodeForURL(url);
         var urlNode = WebInspector.linkifyURLAsNode(url, title, undefined, isExternal);
         if (typeof lineNumber !== "undefined") {
             urlNode.lineNumber = lineNumber;

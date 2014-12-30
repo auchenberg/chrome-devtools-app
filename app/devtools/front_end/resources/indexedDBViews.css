@@ -56,39 +56,8 @@
 
 .indexed-db-data-view .data-view-toolbar {
     position: relative;
-    border-top: none;
-    height: 25px;
-    padding: 1px;
     background-color: #eee;
     border-bottom: 1px solid #ccc;
-}
-
-.indexed-db-data-view .data-grid-container {
-    top: 24px;
-}
-
-.indexed-db-status-bar-back-button,
-.indexed-db-status-bar-forward-button {
-    background-repeat: no-repeat;
-    border: 3px solid transparent;
-}
-
-.indexed-db-status-bar-back-button:disabled,
-.indexed-db-status-bar-forward-button:disabled {
-    opacity: 0.5;
-}
-
-.indexed-db-status-bar-back-button {
-    background-image: url(Images/back.png);
-}
-
-.indexed-db-status-bar-forward-button {
-    background-image: url(Images/forward.png);
-}
-
-.indexed-db-status-bar-back-button .glyph,
-.indexed-db-status-bar-forward-button .glyph {
-    display: none;
 }
 
 .indexed-db-data-view .data-view-toolbar .key-input {
@@ -98,8 +67,7 @@
 }
 
 .indexed-db-data-view .data-grid {
-    height: 100%;
-    border: 0;
+    flex: auto;
 }
 
 .indexed-db-data-view .data-grid .data-container tr:nth-child(even) {
@@ -116,6 +84,10 @@
 
 .indexed-db-data-view .data-grid .data-container tr:nth-last-child(1) td {
     border: 0;
+}
+
+.indexed-db-data-view .data-grid .data-container tr:nth-last-child(2) td {
+    border-bottom: 1px solid #aaa;
 }
 
 .indexed-db-data-view .section,

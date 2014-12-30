@@ -73,7 +73,7 @@ WebInspector.ParsedURL = function(url)
     var path = this.path;
     var indexOfQuery = path.indexOf("?");
     if (indexOfQuery !== -1) {
-        this.queryParams = path.substring(indexOfQuery + 1)
+        this.queryParams = path.substring(indexOfQuery + 1);
         path = path.substring(0, indexOfQuery);
     }
 

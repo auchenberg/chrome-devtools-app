@@ -39,15 +39,6 @@
 
 .heap-snapshot-view {
     overflow: hidden;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-
-.heap-snapshot-view .pie-chart {
-    margin: 12px 30px;
 }
 
 .heap-snapshot-view .data-grid {
@@ -79,11 +70,6 @@
 
 .heap-snapshot-view tr:not(.selected) .console-formatted-id {
     color: grey;
-}
-
-.heap-snapshot-view .delimiter {
-    height: 24px;
-    background-color: #d6dde5;
 }
 
 .heap-snapshot-view .data-grid {
@@ -162,6 +148,10 @@
     left: 0;
     right: 0;
     bottom: 0;
+}
+
+.heap-snapshot-stats-pie-chart {
+    margin: 12px 30px;
 }
 
 .heap-snapshot-stats-legend {

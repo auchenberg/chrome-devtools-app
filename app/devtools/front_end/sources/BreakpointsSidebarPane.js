@@ -69,8 +69,8 @@ WebInspector.JavaScriptBreakpointsSidebarPane.prototype = {
     {
         var breakpointActive = this._breakpointManager.breakpointsActive();
         var breakpointActiveTitle = breakpointActive ?
-            WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Deactivate breakpoints" : "Deactivate Breakpoints") :
-            WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Activate breakpoints" : "Activate Breakpoints");
+            WebInspector.UIString.capitalize("Deactivate ^breakpoints") :
+            WebInspector.UIString.capitalize("Activate ^breakpoints");
         contextMenu.appendItem(breakpointActiveTitle, this._breakpointManager.setBreakpointsActive.bind(this._breakpointManager, !breakpointActive));
     },
 
@@ -144,7 +144,6 @@ WebInspector.JavaScriptBreakpointsSidebarPane.prototype = {
     _breakpointRemoved: function(event)
     {
         var breakpoint = /** @type {!WebInspector.BreakpointManager.Breakpoint} */ (event.data.breakpoint);
-        var uiLocation = /** @type {!WebInspector.UILocation} */ (event.data.uiLocation);
         var breakpointItem = this._items.get(breakpoint);
         if (!breakpointItem)
             return;
@@ -196,9 +195,9 @@ WebInspector.JavaScriptBreakpointsSidebarPane.prototype = {
     {
         var breakpoints = this._items.valuesArray();
         var contextMenu = new WebInspector.ContextMenu(event);
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Remove breakpoint" : "Remove Breakpoint"), breakpoint.remove.bind(breakpoint));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Remove ^breakpoint"), breakpoint.remove.bind(breakpoint));
         if (breakpoints.length > 1) {
-            var removeAllTitle = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Remove all breakpoints" : "Remove All Breakpoints");
+            var removeAllTitle = WebInspector.UIString.capitalize("Remove ^all ^breakpoints");
             contextMenu.appendItem(removeAllTitle, this._breakpointManager.removeAllBreakpoints.bind(this._breakpointManager));
         }
 
@@ -216,8 +215,8 @@ WebInspector.JavaScriptBreakpointsSidebarPane.prototype = {
         }
         if (breakpoints.length > 1) {
             var enableBreakpointCount = enabledBreakpointCount(breakpoints);
-            var enableTitle = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Enable all breakpoints" : "Enable All Breakpoints");
-            var disableTitle = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Disable all breakpoints" : "Disable All Breakpoints");
+            var enableTitle = WebInspector.UIString.capitalize("Enable ^all ^breakpoints");
+            var disableTitle = WebInspector.UIString.capitalize("Disable ^all ^breakpoints");
 
             contextMenu.appendSeparator();
 
@@ -284,8 +283,8 @@ WebInspector.XHRBreakpointsSidebarPane = function()
 {
     WebInspector.NativeBreakpointsSidebarPane.call(this, WebInspector.UIString("XHR Breakpoints"));
 
-    // FIXME: Use StringMap.
-    this._breakpointElements = { __proto__: null };
+    /** @type {!Map.<string, !Element>} */
+    this._breakpointElements = new Map();
 
     var addButton = this.titleElement.createChild("button", "pane-title-button add");
     addButton.title = WebInspector.UIString("Add XHR breakpoint");
@@ -298,6 +297,7 @@ WebInspector.XHRBreakpointsSidebarPane = function()
 
 WebInspector.XHRBreakpointsSidebarPane.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -306,6 +306,7 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target) { },
@@ -313,7 +314,7 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
     _emptyElementContextMenu: function(event)
     {
         var contextMenu = new WebInspector.ContextMenu(event);
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add breakpoint" : "Add Breakpoint"), this._addButtonClicked.bind(this));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^breakpoint"), this._addButtonClicked.bind(this));
         contextMenu.show();
     },
 
@@ -360,20 +361,20 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
         if (enabled)
             this._updateBreakpointOnTarget(url, true, target);
 
-        if (url in this._breakpointElements)
+        if (this._breakpointElements.has(url))
             return;
 
         var element = createElement("li");
         element._url = url;
         element.addEventListener("contextmenu", this._contextMenu.bind(this, url), true);
 
-        var checkboxElement = element.createChild("input", "checkbox-elem");
-        checkboxElement.type = "checkbox";
-        checkboxElement.checked = enabled;
-        checkboxElement.addEventListener("click", this._checkboxClicked.bind(this, url), false);
-        element._checkboxElement = checkboxElement;
+        var label = createCheckboxLabel(undefined, enabled);
+        label.classList.add("checkbox-elem");
+        element.appendChild(label);
+        label.checkboxElement.addEventListener("click", this._checkboxClicked.bind(this, url), false);
+        element._checkboxElement = label.checkboxElement;
 
-        var labelElement = element.createChild("span", "cursor-auto");
+        var labelElement = label.createChild("span", "cursor-auto");
         if (!url)
             labelElement.textContent = WebInspector.UIString("Any XHR");
         else
@@ -387,7 +388,7 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
             currentElement = /** @type {?Element} */ (currentElement.nextSibling);
         }
         this.addListElement(element, currentElement);
-        this._breakpointElements[url] = element;
+        this._breakpointElements.set(url, element);
     },
 
     /**
@@ -396,12 +397,12 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
      */
     _removeBreakpoint: function(url, target)
     {
-        var element = this._breakpointElements[url];
+        var element = this._breakpointElements.get(url);
         if (!element)
             return;
 
         this.removeListElement(element);
-        delete this._breakpointElements[url];
+        this._breakpointElements.delete(url);
         if (element._checkboxElement.checked)
             this._updateBreakpointOnTarget(url, false, target);
     },
@@ -440,14 +441,14 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
          */
         function removeAllBreakpoints()
         {
-            for (var url in this._breakpointElements)
+            for (var url of this._breakpointElements.keys())
                 this._removeBreakpoint(url);
             this._saveBreakpoints();
         }
-        var removeAllTitle = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Remove all breakpoints" : "Remove All Breakpoints");
+        var removeAllTitle = WebInspector.UIString.capitalize("Remove ^all ^breakpoints");
 
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add breakpoint" : "Add Breakpoint"), this._addButtonClicked.bind(this));
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Remove breakpoint" : "Remove Breakpoint"), removeBreakpoint.bind(this));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^breakpoint"), this._addButtonClicked.bind(this));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Remove ^breakpoint"), removeBreakpoint.bind(this));
         contextMenu.appendItem(removeAllTitle, removeAllBreakpoints.bind(this));
         contextMenu.show();
     },
@@ -460,7 +461,7 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
 
     _labelClicked: function(url)
     {
-        var element = this._breakpointElements[url];
+        var element = this._breakpointElements.get(url);
         var inputElement = createElementWithClass("span", "breakpoint-condition editing");
         inputElement.textContent = url;
         this.listElement.insertBefore(inputElement, element);
@@ -488,7 +489,7 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
 
     highlightBreakpoint: function(url)
     {
-        var element = this._breakpointElements[url];
+        var element = this._breakpointElements.get(url);
         if (!element)
             return;
         this.expand();
@@ -507,8 +508,8 @@ WebInspector.XHRBreakpointsSidebarPane.prototype = {
     _saveBreakpoints: function()
     {
         var breakpoints = [];
-        for (var url in this._breakpointElements)
-            breakpoints.push({ url: url, enabled: this._breakpointElements[url]._checkboxElement.checked });
+        for (var url of this._breakpointElements.keys())
+            breakpoints.push({ url: url, enabled: this._breakpointElements.get(url)._checkboxElement.checked });
         WebInspector.settings.xhrBreakpoints.set(breakpoints);
     },
 
@@ -605,6 +606,7 @@ WebInspector.EventListenerBreakpointsSidebarPane.eventNameForUI = function(event
 
 WebInspector.EventListenerBreakpointsSidebarPane.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -613,6 +615,7 @@ WebInspector.EventListenerBreakpointsSidebarPane.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target) { },
@@ -625,8 +628,7 @@ WebInspector.EventListenerBreakpointsSidebarPane.prototype = {
      */
     _createCategory: function(name, eventNames, isInstrumentationEvent, targetNames)
     {
-        var labelNode = createElement("label");
-        labelNode.textContent = name;
+        var labelNode = createCheckboxLabel(name);
 
         var categoryItem = {};
         categoryItem.element = new TreeElement(labelNode);
@@ -634,7 +636,7 @@ WebInspector.EventListenerBreakpointsSidebarPane.prototype = {
         categoryItem.element.listItemElement.classList.add("event-category");
         categoryItem.element.selectable = true;
 
-        categoryItem.checkbox = this._createCheckbox(labelNode);
+        categoryItem.checkbox = labelNode.checkboxElement;
         categoryItem.checkbox.addEventListener("click", this._categoryCheckboxClicked.bind(this, categoryItem), true);
 
         categoryItem.targetNames = this._stringArrayToLowerCase(targetNames || [WebInspector.EventListenerBreakpointsSidebarPane.eventTargetAny]);
@@ -646,17 +648,16 @@ WebInspector.EventListenerBreakpointsSidebarPane.prototype = {
             var breakpointItem = {};
             var title = WebInspector.EventListenerBreakpointsSidebarPane.eventNameForUI(eventName);
 
-            labelNode = createElement("label");
-            labelNode.textContent = title;
+            labelNode = createCheckboxLabel(title);
+            labelNode.classList.add("source-code");
 
             breakpointItem.element = new TreeElement(labelNode);
             categoryItem.element.appendChild(breakpointItem.element);
 
             breakpointItem.element.listItemElement.createChild("div", "breakpoint-hit-marker");
-            breakpointItem.element.listItemElement.classList.add("source-code");
             breakpointItem.element.selectable = false;
 
-            breakpointItem.checkbox = this._createCheckbox(labelNode);
+            breakpointItem.checkbox = labelNode.checkboxElement;
             breakpointItem.checkbox.addEventListener("click", this._breakpointCheckboxClicked.bind(this, eventName, categoryItem.targetNames), true);
             breakpointItem.parent = categoryItem;
 
@@ -674,18 +675,6 @@ WebInspector.EventListenerBreakpointsSidebarPane.prototype = {
         return array.map(function(value) {
             return value.toLowerCase();
         });
-    },
-
-    /**
-     * @param {!Element} labelNode
-     * @return {!Element}
-     */
-    _createCheckbox: function(labelNode)
-    {
-        var checkbox = createElementWithClass("input", "checkbox-elem");
-        checkbox.type = "checkbox";
-        labelNode.insertBefore(checkbox, labelNode.firstChild);
-        return checkbox;
     },
 
     _categoryCheckboxClicked: function(categoryItem)

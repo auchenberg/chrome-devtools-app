@@ -31,11 +31,6 @@
 .canvas-profile-view,
 #canvas-replay-image-container {
     overflow: hidden;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
 }
 
 #canvas-replay-image-container {
@@ -44,6 +39,19 @@
     overflow: hidden;
     padding: 0;
     color: white;
+    flex: auto;
+}
+
+.canvas-profile-view .resizer-widget {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 24px;
+    width: 16px;
+    background-image: url(Images/statusbarResizerHorizontal.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 13;
 }
 
 .canvas-replay-image-parent {
@@ -80,56 +88,16 @@
 }
 
 .canvas-replay-log {
-    position: absolute;
-    top: 24px;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    flex: auto;
+    position: relative;
 }
 
 .canvas-replay-log .data-grid {
     border: none;
 }
 
-.canvas-profile-view button.right-sidebar-show-hide-button.canvas-sidebar-show-hide-button.toggled-hide {
-    margin-right: 15px;
-}
-
 .canvas-replay-button {
     min-width: 32px;
-}
-
-.canvas-replay-first-step .glyph {
-    -webkit-mask-position: 0 -72px;
-    transform: rotate(180deg);
-    top: 0;
-    bottom: 0;
-}
-.canvas-replay-next-step .glyph {
-    -webkit-mask-position: -64px -72px;
-}
-.canvas-replay-prev-step .glyph {
-    -webkit-mask-position: -96px -72px;
-}
-.canvas-replay-last-step .glyph {
-    -webkit-mask-position: 0 -72px;
-}
-.canvas-replay-prev-draw .glyph {
-    -webkit-mask-position: -128px -72px;
-    transform: scaleX(-1);
-}
-.canvas-replay-next-draw .glyph {
-    -webkit-mask-position: -128px -72px;
-}
-.canvas-replay-state-prev .glyph {
-    -webkit-mask-position: -64px -48px;
-    transform: scaleX(-1);
-}
-.canvas-replay-state-next .glyph {
-    -webkit-mask-position: -64px -48px;
-}
-.canvas-replay-state-refresh .glyph {
-    -webkit-mask-position: 0 0;
 }
 
 .canvas-popover-anchor {
@@ -199,4 +167,9 @@
 @-webkit-keyframes fadeout-even {
     from { background-color: rgb(255, 255, 25); }
     to { background-color: rgb(235, 235, 120); }
+}
+
+.canvas-profile-view .status-bar {
+    background-color: #eee;
+    border-bottom: 1px solid #ccc;
 }

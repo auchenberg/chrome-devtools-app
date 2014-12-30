@@ -524,7 +524,7 @@ WebInspector.Layers3DView.prototype = {
     /**
      * @param {!Object} attribute
      * @param {!Array.<number>} array
-     * @param {!number} length
+     * @param {number} length
      */
     _setVertexAttribute: function(attribute, array, length)
     {
@@ -686,9 +686,9 @@ WebInspector.Layers3DView.prototype = {
      */
     _createVisibilitySetting: function(caption, name, value, statusBar)
     {
-        var checkbox = new WebInspector.StatusBarCheckbox(WebInspector.UIString(caption))
+        var checkbox = new WebInspector.StatusBarCheckbox(WebInspector.UIString(caption));
         statusBar.appendStatusBarItem(checkbox);
-        var setting = WebInspector.settings.createSetting(name, value)
+        var setting = WebInspector.settings.createSetting(name, value);
         WebInspector.SettingsUI.bindCheckbox(checkbox.inputElement, setting);
         setting.addChangeListener(this._update, this);
         return setting;
@@ -696,8 +696,8 @@ WebInspector.Layers3DView.prototype = {
 
     _initStatusBar: function()
     {
-        this._panelStatusBar = new WebInspector.StatusBar(this.element);
-        this._panelStatusBar.appendStatusBarItem(new WebInspector.StatusBarItem(this._transformController.controlPanelElement()));
+        this._panelStatusBar = this._transformController.statusBar();
+        this.element.appendChild(this._panelStatusBar.element);
         this._showSlowScrollRectsSetting = this._createVisibilitySetting("Slow scroll rects", "frameViewerShowSlowScrollRects", true, this._panelStatusBar);
         this._showPaintsSetting = this._createVisibilitySetting("Paints", "frameViewerShowPaints", true, this._panelStatusBar);
         WebInspector.settings.frameViewerHideChromeWindow.addChangeListener(this._update, this);
@@ -1011,13 +1011,12 @@ WebInspector.Layers3DView.Rectangle.prototype = {
     /**
      * Intersects quad with given transform matrix and line l(t) = (x0, y0, t)
      * @param {!CSSMatrix} matrix
-     * @param {!number} x0
-     * @param {!number} y0
+     * @param {number} x0
+     * @param {number} y0
      * @return {(number|undefined)}
      */
     intersectWithLine: function(matrix, x0, y0)
     {
-        var epsilon = 1e-8;
         var i;
         // Vertices of the quad with transform matrix applied
         var points = [];
@@ -1063,7 +1062,7 @@ WebInspector.Layers3DView.Selection.Type = {
     Layer: "Layer",
     ScrollRect: "ScrollRect",
     Tile: "Tile",
-};
+}
 
 WebInspector.Layers3DView.Selection.prototype = {
     /**
@@ -1082,7 +1081,7 @@ WebInspector.Layers3DView.Selection.prototype = {
     {
         return false;
     }
-};
+}
 
 /**
  * @constructor
@@ -1106,7 +1105,7 @@ WebInspector.Layers3DView.LayerSelection.prototype = {
     },
 
     __proto__: WebInspector.Layers3DView.Selection.prototype
-};
+}
 
 /**
  * @constructor
@@ -1128,7 +1127,7 @@ WebInspector.Layers3DView.ScrollRectSelection.prototype = {
     isEqual: function(other)
     {
         return other._type === WebInspector.Layers3DView.Selection.Type.ScrollRect &&
-            this.layer.id() === other.layer.id() && this.scrollRectIndex === other.scrollRectIndex
+            this.layer.id() === other.layer.id() && this.scrollRectIndex === other.scrollRectIndex;
     },
 
     __proto__: WebInspector.Layers3DView.Selection.prototype

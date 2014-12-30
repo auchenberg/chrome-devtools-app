@@ -25,25 +25,25 @@ WebInspector.TransformController = function(element, disableRotate)
     this._minScale = 0;
     this._maxScale = Infinity;
 
-    this._controlPanelElement = createElement("div");
-    this._controlPanelElement.classList.add("transform-control-panel");
+    this._controlPanelStatusBar = new WebInspector.StatusBar();
+    this._controlPanelStatusBar.element.classList.add("transform-control-panel");
 
     this._modeButtons = {};
     if (!disableRotate) {
-        var panModeButton = new WebInspector.StatusBarButton(WebInspector.UIString("Pan mode (X)"), "transform-mode-pan");
+        var panModeButton = new WebInspector.StatusBarButton(WebInspector.UIString("Pan mode (X)"), "pan-status-bar-item");
         panModeButton.addEventListener("click", this._setMode.bind(this, WebInspector.TransformController.Modes.Pan));
         this._modeButtons[WebInspector.TransformController.Modes.Pan] = panModeButton;
-        this._controlPanelElement.appendChild(panModeButton.element);
-        var rotateModeButton = new WebInspector.StatusBarButton(WebInspector.UIString("Rotate mode (V)"), "transform-mode-rotate");
+        this._controlPanelStatusBar.appendStatusBarItem(panModeButton);
+        var rotateModeButton = new WebInspector.StatusBarButton(WebInspector.UIString("Rotate mode (V)"), "rotate-status-bar-item");
         rotateModeButton.addEventListener("click", this._setMode.bind(this, WebInspector.TransformController.Modes.Rotate));
         this._modeButtons[WebInspector.TransformController.Modes.Rotate] = rotateModeButton;
-        this._controlPanelElement.appendChild(rotateModeButton.element);
+        this._controlPanelStatusBar.appendStatusBarItem(rotateModeButton);
     }
     this._setMode(WebInspector.TransformController.Modes.Pan);
 
-    var resetButton = new WebInspector.StatusBarButton(WebInspector.UIString("Reset transform (0)"), "transform-reset");
+    var resetButton = new WebInspector.StatusBarButton(WebInspector.UIString("Reset transform (0)"), "center-status-bar-item");
     resetButton.addEventListener("click", this.resetAndNotify.bind(this, undefined));
-    this._controlPanelElement.appendChild(resetButton.element);
+    this._controlPanelStatusBar.appendStatusBarItem(resetButton);
 
     this._reset();
 }
@@ -65,11 +65,11 @@ WebInspector.TransformController.Modes = {
 
 WebInspector.TransformController.prototype = {
     /**
-     * @return {!Element}
+     * @return {!WebInspector.StatusBar}
      */
-    controlPanelElement: function()
+    statusBar: function()
     {
-        return this._controlPanelElement;
+        return this._controlPanelStatusBar;
     },
 
     _onKeyDown: function(event)

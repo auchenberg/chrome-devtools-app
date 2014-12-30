@@ -48,7 +48,6 @@ WebInspector.SourceFrame = function(contentProvider)
     this._currentSearchResultIndex = -1;
     this._searchResults = [];
 
-    this._messages = [];
     this._rowMessageBuckets = {};
 
     this._textEditor.setReadOnly(!this.canEditSource());
@@ -134,7 +133,7 @@ WebInspector.SourceFrame.prototype = {
         var messageBucket = anchor.enclosingNodeOrSelfWithClass("text-editor-line-decoration")._messageBucket;
         var messagesOutline = messageBucket.messagesDescription();
         var popoverAnchor = anchor.enclosingNodeOrSelfWithClass("text-editor-line-decoration-icon") ? anchor : this._errorWavePopoverAnchor;
-        popover.show(messagesOutline, popoverAnchor);
+        popover.showForAnchor(messagesOutline, popoverAnchor);
     },
 
     /**
@@ -174,22 +173,15 @@ WebInspector.SourceFrame.prototype = {
     },
 
     /**
-     * @return {?Element}
+     * @return {!WebInspector.StatusBarText}
      */
     statusBarText: function()
     {
-        return this._sourcePosition.element;
+        return this._sourcePosition;
     },
 
     /**
-     * @return {!Array.<!Element>}
-     */
-    statusBarItems: function()
-    {
-        return [];
-    },
-
-    /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -215,13 +207,6 @@ WebInspector.SourceFrame.prototype = {
         }
     },
 
-    addMessage: function(msg)
-    {
-        this._messages.push(msg);
-        if (this.loaded)
-            this.addMessageToSource(msg.line - 1, msg);
-    },
-
     clearMessages: function()
     {
         for (var line in this._rowMessageBuckets) {
@@ -229,7 +214,6 @@ WebInspector.SourceFrame.prototype = {
             bubble.detachFromEditor();
         }
 
-        this._messages = [];
         this._rowMessageBuckets = {};
     },
 
@@ -404,10 +388,6 @@ WebInspector.SourceFrame.prototype = {
     _setTextEditorDecorations: function()
     {
         this._rowMessageBuckets = {};
-
-        this._textEditor.beginUpdates();
-        this._addExistingMessagesToSource();
-        this._textEditor.endUpdates();
     },
 
     /**
@@ -548,6 +528,7 @@ WebInspector.SourceFrame.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {string} replacement
      */
@@ -571,6 +552,7 @@ WebInspector.SourceFrame.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {string} replacement
      */
@@ -627,19 +609,12 @@ WebInspector.SourceFrame.prototype = {
         return ranges;
     },
 
-    _addExistingMessagesToSource: function()
-    {
-        var length = this._messages.length;
-        for (var i = 0; i < length; ++i)
-            this.addMessageToSource(this._messages[i].line - 1, this._messages[i]);
-    },
-
     /**
-     * @param {number} lineNumber
-     * @param {!WebInspector.ConsoleMessage} consoleMessage
+     * @param {!WebInspector.SourceFrameMessage} message
      */
-    addMessageToSource: function(lineNumber, consoleMessage)
+    addMessageToSource: function(message)
     {
+        var lineNumber = message.lineNumber();
         if (lineNumber >= this._textEditor.linesCount)
             lineNumber = this._textEditor.linesCount - 1;
         if (lineNumber < 0)
@@ -648,15 +623,15 @@ WebInspector.SourceFrame.prototype = {
         if (!this._rowMessageBuckets[lineNumber])
             this._rowMessageBuckets[lineNumber] = new WebInspector.SourceFrame.RowMessageBucket(this, this._textEditor, lineNumber);
         var messageBucket = this._rowMessageBuckets[lineNumber];
-        messageBucket.addMessage(consoleMessage);
+        messageBucket.addMessage(message);
     },
 
     /**
-     * @param {number} lineNumber
-     * @param {!WebInspector.ConsoleMessage} msg
+     * @param {!WebInspector.SourceFrameMessage} message
      */
-    removeMessageFromSource: function(lineNumber, msg)
+    removeMessageFromSource: function(message)
     {
+        var lineNumber = message.lineNumber();
         if (lineNumber >= this._textEditor.linesCount)
             lineNumber = this._textEditor.linesCount - 1;
         if (lineNumber < 0)
@@ -665,7 +640,7 @@ WebInspector.SourceFrame.prototype = {
         var messageBucket = this._rowMessageBuckets[lineNumber];
         if (!messageBucket)
             return;
-        messageBucket.removeMessage(msg);
+        messageBucket.removeMessage(message);
         if (!messageBucket.uniqueMessagesCount()) {
             messageBucket.detachFromEditor();
             delete this._rowMessageBuckets[lineNumber];
@@ -757,28 +732,106 @@ WebInspector.SourceFrame.prototype = {
     __proto__: WebInspector.VBox.prototype
 }
 
+/**
+ * @constructor
+ * @param {string} messageText
+ * @param {!WebInspector.SourceFrameMessage.Level} level
+ * @param {number} lineNumber
+ * @param {number=} columnNumber
+ */
+WebInspector.SourceFrameMessage = function(messageText, level, lineNumber, columnNumber)
+{
+    this._messageText = messageText;
+    this._level = level;
+    this._lineNumber = lineNumber;
+    this._columnNumber = columnNumber;
+}
+
+/**
+ * @enum {string}
+ */
+WebInspector.SourceFrameMessage.Level = {
+    Error: "Error",
+    Warning: "Warning"
+}
+
+/**
+ * @param {!WebInspector.ConsoleMessage} consoleMessage
+ * @param {number} lineNumber
+ * @return {!WebInspector.SourceFrameMessage}
+ */
+WebInspector.SourceFrameMessage.fromConsoleMessage = function(consoleMessage, lineNumber)
+{
+    console.assert(consoleMessage.level === WebInspector.ConsoleMessage.MessageLevel.Error || consoleMessage.level === WebInspector.ConsoleMessage.MessageLevel.Warning);
+    var level = consoleMessage.level === WebInspector.ConsoleMessage.MessageLevel.Error ? WebInspector.SourceFrameMessage.Level.Error : WebInspector.SourceFrameMessage.Level.Warning;
+    return new WebInspector.SourceFrameMessage(consoleMessage.messageText, level, lineNumber, consoleMessage.column);
+}
+
+WebInspector.SourceFrameMessage.prototype = {
+    /**
+     * @return {string}
+     */
+    messageText: function()
+    {
+        return this._messageText;
+    },
+
+    /**
+     * @return {!WebInspector.SourceFrameMessage.Level}
+     */
+    level: function()
+    {
+        return this._level;
+    },
+
+    /**
+     * @return {number}
+     */
+    lineNumber: function()
+    {
+        return this._lineNumber;
+    },
+
+    /**
+     * @return {(number|undefined)}
+     */
+    columnNumber: function()
+    {
+        return this._columnNumber;
+    },
+
+    /**
+     * @param {!WebInspector.SourceFrameMessage} another
+     * @return {boolean}
+     */
+    isEqual: function(another)
+    {
+        return this.messageText() === another.messageText() && this.level() === another.level() && this.lineNumber() === another.lineNumber() && this.columnNumber() === another.columnNumber();
+    }
+}
+
 WebInspector.SourceFrame._iconClassPerLevel = {};
-WebInspector.SourceFrame._iconClassPerLevel[WebInspector.ConsoleMessage.MessageLevel.Error] = "error-icon-small";
-WebInspector.SourceFrame._iconClassPerLevel[WebInspector.ConsoleMessage.MessageLevel.Warning] = "warning-icon-small";
+WebInspector.SourceFrame._iconClassPerLevel[WebInspector.SourceFrameMessage.Level.Error] = "error-icon-small";
+WebInspector.SourceFrame._iconClassPerLevel[WebInspector.SourceFrameMessage.Level.Warning] = "warning-icon-small";
 
 WebInspector.SourceFrame._lineClassPerLevel = {};
-WebInspector.SourceFrame._lineClassPerLevel[WebInspector.ConsoleMessage.MessageLevel.Error] = "text-editor-line-with-error";
-WebInspector.SourceFrame._lineClassPerLevel[WebInspector.ConsoleMessage.MessageLevel.Warning] = "text-editor-line-with-warning";
+WebInspector.SourceFrame._lineClassPerLevel[WebInspector.SourceFrameMessage.Level.Error] = "text-editor-line-with-error";
+WebInspector.SourceFrame._lineClassPerLevel[WebInspector.SourceFrameMessage.Level.Warning] = "text-editor-line-with-warning";
 
 /**
  * @constructor
- * @param {!WebInspector.ConsoleMessage} consoleMessage
+ * @param {!WebInspector.SourceFrameMessage} message
  */
-WebInspector.SourceFrame.RowMessage = function(consoleMessage)
+WebInspector.SourceFrame.RowMessage = function(message)
 {
-    this._consoleMessage = consoleMessage;
+    this._message = message;
     this._repeatCount = 1;
     this.element = createElementWithClass("div", "text-editor-row-message");
     this._icon = this.element.createChild("span", "text-editor-row-message-icon");
-    this._icon.classList.add(WebInspector.SourceFrame._iconClassPerLevel[consoleMessage.level]);
+    this._icon.classList.add(WebInspector.SourceFrame._iconClassPerLevel[message.level()]);
     this._repeatCountElement = this.element.createChild("span", "bubble-repeat-count hidden error");
     var linesContainer = this.element.createChild("div", "text-editor-row-message-lines");
-    var lines = this._consoleMessage.messageText.split("\n");
+    var lines = this._message.messageText().split("\n");
     for (var i = 0; i < lines.length; ++i) {
         var messageLine = linesContainer.createChild("div");
         messageLine.textContent = lines[i];
@@ -787,11 +840,11 @@ WebInspector.SourceFrame.RowMessage = function(consoleMessage)
 
 WebInspector.SourceFrame.RowMessage.prototype = {
     /**
-     * @return {!WebInspector.ConsoleMessage}
+     * @return {!WebInspector.SourceFrameMessage}
      */
-    consoleMessage: function()
+    message: function()
     {
-        return this._consoleMessage;
+        return this._message;
     },
 
     /**
@@ -898,31 +951,31 @@ WebInspector.SourceFrame.RowMessageBucket.prototype = {
     },
 
     /**
-     * @param {!WebInspector.ConsoleMessage} consoleMessage
+     * @param {!WebInspector.SourceFrameMessage} message
      */
-    addMessage: function(consoleMessage)
+    addMessage: function(message)
     {
         for (var i = 0; i < this._messages.length; ++i) {
-            var message = this._messages[i];
-            if (message.consoleMessage().isEqual(consoleMessage)) {
-                message.setRepeatCount(message.repeatCount() + 1);
+            var rowMessage = this._messages[i];
+            if (rowMessage.message().isEqual(message)) {
+                rowMessage.setRepeatCount(rowMessage.repeatCount() + 1);
                 return;
             }
         }
 
-        var rowMessage = new WebInspector.SourceFrame.RowMessage(consoleMessage);
+        var rowMessage = new WebInspector.SourceFrame.RowMessage(message);
         this._messages.push(rowMessage);
         this._updateBucketLevel();
     },
 
     /**
-     * @param {!WebInspector.ConsoleMessage} consoleMessage
+     * @param {!WebInspector.SourceFrameMessage} message
      */
-    removeMessage: function(consoleMessage)
+    removeMessage: function(message)
     {
         for (var i = 0; i < this._messages.length; ++i) {
             var rowMessage = this._messages[i];
-            if (!rowMessage.consoleMessage().isEqual(consoleMessage))
+            if (!rowMessage.message().isEqual(message))
                 continue;
             rowMessage.setRepeatCount(rowMessage.repeatCount() - 1);
             if (!rowMessage.repeatCount())
@@ -943,8 +996,8 @@ WebInspector.SourceFrame.RowMessageBucket.prototype = {
         var lineNumber = position.lineNumber;
         var maxMessage = null;
         for (var i = 0; i < this._messages.length; ++i) {
-            var message = this._messages[i].consoleMessage();;
-            if (!maxMessage || WebInspector.ConsoleMessage.messageLevelComparator(maxMessage, message) < 0)
+            var message = this._messages[i].message();
+            if (!maxMessage || WebInspector.SourceFrameMessage.messageLevelComparator(maxMessage, message) < 0)
                 maxMessage = message;
         }
 
@@ -952,7 +1005,7 @@ WebInspector.SourceFrame.RowMessageBucket.prototype = {
             this._textEditor.toggleLineClass(lineNumber, WebInspector.SourceFrame._lineClassPerLevel[this._level], false);
             this._icon.classList.toggle(WebInspector.SourceFrame._iconClassPerLevel[this._level], false);
         }
-        this._level = maxMessage.level;
+        this._level = maxMessage.level();
         if (!this._level)
             return;
         this._textEditor.toggleLineClass(lineNumber, WebInspector.SourceFrame._lineClassPerLevel[this._level], true);
@@ -970,12 +1023,16 @@ WebInspector.TextEditorDelegateForSourceFrame = function(sourceFrame)
 }
 
 WebInspector.TextEditorDelegateForSourceFrame.prototype = {
+    /**
+     * @override
+     */
     onTextChanged: function(oldRange, newRange)
     {
         this._sourceFrame.onTextChanged(oldRange, newRange);
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextRange} textRange
      */
     selectionChanged: function(textRange)
@@ -984,6 +1041,7 @@ WebInspector.TextEditorDelegateForSourceFrame.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      */
     scrollChanged: function(lineNumber)
@@ -991,22 +1049,32 @@ WebInspector.TextEditorDelegateForSourceFrame.prototype = {
         this._sourceFrame.scrollChanged(lineNumber);
     },
 
+    /**
+     * @override
+     */
     editorFocused: function()
     {
         this._sourceFrame._editorFocused();
     },
 
+    /**
+     * @override
+     */
     populateLineGutterContextMenu: function(contextMenu, lineNumber)
     {
         this._sourceFrame.populateLineGutterContextMenu(contextMenu, lineNumber);
     },
 
+    /**
+     * @override
+     */
     populateTextAreaContextMenu: function(contextMenu, lineNumber)
     {
         this._sourceFrame.populateTextAreaContextMenu(contextMenu, lineNumber);
     },
 
     /**
+     * @override
      * @param {?WebInspector.TextRange} from
      * @param {?WebInspector.TextRange} to
      */
@@ -1014,4 +1082,19 @@ WebInspector.TextEditorDelegateForSourceFrame.prototype = {
     {
         this._sourceFrame.onJumpToPosition(from, to);
     }
+}
+
+WebInspector.SourceFrameMessage._messageLevelPriority = {
+    "Warning": 3,
+    "Error": 4
+};
+
+/**
+ * @param {!WebInspector.SourceFrameMessage} a
+ * @param {!WebInspector.SourceFrameMessage} b
+ * @return {number}
+ */
+WebInspector.SourceFrameMessage.messageLevelComparator = function(a, b)
+{
+    return WebInspector.SourceFrameMessage._messageLevelPriority[a.level()] - WebInspector.SourceFrameMessage._messageLevelPriority[b.level()];
 }

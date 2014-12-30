@@ -40,7 +40,7 @@ WebInspector.ResourcesPanel = function()
 
     WebInspector.settings.resourcesLastSelectedItem = WebInspector.settings.createSetting("resourcesLastSelectedItem", {});
 
-    this.sidebarElement().classList.add("filter-all", "children", "small", "outline-disclosure");
+    this.panelSidebarElement().classList.add("filter-all", "children", "small", "outline-disclosure");
     this.sidebarTree.element.classList.remove("sidebar-tree");
 
     this.resourcesListTreeElement = new WebInspector.StorageCategoryTreeElement(this, WebInspector.UIString("Frames"), "Frames", ["frame-storage-tree-item"]);
@@ -51,6 +51,11 @@ WebInspector.ResourcesPanel = function()
 
     this.indexedDBListTreeElement = new WebInspector.IndexedDBTreeElement(this);
     this.sidebarTree.appendChild(this.indexedDBListTreeElement);
+
+    if (WebInspector.isWorkerFrontend()) {
+        this.serviceWorkerCacheListTreeElement = new WebInspector.ServiceWorkerCacheTreeElement(this);
+        this.sidebarTree.appendChild(this.serviceWorkerCacheListTreeElement);
+    }
 
     this.localStorageListTreeElement = new WebInspector.StorageCategoryTreeElement(this, WebInspector.UIString("Local Storage"), "LocalStorage", ["domstorage-storage-tree-item", "local-storage"]);
     this.sidebarTree.appendChild(this.localStorageListTreeElement);
@@ -73,7 +78,7 @@ WebInspector.ResourcesPanel = function()
     this.storageViews = mainView.element.createChild("div", "vbox flex-auto");
     this._storageViewStatusBar = new WebInspector.StatusBar(mainView.element);
     this._storageViewStatusBar.element.classList.add("resources-status-bar");
-    mainView.show(this.mainElement());
+    this.splitView().setMainView(mainView);
 
     /** @type {!Map.<!WebInspector.Database, !Object.<string, !WebInspector.DatabaseTableView>>} */
     this._databaseTableViews = new Map();
@@ -90,8 +95,8 @@ WebInspector.ResourcesPanel = function()
     /** @type {!Object.<string, boolean>} */
     this._domains = {};
 
-    this.sidebarElement().addEventListener("mousemove", this._onmousemove.bind(this), false);
-    this.sidebarElement().addEventListener("mouseleave", this._onmouseleave.bind(this), false);
+    this.panelSidebarElement().addEventListener("mousemove", this._onmousemove.bind(this), false);
+    this.panelSidebarElement().addEventListener("mouseleave", this._onmouseleave.bind(this), false);
 
     /**
      * @this {WebInspector.ResourcesPanel}
@@ -111,27 +116,26 @@ WebInspector.ResourcesPanel = function()
 
 WebInspector.ResourcesPanel.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
     {
         if (this._target)
             return;
+        this._target = target;
 
         if (target.resourceTreeModel.cachedResourcesLoaded())
-            this._cachedResourcesLoaded();
-
-        target.databaseModel.databases().forEach(this._addDatabase.bind(this));
+            this._initialize();
 
         target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.Load, this._loadEventFired, this);
-        target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.CachedResourcesLoaded, this._cachedResourcesLoaded, this);
+        target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.CachedResourcesLoaded, this._initialize, this);
         target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.WillLoadCachedResources, this._resetWithFrames, this);
         target.databaseModel.addEventListener(WebInspector.DatabaseModel.Events.DatabaseAdded, this._databaseAdded, this);
-
-        this._target = target;
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)
@@ -141,7 +145,7 @@ WebInspector.ResourcesPanel.prototype = {
         delete this._target;
 
         target.resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.Load, this._loadEventFired, this);
-        target.resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.CachedResourcesLoaded, this._cachedResourcesLoaded, this);
+        target.resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.CachedResourcesLoaded, this._initialize, this);
         target.resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.WillLoadCachedResources, this._resetWithFrames, this);
         target.databaseModel.removeEventListener(WebInspector.DatabaseModel.Events.DatabaseAdded, this._databaseAdded, this);
 
@@ -156,25 +160,22 @@ WebInspector.ResourcesPanel.prototype = {
         return false;
     },
 
-    wasShown: function()
-    {
-        WebInspector.Panel.prototype.wasShown.call(this);
-        this._initialize();
-    },
-
     _initialize: function()
     {
-        if (!this._initialized && this.isShowing() && this._cachedResourcesWereLoaded) {
-            var target = /** @type {!WebInspector.Target} */ (WebInspector.targetManager.mainTarget());
-            this._populateResourceTree();
-            this._populateDOMStorageTree();
-            this._populateApplicationCacheTree(target);
-            this.indexedDBListTreeElement._initialize();
-            if (Runtime.experiments.isEnabled("fileSystemInspection"))
-                this.fileSystemListTreeElement._initialize();
-            this._initDefaultSelection();
-            this._initialized = true;
-        }
+        this._target.databaseModel.enable();
+        this._target.domStorageModel.enable();
+        this._target.indexedDBModel.enable();
+
+        this._populateResourceTree();
+        this._populateDOMStorageTree();
+        this._populateApplicationCacheTree();
+        this.indexedDBListTreeElement._initialize();
+        if (this.serviceWorkerCacheListTreeElement)
+            this.serviceWorkerCacheListTreeElement._initialize();
+        if (Runtime.experiments.isEnabled("fileSystemInspection"))
+            this.fileSystemListTreeElement._initialize();
+        this._initDefaultSelection();
+        this._initialized = true;
     },
 
     _loadEventFired: function()
@@ -228,6 +229,8 @@ WebInspector.ResourcesPanel.prototype = {
         this.localStorageListTreeElement.removeChildren();
         this.sessionStorageListTreeElement.removeChildren();
         this.cookieListTreeElement.removeChildren();
+        if (this.serviceWorkerCacheListTreeElement)
+            this.serviceWorkerCacheListTreeElement.removeChildren();
 
         if (this.visibleView && !(this.visibleView instanceof WebInspector.StorageCategoryView))
             this.visibleView.detach();
@@ -270,7 +273,7 @@ WebInspector.ResourcesPanel.prototype = {
 
         var parentTreeElement = parentFrame ? this._treeElementForFrameId[parentFrame.id] : this.resourcesListTreeElement;
         if (!parentTreeElement) {
-            console.warn("No frame to route " + frame.url + " to.")
+            console.warn("No frame to route " + frame.url + " to.");
             return;
         }
 
@@ -324,12 +327,6 @@ WebInspector.ResourcesPanel.prototype = {
         var applicationCacheFrameTreeElement = this._applicationCacheFrameElements[frameId];
         if (applicationCacheFrameTreeElement)
             applicationCacheFrameTreeElement.frameNavigated(frame);
-    },
-
-    _cachedResourcesLoaded: function()
-    {
-        this._cachedResourcesWereLoaded = true;
-        this._initialize();
     },
 
     /**
@@ -545,6 +542,14 @@ WebInspector.ResourcesPanel.prototype = {
     },
 
     /**
+     * @param {!WebInspector.View} view
+     */
+    showServiceWorkerCache: function(view)
+    {
+        this._innerShowView(view);
+    },
+
+    /**
      * @param {!WebInspector.DOMStorage} domStorage
      */
     _showDOMStorage: function(domStorage)
@@ -677,12 +682,9 @@ WebInspector.ResourcesPanel.prototype = {
         WebInspector.domStorageModel.addEventListener(WebInspector.DOMStorageModel.Events.DOMStorageRemoved, this._domStorageRemoved, this);
     },
 
-    /**
-     * @param {!WebInspector.Target} target
-     */
-    _populateApplicationCacheTree: function(target)
+    _populateApplicationCacheTree: function()
     {
-        this._applicationCacheModel = new WebInspector.ApplicationCacheModel(target);
+        this._applicationCacheModel = new WebInspector.ApplicationCacheModel(this._target);
 
         this._applicationCacheViews = {};
         this._applicationCacheFrameElements = {};
@@ -699,9 +701,8 @@ WebInspector.ResourcesPanel.prototype = {
     {
         var frameId = event.data;
         var manifestURL = this._applicationCacheModel.frameManifestURL(frameId);
-        var status = this._applicationCacheModel.frameManifestStatus(frameId)
 
-        var manifestTreeElement = this._applicationCacheManifestElements[manifestURL]
+        var manifestTreeElement = this._applicationCacheManifestElements[manifestURL];
         if (!manifestTreeElement) {
             manifestTreeElement = new WebInspector.ApplicationCacheManifestTreeElement(this, manifestURL);
             this.applicationCacheListTreeElement.appendChild(manifestTreeElement);
@@ -737,7 +738,7 @@ WebInspector.ResourcesPanel.prototype = {
     _applicationCacheFrameManifestStatusChanged: function(event)
     {
         var frameId = event.data;
-        var status = this._applicationCacheModel.frameManifestStatus(frameId)
+        var status = this._applicationCacheModel.frameManifestStatus(frameId);
 
         if (this._applicationCacheViews[frameId])
             this._applicationCacheViews[frameId].updateStatus(status);
@@ -753,13 +754,7 @@ WebInspector.ResourcesPanel.prototype = {
 
     _findTreeElementForResource: function(resource)
     {
-        function getParent(object)
-        {
-            // Redirects, XHRs do not belong to the tree, it is fine to silently return false here.
-            return null;
-        }
-
-        return this.sidebarTree.findTreeElement(resource, getParent);
+        return this.sidebarTree.getCachedTreeElement(resource);
     },
 
     showView: function(view)
@@ -814,20 +809,19 @@ WebInspector.ResourcesPanel.ResourceRevealer = function()
 
 WebInspector.ResourcesPanel.ResourceRevealer.prototype = {
     /**
+     * @override
      * @param {!Object} resource
      * @param {number=} lineNumber
      * @return {!Promise}
      */
     reveal: function(resource, lineNumber)
     {
-        if (resource instanceof WebInspector.Resource) {
-
-            var panel = WebInspector.ResourcesPanel._instance();
-            WebInspector.inspectorView.setCurrentPanel(panel);
-            panel.showResource(resource, lineNumber);
-            return Promise.resolve();
-        }
-        return Promise.rejectWithError("Internal error: not a resource");
+        if (!(resource instanceof WebInspector.Resource))
+            return Promise.reject(new Error("Internal error: not a resource"));
+        var panel = WebInspector.ResourcesPanel._instance();
+        WebInspector.inspectorView.setCurrentPanel(panel);
+        panel.showResource(resource, lineNumber);
+        return Promise.resolve();
     }
 }
 
@@ -1311,7 +1305,7 @@ WebInspector.FrameResourceTreeElement.prototype = {
             this._sourceView = sourceFrame;
             if (this._resource.messages) {
                 for (var i = 0; i < this._resource.messages.length; i++)
-                    this._sourceView.addMessage(this._resource.messages[i]);
+                    this._sourceView.addPersistentMessage(this._resource.messages[i]);
             }
         }
         return this._sourceView;
@@ -1408,6 +1402,208 @@ WebInspector.DatabaseTableTreeElement.prototype = {
     __proto__: WebInspector.BaseStorageTreeElement.prototype
 }
 
+
+/**
+ * @constructor
+ * @extends {WebInspector.StorageCategoryTreeElement}
+ * @param {!WebInspector.ResourcesPanel} storagePanel
+ * @implements {WebInspector.TargetManager.Observer}
+ */
+WebInspector.ServiceWorkerCacheTreeElement = function(storagePanel)
+{
+    WebInspector.StorageCategoryTreeElement.call(this, storagePanel, WebInspector.UIString("Service Worker Cache"), "ServiceWorkerCache", ["service-worker-cache-storage-tree-item"]);
+}
+
+WebInspector.ServiceWorkerCacheTreeElement.prototype = {
+    _initialize: function()
+    {
+        /** @type {!Array.<!WebInspector.SWCacheTreeElement>} */
+        this._swCacheTreeElements = [];
+        var targets = WebInspector.targetManager.targets();
+        for (var i = 0; i < targets.length; ++i) {
+            if (!targets[i].serviceWorkerCacheModel)
+                continue;
+            var caches = targets[i].serviceWorkerCacheModel.caches();
+            for (var j = 0; j < caches.length; ++j)
+                this._addCache(targets[i].serviceWorkerCacheModel, caches[j]);
+        }
+        WebInspector.targetManager.addModelListener(WebInspector.ServiceWorkerCacheModel, WebInspector.ServiceWorkerCacheModel.EventTypes.CacheAdded, this._cacheAdded, this);
+        WebInspector.targetManager.addModelListener(WebInspector.ServiceWorkerCacheModel, WebInspector.ServiceWorkerCacheModel.EventTypes.CacheRemoved, this._cacheRemoved, this);
+        this._refreshCaches();
+        WebInspector.targetManager.observeTargets(this);
+    },
+
+    onattach: function()
+    {
+        WebInspector.StorageCategoryTreeElement.prototype.onattach.call(this);
+        this.listItemElement.addEventListener("contextmenu", this._handleContextMenuEvent.bind(this), true);
+    },
+
+    /**
+     * @override
+     * @param {!WebInspector.Target} target
+     */
+    targetAdded: function(target)
+    {
+        if (target.isWorkerTarget() && target.serviceWorkerCacheModel)
+            this._refreshCaches();
+    },
+
+    /**
+     * @override
+     * @param {!WebInspector.Target} target
+     */
+    targetRemoved: function(target) {},
+
+    _handleContextMenuEvent: function(event)
+    {
+        var contextMenu = new WebInspector.ContextMenu(event);
+        contextMenu.appendItem(WebInspector.UIString("Refresh Caches"), this._refreshCaches.bind(this));
+        contextMenu.show();
+    },
+
+    _refreshCaches: function()
+    {
+        var targets = WebInspector.targetManager.targets();
+        for (var i = 0; i < targets.length; ++i) {
+            if (targets[i].serviceWorkerCacheModel)
+                targets[i].serviceWorkerCacheModel.refreshCacheNames();
+        }
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _cacheAdded: function(event)
+    {
+        var cacheId = /** @type {!WebInspector.ServiceWorkerCacheModel.CacheId} */ (event.data);
+        var model = /** @type {!WebInspector.ServiceWorkerCacheModel} */ (event.target);
+        this._addCache(model, cacheId);
+    },
+
+    /**
+     * @param {!WebInspector.ServiceWorkerCacheModel} model
+     * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+     */
+    _addCache: function(model, cacheId)
+    {
+        var swCacheTreeElement = new WebInspector.SWCacheTreeElement(this._storagePanel, model, cacheId);
+        this._swCacheTreeElements.push(swCacheTreeElement);
+        this.appendChild(swCacheTreeElement);
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _cacheRemoved: function(event)
+    {
+        var cacheId = /** @type {!WebInspector.ServiceWorkerCacheModel.CacheId} */ (event.data);
+        var model = /** @type {!WebInspector.ServiceWorkerCacheModel} */ (event.target);
+
+        var swCacheTreeElement = this._cacheTreeElement(model, cacheId);
+        if (!swCacheTreeElement)
+            return;
+
+        swCacheTreeElement.clear();
+        this.removeChild(swCacheTreeElement);
+        this._swCacheTreeElements.remove(swCacheTreeElement);
+    },
+
+    /**
+     * @param {!WebInspector.ServiceWorkerCacheModel} model
+     * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+     * @return {?WebInspector.SWCacheTreeElement}
+     */
+    _cacheTreeElement: function(model, cacheId)
+    {
+        var index = -1;
+        for (var i = 0; i < this._swCacheTreeElements.length; ++i) {
+            if (this._swCacheTreeElements[i]._cacheId.equals(cacheId) && this._swCacheTreeElements[i]._model === model) {
+                index = i;
+                break;
+            }
+        }
+        if (index !== -1)
+            return this._swCacheTreeElements[i];
+        return null;
+    },
+
+    __proto__: WebInspector.StorageCategoryTreeElement.prototype
+}
+
+/**
+ * @constructor
+ * @extends {WebInspector.BaseStorageTreeElement}
+ * @param {!WebInspector.ResourcesPanel} storagePanel
+ * @param {!WebInspector.ServiceWorkerCacheModel} model
+ * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+ */
+WebInspector.SWCacheTreeElement = function(storagePanel, model, cacheId)
+{
+    WebInspector.BaseStorageTreeElement.call(this, storagePanel, null, cacheId.name, ["service-worker-cache-tree-item"]);
+    this._model = model;
+    this._cacheId = cacheId;
+}
+
+WebInspector.SWCacheTreeElement.prototype = {
+    get itemURL()
+    {
+        // I don't think this will work at all.
+        return "swcache://" + this._cacheId.name;
+    },
+
+    onattach: function()
+    {
+        WebInspector.BaseStorageTreeElement.prototype.onattach.call(this);
+        this.listItemElement.addEventListener("contextmenu", this._handleContextMenuEvent.bind(this), true);
+    },
+
+    _handleContextMenuEvent: function(event)
+    {
+        var contextMenu = new WebInspector.ContextMenu(event);
+        contextMenu.appendItem(WebInspector.UIString("Delete"), this._clearCache.bind(this));
+        contextMenu.show();
+    },
+
+    _clearCache: function()
+    {
+        this._model.deleteCache(this._cacheId);
+    },
+
+    /**
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
+     */
+    update: function(cache)
+    {
+        this._cache = cache;
+        if (this._view)
+            this._view.update(cache);
+    },
+
+    /**
+     * @override
+     * @return {boolean}
+     */
+    onselect: function(selectedByUser)
+    {
+        WebInspector.BaseStorageTreeElement.prototype.onselect.call(this, selectedByUser);
+        if (!this._view)
+            this._view = new WebInspector.ServiceWorkerCacheView(this._model, this._cacheId, this._cache);
+
+        this._storagePanel.showServiceWorkerCache(this._view);
+        return false;
+    },
+
+    clear: function()
+    {
+        if (this._view)
+            this._view.clear();
+    },
+
+    __proto__: WebInspector.BaseStorageTreeElement.prototype
+}
+
+
 /**
  * @constructor
  * @extends {WebInspector.StorageCategoryTreeElement}
@@ -1502,7 +1698,7 @@ WebInspector.IndexedDBTreeElement.prototype = {
         var database = /** @type {!WebInspector.IndexedDBModel.Database} */ (event.data);
         var model = /** @type {!WebInspector.IndexedDBModel} */ (event.target);
 
-        var idbDatabaseTreeElement = this._idbDatabaseTreeElement(model, database.databaseId)
+        var idbDatabaseTreeElement = this._idbDatabaseTreeElement(model, database.databaseId);
         if (!idbDatabaseTreeElement)
             return;
 
@@ -1556,7 +1752,7 @@ WebInspector.FileSystemListTreeElement.prototype = {
     _handleContextMenuEvent: function(event)
     {
         var contextMenu = new WebInspector.ContextMenu(event);
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Refresh FileSystem list" : "Refresh FileSystem List"), this._refreshFileSystem.bind(this));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Refresh FileSystem ^list"), this._refreshFileSystem.bind(this));
         contextMenu.show();
     },
 
@@ -1805,7 +2001,7 @@ WebInspector.IDBObjectStoreTreeElement.prototype = {
         var tooltipString = keyPathString !== null ? (WebInspector.UIString("Key path: ") + keyPathString) : "";
         if (this._objectStore.autoIncrement)
             tooltipString += "\n" + WebInspector.UIString("autoIncrement");
-        this.tooltip = tooltipString
+        this.tooltip = tooltipString;
     },
 
     /**
@@ -2195,6 +2391,7 @@ WebInspector.ResourcesPanelFactory = function()
 
 WebInspector.ResourcesPanelFactory.prototype = {
     /**
+     * @override
      * @return {!WebInspector.Panel}
      */
     createPanel: function()

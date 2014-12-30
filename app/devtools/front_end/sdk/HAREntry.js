@@ -104,6 +104,7 @@ WebInspector.HAREntry.prototype = {
             redirectURL: this._request.responseHeaderValue("Location") || "",
             headersSize: headersText ? headersText.length : -1,
             bodySize: this.responseBodySize,
+            _transferSize: this._request.transferSize,
             _error: this._request.localizedFailDescription
         };
     },
@@ -142,7 +143,7 @@ WebInspector.HAREntry.prototype = {
                 if (values[i] >= 0)
                     return values[i];
             }
-            console.assert(false, "Incomplete requet timing information.");
+            console.assert(false, "Incomplete request timing information.");
         }
 
         var blocked = firstNonNegative([timing.dnsStart, timing.connectStart, timing.sendStart]);

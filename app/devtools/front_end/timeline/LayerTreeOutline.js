@@ -117,7 +117,7 @@ WebInspector.LayerTreeOutline.prototype = {
         if (root)
             layerTree.forEachLayer(updateLayer.bind(this), root);
         // Cleanup layers that don't exist anymore from tree.
-        for (var node = /** @type {!TreeElement|!TreeOutline|null} */ (this._treeOutline.children[0]); node && !node.root;) {
+        for (var node = /** @type {?TreeContainerNode} */ (this._treeOutline.children[0]); node && !node.root;) {
             if (seenLayers.get(node.representedObject)) {
                 node = node.traverseNextTreeElement(false);
             } else {
@@ -150,7 +150,7 @@ WebInspector.LayerTreeOutline.prototype = {
     _selectedNodeChanged: function(node)
     {
         var layer = /** @type {!WebInspector.Layer} */ (node.representedObject);
-        var selection = node.representedObject ? new WebInspector.Layers3DView.LayerSelection(node.representedObject) : null;
+        var selection = layer ? new WebInspector.Layers3DView.LayerSelection(layer) : null;
         this.dispatchEventToListeners(WebInspector.LayerTreeOutline.Events.LayerSelected, selection);
     },
 

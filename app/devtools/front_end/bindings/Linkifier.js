@@ -73,7 +73,7 @@ WebInspector.Linkifier.handleLink = function(url, lineNumber)
 {
     if (!WebInspector.Linkifier._linkHandler)
         return false;
-    return WebInspector.Linkifier._linkHandler.handleLink(url, lineNumber)
+    return WebInspector.Linkifier._linkHandler.handleLink(url, lineNumber);
 }
 
 /**
@@ -114,6 +114,7 @@ WebInspector.Linkifier.linkifyUsingRevealer = function(revealable, text, fallbac
 
 WebInspector.Linkifier.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -122,6 +123,7 @@ WebInspector.Linkifier.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)
@@ -239,13 +241,15 @@ WebInspector.Linkifier.prototype = {
          */
         function clickHandler(event)
         {
-            if (!anchor.__uiLocation)
+            var uiLocation = anchor.__uiLocation;
+            if (!uiLocation)
                 return;
 
             event.consume(true);
-            if (WebInspector.Linkifier.handleLink(anchor.__uiLocation.uiSourceCode.url, anchor.__uiLocation.lineNumber))
+            var networkURL = WebInspector.networkMapping.networkURL(uiLocation.uiSourceCode);
+            if (WebInspector.Linkifier.handleLink(networkURL, uiLocation.lineNumber))
                 return;
-            WebInspector.Revealer.reveal(anchor.__uiLocation);
+            WebInspector.Revealer.reveal(uiLocation);
         }
         anchor.addEventListener("click", clickHandler, false);
         return anchor;
@@ -259,6 +263,13 @@ WebInspector.Linkifier.prototype = {
             this.targetRemoved(target);
             this.targetAdded(target);
         }
+    },
+
+    dispose: function()
+    {
+        this.reset();
+        WebInspector.targetManager.unobserveTargets(this);
+        this._liveLocationsByTarget.clear();
     },
 
     /**
@@ -284,6 +295,7 @@ WebInspector.Linkifier.DefaultFormatter = function(maxLength)
 
 WebInspector.Linkifier.DefaultFormatter.prototype = {
     /**
+     * @override
      * @param {!Element} anchor
      * @param {!WebInspector.UILocation} uiLocation
      */
@@ -314,6 +326,7 @@ WebInspector.Linkifier.DefaultCSSFormatter.MaxLengthForDisplayedURLs = 30;
 
 WebInspector.Linkifier.DefaultCSSFormatter.prototype = {
     /**
+     * @override
      * @param {!Element} anchor
      * @param {!WebInspector.UILocation} uiLocation
      */

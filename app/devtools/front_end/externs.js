@@ -179,6 +179,72 @@ function DOMFileSystem() {}
  */
 DOMFileSystem.prototype.root = null;
 
+var DevToolsHost = {};
+
+/** @typedef {{type:string, id:(number|undefined),
+              label:(string|undefined), enabled:(boolean|undefined), checked:(boolean|undefined),
+              subItems:(!Array.<!DevToolsHost.ContextMenuDescriptor>|undefined)}} */
+DevToolsHost.ContextMenuDescriptor;
+
+/**
+ * @return {number}
+ */
+DevToolsHost.zoomFactor = function() { }
+
+/**
+ * @param {string} origin
+ * @param {string} script
+ */
+DevToolsHost.setInjectedScriptForOrigin = function(origin, script) { }
+
+/**
+ * @param {string} text
+ */
+DevToolsHost.copyText = function(text) { }
+
+/**
+ * @return {string}
+ */
+DevToolsHost.platform = function() { }
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {!Array.<!DevToolsHost.ContextMenuDescriptor>} items
+ * @param {!Document} document
+ */
+DevToolsHost.showContextMenuAtPoint = function(x, y, items, document) { }
+
+/**
+ * @param {string} message
+ */
+DevToolsHost.sendMessageToBackend = function(message) { }
+
+/**
+ * @param {string} message
+ */
+DevToolsHost.sendMessageToEmbedder = function(message) { }
+
+/**
+ * @return {string}
+ */
+DevToolsHost.getSelectionBackgroundColor = function() { }
+
+/**
+ * @return {string}
+ */
+DevToolsHost.getSelectionForegroundColor = function() { }
+
+/**
+ * @return {boolean}
+ */
+DevToolsHost.isUnderTest = function() { }
+
+/**
+ * @return {boolean}
+ */
+DevToolsHost.isHostedMode = function() { }
+
 // FIXME: remove everything below.
 var FormatterWorker = {}
 var WebInspector = {}
@@ -227,6 +293,12 @@ function ExtensionReloadOptions() {
     this.preprocessingScript = "";
     this.userAgent = "";
 }
+
+var Adb = {};
+/** @typedef {{id: string, adbBrowserChromeVersion: string, compatibleVersion: boolean, adbBrowserName: string, source: string, adbBrowserVersion: string}} */
+Adb.Browser;
+/** @typedef {{id: string, adbModel: string, adbSerial: string, browsers: !Array.<!Adb.Browser>, adbPortStatus: !Array.<number>, adbConnected: boolean}} */
+Adb.Device;
 
 /* jsdifflib API */
 var difflib = {};
@@ -419,25 +491,25 @@ CodeMirror.StringStream = function(line)
     this.start = 0;
 }
 CodeMirror.StringStream.prototype = {
-    backUp: function (n) { },
-    column: function () { },
-    current: function () { },
-    eat: function (match) { },
-    eatSpace: function () { },
-    eatWhile: function (match) { },
-    eol: function () { },
-    indentation: function () { },
+    backUp: function(n) { },
+    column: function() { },
+    current: function() { },
+    eat: function(match) { },
+    eatSpace: function() { },
+    eatWhile: function(match) { },
+    eol: function() { },
+    indentation: function() { },
     /**
      * @param {!RegExp|string} pattern
      * @param {boolean=} consume
      * @param {boolean=} caseInsensitive
      */
-    match: function (pattern, consume, caseInsensitive) { },
-    next: function () { },
-    peek: function () { },
-    skipTo: function (ch) { },
-    skipToEnd: function () { },
-    sol: function () { }
+    match: function(pattern, consume, caseInsensitive) { },
+    next: function() { },
+    peek: function() { },
+    skipTo: function(ch) { },
+    skipToEnd: function() { },
+    sol: function() { }
 }
 
 /** @type {Object.<string, !Object.<string, string>>} */
@@ -578,4 +650,61 @@ Set.prototype = {
 
     // FIXME: This should be removed once transpilation is not required for closure compiler ES6
     $$iterator: function() { }
+}
+
+/**
+ * @constructor
+ * @template K, V
+ */
+var WeakMap = function() { }
+
+WeakMap.prototype = {
+    /**
+     * @param {K} key
+     * @param {V} value
+     */
+    set: function(key, value) { },
+
+    /**
+     * @param {K} key
+     * @return {boolean}
+     */
+    delete: function(key) { },
+
+    /**
+     * @param {K} key
+     * @return {V}
+     */
+    get: function(key) { },
+
+    /**
+     * @param {K} key
+     * @return {boolean}
+     */
+    has: function(key) { },
+}
+
+/**
+ * @constructor
+ * @template V
+ */
+var WeakSet = function() { }
+
+WeakSet.prototype = {
+    /**
+     * @param {V} value
+     */
+    add: function(value) { },
+
+    /**
+     * @param {V} value
+     * @return {boolean}
+     */
+    delete: function(value) { },
+
+    /**
+     * @param {V} value
+     * @return {boolean}
+     */
+    has: function(value) { },
 }

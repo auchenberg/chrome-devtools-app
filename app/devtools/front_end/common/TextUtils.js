@@ -128,22 +128,20 @@ WebInspector.TextUtils = {
      * @param {number=} lastIndex
      * @return {number}
      */
-    findBalancedCurlyBrackets: function(source, startIndex, lastIndex) {
+    findBalancedCurlyBrackets: function(source, startIndex, lastIndex)
+    {
+        // The function is performance sensitive.
         lastIndex = lastIndex || source.length;
         startIndex = startIndex || 0;
         var counter = 0;
-        var inString = false;
 
-        for (var index = startIndex; index < lastIndex; ++index) {
-            var character = source[index];
-            if (inString) {
-                if (character === "\\")
-                    ++index;
-                else if (character === "\"")
-                    inString = false;
-            } else {
+        var index = startIndex;
+        while (index < lastIndex) {
+            // This part counts brackets until end of string or a double quote.
+            for (; index < lastIndex; ++index) {
+                var character = source[index];
                 if (character === "\"")
-                    inString = true;
+                    break;
                 else if (character === "{")
                     ++counter;
                 else if (character === "}") {
@@ -151,6 +149,14 @@ WebInspector.TextUtils = {
                         return index + 1;
                 }
             }
+            if (index === lastIndex)
+                return -1;
+            // This part seeks the closing double quote which could have even number of back slashes prefix.
+            var regexp = WebInspector.TextUtils._ClosingDoubleQuoteRegexp;
+            regexp.lastIndex = index;
+            if (!regexp.test(source))
+                return -1;
+            index = regexp.lastIndex;
         }
         return -1;
     },
@@ -187,6 +193,7 @@ WebInspector.TextUtils = {
 }
 
 WebInspector.TextUtils._SpaceCharRegex = /\s/;
+WebInspector.TextUtils._ClosingDoubleQuoteRegexp = /[^\\](?:\\\\)*"/g;
 
 /**
  * @enum {string}

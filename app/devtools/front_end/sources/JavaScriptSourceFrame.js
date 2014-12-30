@@ -98,7 +98,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         infobar.createDetailsRowMessage(WebInspector.UIString("The content of this file on the file system:\u00a0")).appendChild(
             WebInspector.createExternalAnchor(fileURL, fileURL, "source-frame-infobar-details-url"));
 
-        var scriptURL = this._uiSourceCode.url;
+        var scriptURL = WebInspector.networkMapping.networkURL(this._uiSourceCode);
         infobar.createDetailsRowMessage(WebInspector.UIString("does not match the loaded script:\u00a0")).appendChild(
             WebInspector.createExternalAnchor(scriptURL, scriptURL, "source-frame-infobar-details-url"));
 
@@ -130,7 +130,8 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         var projectType = this._uiSourceCode.project().type();
         if (projectType === WebInspector.projectTypes.Snippets)
             return;
-        var url = this._uiSourceCode.url;
+        var networkURL = WebInspector.networkMapping.networkURL(this._uiSourceCode);
+        var url = projectType === WebInspector.projectTypes.Formatter ? this._uiSourceCode.originURL() : networkURL;
         var isContentScript = projectType === WebInspector.projectTypes.ContentScripts;
         if (!WebInspector.BlackboxSupport.isBlackboxed(url, isContentScript)) {
             this._hideBlackboxInfobar();
@@ -246,20 +247,20 @@ WebInspector.JavaScriptSourceFrame.prototype = {
 
     populateLineGutterContextMenu: function(contextMenu, lineNumber)
     {
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Continue to here" : "Continue to Here"), this._continueToLine.bind(this, lineNumber));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Continue to ^here"), this._continueToLine.bind(this, lineNumber));
         var breakpoint = this._breakpointManager.findBreakpointOnLine(this._uiSourceCode, lineNumber);
         if (!breakpoint) {
             // This row doesn't have a breakpoint: We want to show Add Breakpoint and Add and Edit Breakpoint.
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add breakpoint" : "Add Breakpoint"), this._setBreakpoint.bind(this, lineNumber, 0, "", true));
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add conditional breakpoint…" : "Add Conditional Breakpoint…"), this._editBreakpointCondition.bind(this, lineNumber));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^breakpoint"), this._setBreakpoint.bind(this, lineNumber, 0, "", true));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^conditional ^breakpoint…"), this._editBreakpointCondition.bind(this, lineNumber));
         } else {
             // This row has a breakpoint, we want to show edit and remove breakpoint, and either disable or enable.
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Remove breakpoint" : "Remove Breakpoint"), breakpoint.remove.bind(breakpoint));
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Edit breakpoint…" : "Edit Breakpoint…"), this._editBreakpointCondition.bind(this, lineNumber, breakpoint));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Remove ^breakpoint"), breakpoint.remove.bind(breakpoint));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Edit ^breakpoint…"), this._editBreakpointCondition.bind(this, lineNumber, breakpoint));
             if (breakpoint.enabled())
-                contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Disable breakpoint" : "Disable Breakpoint"), breakpoint.setEnabled.bind(breakpoint, false));
+                contextMenu.appendItem(WebInspector.UIString.capitalize("Disable ^breakpoint"), breakpoint.setEnabled.bind(breakpoint, false));
             else
-                contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Enable breakpoint" : "Enable Breakpoint"), breakpoint.setEnabled.bind(breakpoint, true));
+                contextMenu.appendItem(WebInspector.UIString.capitalize("Enable ^breakpoint"), breakpoint.setEnabled.bind(breakpoint, true));
         }
     },
 
@@ -268,33 +269,11 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         var textSelection = this.textEditor.selection();
         if (textSelection && !textSelection.isEmpty()) {
             var selection = this.textEditor.copyRange(textSelection);
-            var addToWatchLabel = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add to watch" : "Add to Watch");
+            var addToWatchLabel = WebInspector.UIString.capitalize("Add to ^watch");
             contextMenu.appendItem(addToWatchLabel, this._innerAddToWatch.bind(this, selection));
-            var evaluateLabel = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Evaluate in console" : "Evaluate in Console");
+            var evaluateLabel = WebInspector.UIString.capitalize("Evaluate in ^console");
             contextMenu.appendItem(evaluateLabel, this._evaluateInConsole.bind(this, selection));
             contextMenu.appendSeparator();
-        } else if (this._uiSourceCode.project().type() === WebInspector.projectTypes.Debugger) {
-            // FIXME: Change condition above to explicitly check that current uiSourceCode is created by default debugger mapping
-            // and move the code adding this menu item to generic context menu provider for UISourceCode.
-            var liveEditLabel = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Live edit" : "Live Edit");
-            var liveEditSupport = WebInspector.LiveEditSupport.liveEditSupportForUISourceCode(this._uiSourceCode);
-            if (!liveEditSupport)
-                return;
-
-            contextMenu.appendItem(liveEditLabel, liveEdit.bind(this, liveEditSupport));
-            contextMenu.appendSeparator();
-        }
-
-        /**
-         * @this {WebInspector.JavaScriptSourceFrame}
-         * @param {!WebInspector.LiveEditSupport} liveEditSupport
-         */
-        function liveEdit(liveEditSupport)
-        {
-            var liveEditUISourceCode = liveEditSupport.uiSourceCodeForLiveEdit(this._uiSourceCode);
-            if (!liveEditUISourceCode)
-                return;
-            WebInspector.Revealer.reveal(liveEditUISourceCode.uiLocation(lineNumber));
         }
 
         /**
@@ -322,7 +301,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         if (this._uiSourceCode.project().type() === WebInspector.projectTypes.Network && WebInspector.settings.jsSourceMapsEnabled.get()) {
             if (this._scriptFileForTarget.size) {
                 var scriptFile = this._scriptFileForTarget.valuesArray()[0];
-                var addSourceMapURLLabel = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add source map\u2026" : "Add Source Map\u2026");
+                var addSourceMapURLLabel = WebInspector.UIString.capitalize("Add ^source ^map\u2026");
                 contextMenu.appendItem(addSourceMapURLLabel, addSourceMapURL.bind(this, scriptFile));
                 contextMenu.appendSeparator();
             }
@@ -375,11 +354,33 @@ WebInspector.JavaScriptSourceFrame.prototype = {
             if (succeededEdits + failedEdits !== scriptFiles.length)
                 return;
 
-            if (!failedEdits)
-                WebInspector.LiveEditSupport.logSuccess();
-            else
-                WebInspector.LiveEditSupport.logDetailedError(liveEditError, liveEditErrorData, contextScript)
+            if (failedEdits)
+                logLiveEditError.call(this, liveEditError, liveEditErrorData, contextScript);
             this._scriptsPanel.setIgnoreExecutionLineEvents(false);
+        }
+
+        /**
+         * @param {?string} error
+         * @param {!DebuggerAgent.SetScriptSourceError=} errorData
+         * @param {!WebInspector.Script=} contextScript
+         * @this {WebInspector.JavaScriptSourceFrame}
+         */
+        function logLiveEditError(error, errorData, contextScript)
+        {
+            var warningLevel = WebInspector.Console.MessageLevel.Warning;
+            if (!errorData) {
+                if (error)
+                    WebInspector.console.addMessage(WebInspector.UIString("LiveEdit failed: %s", error), warningLevel);
+                return;
+            }
+            var compileError = errorData.compileError;
+            if (compileError) {
+                var messageText = WebInspector.UIString("LiveEdit compile failed: %s", compileError.message);
+                var message = new WebInspector.SourceFrameMessage(messageText, WebInspector.SourceFrameMessage.Level.Error, compileError.lineNumber - 1, compileError.columnNumber);
+                this.addMessageToSource(message);
+            } else {
+                WebInspector.console.addMessage(WebInspector.UIString("Unknown LiveEdit error: %s; %s", JSON.stringify(errorData), error), warningLevel);
+            }
         }
 
         this._scriptsPanel.setIgnoreExecutionLineEvents(true);
@@ -708,10 +709,10 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         if (this._muted)
             return true;
         var scriptFiles = this._scriptFileForTarget.valuesArray();
-        var hasDivergingOrMergingFile = false;
-        for (var i = 0; i < scriptFiles.length; ++i)
+        for (var i = 0; i < scriptFiles.length; ++i) {
             if (scriptFiles[i].isDivergingFromVM() || scriptFiles[i].isMergingToVM())
                 return true;
+        }
         return false;
     },
 
@@ -736,7 +737,6 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         if (this._shouldIgnoreExternalBreakpointEvents())
             return;
 
-        var breakpoint = /** @type {!WebInspector.BreakpointManager.Breakpoint} */ (event.data.breakpoint);
         var remainingBreakpoint = this._breakpointManager.findBreakpointOnLine(this._uiSourceCode, uiLocation.lineNumber);
         if (!remainingBreakpoint && this.loaded)
             this._removeBreakpointDecoration(uiLocation.lineNumber);
@@ -746,14 +746,23 @@ WebInspector.JavaScriptSourceFrame.prototype = {
     {
         var message = /** @type {!WebInspector.PresentationConsoleMessage} */ (event.data);
         if (this.loaded)
-            this.addMessageToSource(message.lineNumber, message.originalMessage);
+            this.addMessageToSource(this._sourceFrameMessage(message));
     },
 
     _consoleMessageRemoved: function(event)
     {
         var message = /** @type {!WebInspector.PresentationConsoleMessage} */ (event.data);
         if (this.loaded)
-            this.removeMessageFromSource(message.lineNumber, message.originalMessage);
+            this.removeMessageFromSource(this._sourceFrameMessage(message));
+    },
+
+    /**
+     * @param {!WebInspector.PresentationConsoleMessage} message
+     * @return {!WebInspector.SourceFrameMessage}
+     */
+    _sourceFrameMessage: function(message)
+    {
+        return WebInspector.SourceFrameMessage.fromConsoleMessage(message.originalMessage, message.lineNumber);
     },
 
     _consoleMessagesCleared: function(event)
@@ -821,10 +830,8 @@ WebInspector.JavaScriptSourceFrame.prototype = {
             this._breakpointAdded({data:breakpointLocations[i]});
 
         var messages = WebInspector.presentationConsoleMessageHelper.consoleMessages(this._uiSourceCode);
-        for (var i = 0; i < messages.length; ++i) {
-            var message = messages[i];
-            this.addMessageToSource(message.lineNumber, message.originalMessage);
-        }
+        for (var message of messages)
+            this.addMessageToSource(this._sourceFrameMessage(message));
 
         var scriptFiles = this._scriptFileForTarget.valuesArray();
         for (var i = 0; i < scriptFiles.length; ++i)

@@ -149,7 +149,7 @@ WebInspector.PresentationConsoleMessageHelper.prototype = {
     _onConsoleMessageAdded: function(event)
     {
         var message = /** @type {!WebInspector.ConsoleMessage} */ (event.data);
-        this._consoleMessageAdded(message)
+        this._consoleMessageAdded(message);
     },
 
     /**

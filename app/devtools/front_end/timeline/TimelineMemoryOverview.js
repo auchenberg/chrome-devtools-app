@@ -47,6 +47,9 @@ WebInspector.TimelineMemoryOverview.prototype = {
         this._heapSizeLabel.textContent = "";
     },
 
+    /**
+     * @override
+     */
     update: function()
     {
         this.resetCanvas();

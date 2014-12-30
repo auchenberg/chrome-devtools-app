@@ -104,11 +104,6 @@ li.selected .base-storage-tree-element-subtitle {
 .storage-view {
     display: none;
     overflow: hidden;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
 }
 
 .storage-view.visible {
@@ -126,6 +121,12 @@ li.selected .base-storage-tree-element-subtitle {
 
 .storage-view .storage-table-error {
     color: rgb(66%, 33%, 33%);
+    font-size: 24px;
+    font-weight: bold;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .storage-view.query {
@@ -323,6 +324,14 @@ li.selected .base-storage-tree-element-subtitle {
     content: url(Images/indexedDBIndex.png);
 }
 
+.service-worker-cache-tree-item .icon {
+    content: url(Images/indexedDBObjectStore.png);
+}
+
+.service-worker-cache-storage-tree-item .icon {
+    content: url(Images/indexedDB.png);
+}
+
 .domstorage-storage-tree-item.local-storage .icon {
     content: url(Images/localStorage.png);
 }
@@ -341,4 +350,16 @@ li.selected .base-storage-tree-element-subtitle {
 
 .file-system-storage-tree-item .icon {
     content: url(Images/fileSystem.png);
+}
+
+.storage-application-cache-status-icon,
+.storage-application-cache-connectivity-icon {
+    margin: 0 5px;
+}
+
+.storage-application-cache-connectivity {
+    padding-right: 5px;
+    border-right: 1px solid #CCC;
+    height: 23px;
+    line-height: 23px
 }

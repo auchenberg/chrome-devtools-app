@@ -49,7 +49,6 @@ WebInspector.DockController = function(canDock)
 WebInspector.DockController.State = {
     DockedToBottom: "bottom",
     DockedToRight: "right",
-    DockedToLeft: "left",
     Undocked: "undocked"
 }
 
@@ -70,10 +69,6 @@ WebInspector.DockController.prototype = {
 
         this._states = [WebInspector.DockController.State.DockedToRight, WebInspector.DockController.State.DockedToBottom, WebInspector.DockController.State.Undocked];
         this._titles = [WebInspector.UIString("Dock to main window."), WebInspector.UIString("Dock to main window."), WebInspector.UIString("Undock into separate window.")];
-        if (Runtime.experiments.isEnabled("dockToLeft")) {
-            this._states.push(WebInspector.DockController.State.DockedToLeft);
-            this._titles.push(WebInspector.UIString("Dock to main window."));
-        }
         var initialState = WebInspector.settings.currentDockState.get();
         initialState = this._states.indexOf(initialState) >= 0 ? initialState : this._states[0];
         this._dockSideChanged(initialState);
@@ -100,7 +95,7 @@ WebInspector.DockController.prototype = {
      */
     isVertical: function()
     {
-        return this._dockSide === WebInspector.DockController.State.DockedToRight || this._dockSide === WebInspector.DockController.State.DockedToLeft;
+        return this._dockSide === WebInspector.DockController.State.DockedToRight;
     },
 
     /**
@@ -138,25 +133,16 @@ WebInspector.DockController.prototype = {
         case WebInspector.DockController.State.DockedToBottom:
             body.classList.remove("undocked");
             body.classList.remove("dock-to-right");
-            body.classList.remove("dock-to-left");
             body.classList.add("dock-to-bottom");
             break;
         case WebInspector.DockController.State.DockedToRight:
             body.classList.remove("undocked");
             body.classList.add("dock-to-right");
-            body.classList.remove("dock-to-left");
-            body.classList.remove("dock-to-bottom");
-            break;
-        case WebInspector.DockController.State.DockedToLeft:
-            body.classList.remove("undocked");
-            body.classList.remove("dock-to-right");
-            body.classList.add("dock-to-left");
             body.classList.remove("dock-to-bottom");
             break;
         case WebInspector.DockController.State.Undocked:
             body.classList.add("undocked");
             body.classList.remove("dock-to-right");
-            body.classList.remove("dock-to-left");
             body.classList.remove("dock-to-bottom");
             break;
         }
@@ -175,6 +161,7 @@ WebInspector.DockController.ButtonProvider = function()
 
 WebInspector.DockController.ButtonProvider.prototype = {
     /**
+     * @override
      * @return {?WebInspector.StatusBarItem}
      */
     item: function()
@@ -182,8 +169,8 @@ WebInspector.DockController.ButtonProvider.prototype = {
         if (!WebInspector.dockController.canDock())
             return null;
 
-        if (!this._dockToggleButton) {
-            this._dockToggleButton = new WebInspector.StatusBarStatesSettingButton(
+        if (!WebInspector.dockController._dockToggleButton) {
+            WebInspector.dockController._dockToggleButton = new WebInspector.StatusBarStatesSettingButton(
                     "dock-status-bar-item",
                     WebInspector.dockController._states,
                     WebInspector.dockController._titles,
@@ -192,7 +179,30 @@ WebInspector.DockController.ButtonProvider.prototype = {
                     WebInspector.settings.lastDockState,
                     WebInspector.dockController._dockSideChanged.bind(WebInspector.dockController));
         }
-        return this._dockToggleButton;
+        return WebInspector.dockController._dockToggleButton;
+    }
+}
+
+/**
+ * @constructor
+ * @implements {WebInspector.ActionDelegate}
+ */
+WebInspector.DockController.ToggleDockActionDelegate = function()
+{
+}
+
+WebInspector.DockController.ToggleDockActionDelegate.prototype = {
+    /**
+     * @override
+     * @return {boolean}
+     */
+    handleAction: function()
+    {
+        var toggleButton = new WebInspector.DockController.ButtonProvider().item();
+        if (!toggleButton)
+            return false;
+        /** @type {!WebInspector.StatusBarStatesSettingButton} */ (toggleButton).toggle();
+        return true;
     }
 }
 

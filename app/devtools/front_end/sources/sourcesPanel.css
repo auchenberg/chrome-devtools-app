@@ -27,28 +27,24 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-.scripts-pause-on-exceptions-status-bar-item .glyph {
-    -webkit-mask-position: -256px 0;
-}
-
-.scripts-pause-on-exceptions-status-bar-item.toggled-on .glyph {
-    background-color: rgb(66, 129, 235);
-}
-
 .scripts-debug-toolbar {
     position: absolute;
     top: 0;
     width: 100%;
     background-color: #eee;
     border-bottom: 1px solid rgb(163, 163, 163);
-    margin-top: -1px;
+    height: 23px;
+}
+
+.scripts-debug-toolbar::shadow .status-bar-item {
+    position: relative;
+    top: -1px;
 }
 
 .scripts-debug-toolbar-drawer {
     flex: 0 0 46px;
     -webkit-transition: margin-top 0.1s ease-in-out;
     margin-top: -23px;
-    line-height: 23px;
     padding-top: 22px;
     border-bottom: 1px solid rgb(202, 202, 202);
     background-color: white;
@@ -61,73 +57,34 @@
 
 .scripts-debug-toolbar-drawer > label {
     display: flex;
+    padding-top: 3px;
     padding-left: 3px;
     border-top: 1px solid rgb(196,196,196);
     height: 24px;
 }
 
-#scripts-editor-toolbar {
-    position: relative;
-    margin-top: -1px;
-    height: 24px;
-}
-
-.scripts-run-snippet .glyph {
-    -webkit-mask-position: -64px -48px;
-}
-
-.scripts-pause .glyph {
-    -webkit-mask-position: -32px -72px;
-}
-
-.scripts-pause.toggled-on .glyph {
-    -webkit-mask-position: 0 -72px;
-}
-
-.scripts-step-over .glyph {
-    -webkit-mask-position: -128px -72px;
-}
-
-.scripts-step-into .glyph {
-    -webkit-mask-position: -64px -72px;
-}
-
-.scripts-step-out .glyph {
-    -webkit-mask-position: -96px -72px;
-}
-
-.scripts-long-resume .glyph {
-    -webkit-mask-position: -64px -48px;
-}
-
-.scripts-toggle-breakpoints.toggled-on .glyph {
-    -webkit-mask-position: -32px 0;
-}
-
-.scripts-toggle-breakpoints .glyph {
-    -webkit-mask-position: 0 -24px;
-}
-
-#shared-workers-list {
-    margin: 5px 0 5px 20px;
-    font-style:italic;
-}
-
-#pause-workers-checkbox > input {
-    position: relative;
-    top: 2px;
-}
-
-.panel.sources #sources-editor-container-tabbed-pane .tabbed-pane-header-contents {
+.panel.sources #sources-editor-container-tabbed-pane::shadow .tabbed-pane-header-contents {
     margin-left: 22px;
     margin-right: 36px;
 }
 
-.panel.sources .split-view button.scripts-debugger-show-hide-button.right-sidebar-show-hide-button.toggled-hide {
+.panel.sources .split-view /deep/ button.scripts-debugger-show-hide-button.right-sidebar-show-hide-button.toggled-hide {
     margin-right: 15px;
 }
 
-.panel.sources .split-view #scripts-debug-sidebar-resizer-widget.ns-resizer-widget {
+#scripts-debug-sidebar-resizer-widget {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 24px;
+    width: 16px;
+    background-image: url(Images/statusbarResizerHorizontal.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 13;
+}
+
+.sources-split-view-vertical #scripts-debug-sidebar-resizer-widget {
     transform: rotate(90deg);
     right: 17px;
     bottom: 4px;
@@ -140,18 +97,8 @@
     bottom: 0;
 }
 
-.panel.sources .scripts-debugger-show-hide-button {
+.panel.sources /deep/ .scripts-debugger-show-hide-button {
     display: block;
-}
-
-.panel.sources button.status-bar-item.scripts-navigator-show-hide-button {
-    display: block;
-    top: 3px;
-    left: 3px;
-}
-
-.panel.sources .navigator-tabbed-pane .tabbed-pane-header {
-    background-color: #eee;
 }
 
 .function-location-link {
@@ -173,15 +120,6 @@
     overflow: auto;
 }
 
-#targets-toolbar {
-    background: rgb(236, 236, 236);
-    border-bottom: 1px solid rgb(189, 189, 189);
-    border-top: 1px solid rgb(189, 189, 189);
-    margin-right: 0px;
-    padding-right: 6px;
-    margin-top: -1px;
-}
-
 .panel.sources .drag-mask {
     background-color: rgba(255,255,255,0.8);
     z-index: 1000;
@@ -196,4 +134,108 @@
     margin: 20px;
     border: 4px dashed #ddd;
     pointer-events: none;
+}
+
+ol.watch-expressions > li.hovered {
+    background-color: #F0F0F0;
+}
+
+.sidebar-tabbed-pane .watch-expressions {
+    margin-top: 17px;
+}
+
+.properties-tree.watch-expressions {
+    padding-left: 0 !important;
+}
+
+.properties-tree.watch-expressions > li {
+    padding-left: 4px;
+}
+
+.properties-tree.watch-expressions > li > .value {
+    display: inline;
+    position: static;
+}
+
+.properties-tree.watch-expressions > li:not(.parent) {
+    margin-left: 1px;
+    padding-left: 15px;
+}
+
+.properties-tree.watch-expressions > li.hovered {
+    padding-right: 14px;
+}
+
+.watch-expressions > li.editing-sub-part .text-prompt {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+}
+
+.watch-expressions > li.editing-sub-part .value,
+.watch-expressions > li.editing-sub-part .separator  {
+    display: none;
+}
+
+li.editing-sub-part .delete-button {
+    display: none !important;
+}
+
+.section .properties .delete-button {
+    width: 10px;
+    height: 10px;
+    background-image: url(Images/deleteIcon.png);
+    background-position: 0 0;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    border: 0 none transparent;
+    position: absolute;
+    right: 8px;
+    display: none;
+}
+
+.section .properties li.hovered .delete-button {
+    display: inline;
+}
+
+.source-frame-breakpoint-condition {
+    z-index: 30;
+    padding: 4px;
+    background-color: rgb(203, 226, 255);
+    border-radius: 7px;
+    border: 2px solid rgb(169, 172, 203);
+    width: 90%;
+    pointer-events: auto;
+}
+
+.source-frame-breakpoint-message {
+    background-color: transparent;
+    font-weight: normal;
+    font-size: 11px;
+    text-align: left;
+    text-shadow: none;
+    color: rgb(85, 85, 85);
+    cursor: default;
+    margin: 0 0 2px 0;
+}
+
+#source-frame-breakpoint-condition {
+    margin: 0;
+    border: 1px inset rgb(190, 190, 190) !important;
+    width: 100%;
+    box-shadow: none !important;
+    outline: none !important;
+    -webkit-user-modify: read-write;
+}
+
+li.editing .delete-button {
+    display: none !important;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-auto {
+    cursor: auto;
 }

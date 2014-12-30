@@ -138,12 +138,12 @@ WebInspector.IsolatedFileSystem.prototype = {
             for (var i = 0; i < entries.length; ++i) {
                 var entry = entries[i];
                 if (!entry.isDirectory) {
-                    if (this._manager.mapping().isFileExcluded(this._path, entry.fullPath))
+                    if (this._manager.excludedFolderManager().isFileExcluded(this._path, entry.fullPath))
                         continue;
                     fileCallback(entry.fullPath.substr(1));
                 }
                 else {
-                    if (this._manager.mapping().isFileExcluded(this._path, entry.fullPath + "/"))
+                    if (this._manager.excludedFolderManager().isFileExcluded(this._path, entry.fullPath + "/"))
                         continue;
                     ++pendingRequests;
                     this._requestEntries(domFileSystem, entry.fullPath, innerCallback.bind(this));
@@ -457,7 +457,6 @@ WebInspector.IsolatedFileSystem.prototype = {
         }
         var fileEntry;
         var dirEntry;
-        var newFileEntry;
         this._requestFileSystem(fileSystemLoaded.bind(this));
 
         /**
@@ -584,7 +583,7 @@ WebInspector.IsolatedFileSystem.prototype = {
          */
         function innerCallback(dirEntry)
         {
-            this._readDirectory(dirEntry, callback)
+            this._readDirectory(dirEntry, callback);
         }
 
         function errorHandler(error)

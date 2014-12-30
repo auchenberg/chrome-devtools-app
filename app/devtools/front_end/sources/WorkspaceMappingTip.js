@@ -46,7 +46,8 @@ WebInspector.WorkspaceMappingTip.prototype = {
 
         // First try mapping filesystem -> network.
         if (uiSourceCode.project().type() === WebInspector.projectTypes.FileSystem) {
-            var hasMappings = !!uiSourceCode.url;
+            var networkURL = WebInspector.networkMapping.networkURL(uiSourceCode);
+            var hasMappings = !!networkURL;
             if (hasMappings)
                 return;
 
@@ -71,7 +72,8 @@ WebInspector.WorkspaceMappingTip.prototype = {
             // Suggest for localhost only.
             if (!this._isLocalHost(uiSourceCode.originURL()))
                 return;
-            if (this._workspace.uiSourceCodeForURL(uiSourceCode.url) !== uiSourceCode)
+            var networkURL = WebInspector.networkMapping.networkURL(uiSourceCode);
+            if (WebInspector.networkMapping.uiSourceCodeForURL(networkURL) !== uiSourceCode)
                 return;
 
             var filesystemProjects = this._workspace.projectsForType(WebInspector.projectTypes.FileSystem);
@@ -105,7 +107,7 @@ WebInspector.WorkspaceMappingTip.prototype = {
      */
     _showWorkspaceInfobar: function(uiSourceCode)
     {
-        var infobar = new WebInspector.UISourceCodeFrame.Infobar(WebInspector.UISourceCodeFrame.Infobar.Level.Info, WebInspector.UIString("Serving from the file system? Add your files into the workspace."));
+        var infobar = new WebInspector.UISourceCodeFrame.Infobar(WebInspector.UISourceCodeFrame.Infobar.Level.Info, WebInspector.UIString("Serving from the file system? Add your files into the workspace."), this._onWorkspaceInfobarDispose.bind(this));
         infobar.createDetailsRowMessage(WebInspector.UIString("If you add files into your DevTools workspace, your changes will be persisted to disk."));
         infobar.createDetailsRowMessage(WebInspector.UIString("To add a folder into the workspace, drag and drop it into the Sources panel."));
         this._appendInfobar(uiSourceCode, infobar);

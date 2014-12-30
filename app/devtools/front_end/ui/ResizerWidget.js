@@ -37,7 +37,7 @@ WebInspector.ResizerWidget.prototype = {
     setEnabled: function(enabled)
     {
         this._isEnabled = enabled;
-        this._updateElementsClass();
+        this._updateElementCursors();
     },
 
     /**
@@ -55,7 +55,7 @@ WebInspector.ResizerWidget.prototype = {
     setVertical: function(vertical)
     {
         this._isVertical = vertical;
-        this._updateElementsClass();
+        this._updateElementCursors();
     },
 
     /**
@@ -76,8 +76,7 @@ WebInspector.ResizerWidget.prototype = {
 
         this._elements.push(element);
         element.addEventListener("mousedown", this._installDragOnMouseDownBound, false);
-        element.classList.toggle("ns-resizer-widget", this._isVertical && this._isEnabled);
-        element.classList.toggle("ew-resizer-widget", !this._isVertical && this._isEnabled);
+        this._updateElementCursor(element);
     },
 
     /**
@@ -90,16 +89,23 @@ WebInspector.ResizerWidget.prototype = {
 
         this._elements.remove(element);
         element.removeEventListener("mousedown", this._installDragOnMouseDownBound, false);
-        element.classList.remove("ns-resizer-widget");
-        element.classList.remove("ew-resizer-widget");
+        element.style.removeProperty("cursor");
     },
 
-    _updateElementsClass: function()
+    _updateElementCursors: function()
     {
-        for (var i = 0; i < this._elements.length; ++i) {
-            this._elements[i].classList.toggle("ns-resizer-widget", this._isVertical && this._isEnabled);
-            this._elements[i].classList.toggle("ew-resizer-widget", !this._isVertical && this._isEnabled);
-        }
+        this._elements.forEach(this._updateElementCursor.bind(this));
+    },
+
+    /**
+     * @param {!Element} element
+     */
+    _updateElementCursor: function(element)
+    {
+        if (this._isEnabled)
+            element.style.setProperty("cursor", this._isVertical ? "ns-resize" : "ew-resize");
+        else
+            element.style.removeProperty("cursor");
     },
 
     /**

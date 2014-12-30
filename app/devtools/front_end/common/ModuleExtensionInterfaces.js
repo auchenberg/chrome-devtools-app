@@ -24,7 +24,7 @@ WebInspector.Renderer.prototype = {
 WebInspector.Renderer.renderPromise = function(object)
 {
     if (!object)
-        return Promise.rejectWithError("Can't render " + object);
+        return Promise.reject(new Error("Can't render " + object));
 
     return self.runtime.instancePromise(WebInspector.Renderer, object).then(render);
 
@@ -45,35 +45,34 @@ WebInspector.Revealer = function()
 }
 
 /**
- * @param {!Object} revealable
+ * @param {?Object} revealable
  * @param {number=} lineNumber
  */
 WebInspector.Revealer.reveal = function(revealable, lineNumber)
 {
-    WebInspector.Revealer.revealPromise(revealable, lineNumber).done();
+    WebInspector.Revealer.revealPromise(revealable, lineNumber);
 }
 
 /**
- * @param {!Object} revealable
+ * @param {?Object} revealable
  * @param {number=} lineNumber
- * @return {!Promise}
+ * @return {!Promise.<undefined>}
  */
 WebInspector.Revealer.revealPromise = function(revealable, lineNumber)
 {
     if (!revealable)
-        return Promise.rejectWithError("Can't reveal " + revealable);
-
+        return Promise.reject(new Error("Can't reveal " + revealable));
     return self.runtime.instancesPromise(WebInspector.Revealer, revealable).then(reveal);
 
     /**
      * @param {!Array.<!WebInspector.Revealer>} revealers
-     * @return {!Promise}
+     * @return {!Promise.<undefined>}
      */
     function reveal(revealers)
     {
         var promises = [];
         for (var i = 0; i < revealers.length; ++i)
-            promises.push(revealers[i].reveal(revealable, lineNumber));
+            promises.push(revealers[i].reveal(/** @type {!Object} */ (revealable), lineNumber));
         return Promise.race(promises);
     }
 }

@@ -74,6 +74,46 @@ body /deep/ a img {
     border: none;
 }
 
+body /deep/ .fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+body /deep/ iframe.fill {
+    width: 100%;
+    height: 100%;
+}
+
+body /deep/ .view {
+    position: relative;
+    flex: auto;
+}
+
+body /deep/ .hbox {
+    display: flex;
+    flex-direction: row !important;
+    position: relative;
+}
+
+body /deep/ .vbox {
+    display: flex;
+    flex-direction: column !important;
+    position: relative;
+}
+
+body /deep/ .flex-auto {
+    flex: auto;
+}
+
+body /deep/ .flex-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 body /deep/ iframe.view {
     position: absolute;
     width: 100%;
@@ -98,4 +138,16 @@ body /deep/ .highlighted-search-result {
     padding: 1px;
     margin: -1px;
     background-color: rgba(255, 255, 0, 0.8);
+}
+
+body /deep/ button,
+body /deep/ input,
+body /deep/ select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+body /deep/ input[type="search"]:focus,
+body /deep/ input[type="text"]:focus {
+    outline: auto 5px -webkit-focus-ring-color;
 }

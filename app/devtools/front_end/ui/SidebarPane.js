@@ -57,7 +57,7 @@ WebInspector.SidebarPane.prototype = {
     },
 
     /**
-     * @param {function()} callback
+     * @param {function()=} callback
      */
     prepareContent: function(callback)
     {

@@ -37,7 +37,7 @@ WebInspector.FilterBar = function()
     this._filtersShown = false;
     this._element = createElementWithClass("div", "filter-bar hbox");
 
-    this._filterButton = new WebInspector.StatusBarButton(WebInspector.UIString("Filter"), "filters-toggle", 3);
+    this._filterButton = new WebInspector.StatusBarButton(WebInspector.UIString("Filter"), "filter-status-bar-item", 3);
     this._filterButton.element.addEventListener("click", this._handleFilterButtonClick.bind(this), false);
 
     this._filters = [];
@@ -207,7 +207,7 @@ WebInspector.TextFilterUI = function(supportRegex)
     this._filterElement = createElement("div");
     this._filterElement.className = "filter-text-filter";
 
-    this._filterInputElement = /** @type {!HTMLInputElement} */ (this._filterElement.createChild("input", "search-replace toolbar-replace-control"));
+    this._filterInputElement = /** @type {!HTMLInputElement} */ (this._filterElement.createChild("input", "filter-input-field"));
     this._filterInputElement.placeholder = WebInspector.UIString("Filter");
     this._filterInputElement.id = "filter-input-field";
     this._filterInputElement.addEventListener("mousedown", this._onFilterFieldManualFocus.bind(this), false); // when the search field is manually selected
@@ -223,19 +223,19 @@ WebInspector.TextFilterUI = function(supportRegex)
 
     if (this._supportRegex) {
         this._filterElement.classList.add("supports-regex");
-        this._regexCheckBox = this._filterElement.createChild("input");
-        this._regexCheckBox.type = "checkbox";
+        var label = createCheckboxLabel(WebInspector.UIString("Regex"));
+        this._regexCheckBox = label.checkboxElement;
         this._regexCheckBox.id = "text-filter-regex";
         this._regexCheckBox.addEventListener("change", this._onInput.bind(this), false);
+        this._filterElement.appendChild(label);
 
-        this._regexLabel = this._filterElement.createChild("label");
-        this._regexLabel.htmlFor = "text-filter-regex";
-        this._regexLabel.textContent = WebInspector.UIString("Regex");
+        this._regexLabel = this._filterElement.textElement;
     }
 }
 
 WebInspector.TextFilterUI.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     isActive: function()
@@ -244,6 +244,7 @@ WebInspector.TextFilterUI.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     element: function()
@@ -281,7 +282,7 @@ WebInspector.TextFilterUI.prototype = {
      */
     _onFilterFieldManualFocus: function(event)
     {
-        WebInspector.setCurrentFocusElement(event.target);
+        WebInspector.setCurrentFocusElement(/** @type {?Node} */ (event.target));
     },
 
     /**
@@ -488,6 +489,7 @@ WebInspector.NamedBitSetFilterUI.ALL_TYPES = "all";
 
 WebInspector.NamedBitSetFilterUI.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     isActive: function()
@@ -496,6 +498,7 @@ WebInspector.NamedBitSetFilterUI.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     element: function()
@@ -608,6 +611,7 @@ WebInspector.ComboBoxFilterUI = function(options)
 
 WebInspector.ComboBoxFilterUI.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     isActive: function()
@@ -616,6 +620,7 @@ WebInspector.ComboBoxFilterUI.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     element: function()
@@ -690,6 +695,7 @@ WebInspector.CheckboxFilterUI = function(className, title, activeWhenChecked, se
 
 WebInspector.CheckboxFilterUI.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     isActive: function()
@@ -698,6 +704,7 @@ WebInspector.CheckboxFilterUI.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     element: function()
