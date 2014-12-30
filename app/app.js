@@ -1,3 +1,4 @@
+
 var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
 
 app.filter('regex', function() {
@@ -19,7 +20,7 @@ app.filter('regex', function() {
 
 app.directive('devtools', function() {
 
-    return {   
+    return {
         restrict: 'E',
         replace: true,
         template: '<div class="devtools-wrapper"><iframe src="{{src}}"></iframe></div>',
@@ -35,17 +36,23 @@ app.directive('devtools', function() {
 
 app.controller('home', function ($scope, $http, $location) {
 
+
+
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
     $scope.targets = [];
     $scope.devtoolsUrl = '';
 
+    $scope.gui = require('nw.gui');
+    $scope.win = $scope.gui.Window.get();
+
+    var nativeMenuBar = new $scope.gui.Menu({ type: "menubar" });
+    nativeMenuBar.createMacBuiltin('chrome devtools app');
+
+    $scope.win.menu = nativeMenuBar;
+
     $scope.debug = function() {
-
-        var gui = require('nw.gui');
-        var win = gui.Window.get();
-
-        win.showDevTools();
+        $scope.win.showDevTools();
     }
 
     $scope.connect = function(target) {
@@ -63,19 +70,19 @@ app.controller('home', function ($scope, $http, $location) {
 
         switch(filter) {
             case 'apps':
-                $scope.filter = '^apps$'; 
+                $scope.filter = '^apps$';
                 $scope.targetsFilterSelectedIndex = 0;
                 break;
             case 'pages':
-                $scope.filter = '^page$'; 
+                $scope.filter = '^page$';
                 $scope.targetsFilterSelectedIndex = 1;
-                break;        
+                break;
             case 'background_page':
-                $scope.filter = '^background_page$'; 
+                $scope.filter = '^background_page$';
                 $scope.targetsFilterSelectedIndex = 2;
                 break;
         }
-        
+
     }
 
     $scope.discover = function() {
@@ -87,7 +94,7 @@ app.controller('home', function ($scope, $http, $location) {
         });
 
         req.catch(function() {
-            
+
         });
     }
 
