@@ -36,8 +36,6 @@ app.directive('devtools', function() {
 
 app.controller('home', function ($scope, $http, $location) {
 
-
-
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
     $scope.targets = [];
