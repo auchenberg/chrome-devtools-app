@@ -47,7 +47,7 @@ app.controller('home', function ($scope, $http, $location) {
         $scope.win = $scope.gui.Window.get();
 
         var nativeMenuBar = new $scope.gui.Menu({ type: "menubar" });
-        nativeMenuBar.createMacBuiltin('chrome devtools app');
+        nativeMenuBar.createMacBuiltin('Chrome DevTools');
 
         $scope.win.menu = nativeMenuBar;
     }
