@@ -39,6 +39,5 @@ module.exports = function(grunt) {
     grunt.registerTask('build', ['nodewebkit']);
     grunt.registerTask('server', ['browserSync']);
     grunt.registerTask('run', ['shell:runApp']);
-    grunt.registerTask('debug', ['shell:runAppDebug'])
-
+    grunt.registerTask('remote-debug', ['shell:runAppDebug']);
 }
