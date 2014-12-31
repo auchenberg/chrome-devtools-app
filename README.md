@@ -5,7 +5,7 @@ Chrome DevTools App.
 
 Chrome DevTools packaged as an app via [node-webkit](https://github.com/rogerwang/node-webkit). 
 
-This project is an exploration of how much work it would take to seperate Chrome DevTools from Chrome itself and to explore what a seperation from the browser itself would bring to the table in terms new functionality, etc.
+This project is an exploration of how much work it would take to seperate Chrome DevTools from Chrome itself and to explore what a separation from the browser itself would bring to the table in terms of new functionality, etc.
 
 ![Intro](https://raw.githubusercontent.com/auchenberg/chrome-devtools-app/master/readme/app-intro.png)
 ![Tools](https://raw.githubusercontent.com/auchenberg/chrome-devtools-app/master/readme/app-inspector.png)
