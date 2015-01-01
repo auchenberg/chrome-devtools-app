@@ -24,7 +24,7 @@ module.exports = function(grunt) {
 
         shell: {
             runApp: {
-                command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app'
+                command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app --remote-debugging-port=9222'
             }
         }        
 
