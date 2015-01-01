@@ -12,7 +12,7 @@ This project is an exploration of how much work it would take to separate Chrome
 
 ## How to get started with a release
 
-1. Download and start [Chrome DevTools.app](https://github.com/auchenberg/chrome-devtools-app/blob/master/build/Chrome%20DevTools/osx/Chrome-DevTools.app.zip)
+1. Download and start [Chrome DevTools.app](https://github.com/auchenberg/chrome-devtools-app/raw/master/build/Chrome%20DevTools/osx/Chrome-DevTools.app.zip)
 2. Start an instance of Chrome with [remote debugging enabled](https://developer.chrome.com/devtools/docs/debugger-protocol#remote)
 3. Wait a second or click the refresh button.
 4. Targets should show up. Click "Go" next to your target.
