@@ -24,7 +24,7 @@ This project is an exploration of how much work it would take to separate Chrome
 3. Run ``grunt server`` 
 
 ### How to start this app from source?
-1. Run ``npm install node-webkit`` if you haven't already
+1. Run ``npm install nodewebkit`` if you haven't already
 2. Run ``grunt run``
 
 ### How to start a debug version of this app in the browser?
