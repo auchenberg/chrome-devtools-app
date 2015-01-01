@@ -12,16 +12,18 @@ This project is an exploration of how much work it would take to separate Chrome
 
 ## How to get started with a release
 
-1. Download and start [Chrome DevTools.app](https://github.com/auchenberg/chrome-devtools-app/raw/master/build/Chrome%20DevTools/osx/Chrome%20DevTools.app.zip).
+1. Download and start [Chrome DevTools.app](https://github.com/auchenberg/chrome-devtools-app/blob/master/build/Chrome%20DevTools/osx/Chrome-DevTools.app.zip)
 2. Start an instance of Chrome with [remote debugging enabled](https://developer.chrome.com/devtools/docs/debugger-protocol#remote)
-3. Wait a sec or click the refresh button.
+3. Wait a second or click the refresh button.
 4. Targets should show up. Click "Go" next to your target.
 5. Bam. There go you.
 
 ### How to get started from source?
 1. Run ``npm install``
 2. Run ``bower install``
-3. Run ``grunt server`` 
+3. Run ``grunt server``
+
+---
 
 ### How to start this app from source?
 1. Run ``npm install nodewebkit`` if you haven't already
@@ -30,7 +32,11 @@ This project is an exploration of how much work it would take to separate Chrome
 ### How to start a debug version of this app in the browser?
 Run ``grunt server``
 
+---
+
 ### How to make a new build?
 Run ``grunt build``
+
+---
 
 This project is highly experimental.
