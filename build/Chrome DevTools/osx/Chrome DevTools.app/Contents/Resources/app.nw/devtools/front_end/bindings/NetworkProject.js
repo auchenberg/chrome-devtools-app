@@ -30,13 +30,88 @@
 
 /**
  * @constructor
- * @param {!WebInspector.NetworkWorkspaceBinding} networkWorkspaceBinding
+ * @extends {WebInspector.ContentProviderBasedProjectDelegate}
  * @param {!WebInspector.Workspace} workspace
+ * @param {string} projectId
+ * @param {string} projectName
+ * @param {!WebInspector.projectTypes} projectType
  */
-WebInspector.NetworkUISourceCodeProvider = function(networkWorkspaceBinding, workspace)
+WebInspector.NetworkProjectDelegate = function(workspace, projectId, projectName, projectType)
 {
-    this._networkWorkspaceBinding = networkWorkspaceBinding;
+    this._name = projectName;
+    this._id = projectId;
+    WebInspector.ContentProviderBasedProjectDelegate.call(this, workspace, projectId, projectType);
+    this._lastUniqueSuffix = 0;
+}
+
+WebInspector.NetworkProjectDelegate.prototype = {
+    /**
+     * @return {string}
+     */
+    id: function()
+    {
+        return this._id;
+    },
+
+    /**
+     * @override
+     * @return {string}
+     */
+    displayName: function()
+    {
+        if (typeof this._displayName !== "undefined")
+            return this._displayName;
+        if (!this._name) {
+            this._displayName = WebInspector.UIString("(no domain)");
+            return this._displayName;
+        }
+        var parsedURL = new WebInspector.ParsedURL(this._name);
+        if (parsedURL.isValid) {
+            this._displayName = parsedURL.host + (parsedURL.port ? (":" + parsedURL.port) : "");
+            if (!this._displayName)
+                this._displayName = this._name;
+        }
+        else
+            this._displayName = this._name;
+        return this._displayName;
+    },
+
+    /**
+     * @override
+     * @return {string}
+     */
+    url: function()
+    {
+        return this._name;
+    },
+
+    /**
+     * @param {string} parentPath
+     * @param {string} name
+     * @param {string} url
+     * @param {!WebInspector.ContentProvider} contentProvider
+     * @return {string}
+     */
+    addFile: function(parentPath, name, url, contentProvider)
+    {
+        return this.addContentProvider(parentPath, name, url, url, contentProvider);
+    },
+
+    __proto__: WebInspector.ContentProviderBasedProjectDelegate.prototype
+}
+
+/**
+ * @constructor
+ * @extends {WebInspector.Object}
+ * @param {!WebInspector.Workspace} workspace
+ * @param {!WebInspector.NetworkMapping} networkMapping
+ */
+WebInspector.NetworkProject = function(workspace, networkMapping)
+{
     this._workspace = workspace;
+    this._networkMapping = networkMapping;
+    this._projectDelegates = {};
+
     this._processedURLs = {};
     WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.ResourceAdded, this._resourceAdded, this);
     WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.MainFrameNavigated, this._mainFrameNavigated, this);
@@ -46,7 +121,62 @@ WebInspector.NetworkUISourceCodeProvider = function(networkWorkspaceBinding, wor
     WebInspector.targetManager.addModelListener(WebInspector.CSSStyleModel, WebInspector.CSSStyleModel.Events.StyleSheetRemoved, this._styleSheetRemoved, this);
 }
 
-WebInspector.NetworkUISourceCodeProvider.prototype = {
+WebInspector.NetworkProject.prototype = {
+    /**
+     * @param {string} projectName
+     * @param {boolean} isContentScripts
+     * @return {!WebInspector.NetworkProjectDelegate}
+     */
+    _projectDelegate: function(projectName, isContentScripts)
+    {
+        var projectId = (isContentScripts ? "contentscripts:" : "") + projectName;
+        var projectType = isContentScripts ? WebInspector.projectTypes.ContentScripts : WebInspector.projectTypes.Network;
+
+        if (this._projectDelegates[projectId])
+            return this._projectDelegates[projectId];
+        var projectDelegate = new WebInspector.NetworkProjectDelegate(this._workspace, projectId, projectName, projectType);
+        this._projectDelegates[projectId] = projectDelegate;
+        return projectDelegate;
+    },
+
+    /**
+     * @param {string} url
+     * @param {!WebInspector.ContentProvider} contentProvider
+     * @param {boolean=} isContentScript
+     * @return {!WebInspector.UISourceCode}
+     */
+    addFileForURL: function(url, contentProvider, isContentScript)
+    {
+        var splitURL = WebInspector.ParsedURL.splitURLIntoPathComponents(url);
+        var projectName = splitURL[0];
+        var parentPath = splitURL.slice(1, -1).join("/");
+        var name = splitURL.peekLast() || "";
+        var projectDelegate = this._projectDelegate(projectName, isContentScript || false);
+        var path = projectDelegate.addFile(parentPath, name, url, contentProvider);
+        var uiSourceCode = /** @type {!WebInspector.UISourceCode} */ (this._workspace.uiSourceCode(projectDelegate.id(), path));
+        console.assert(uiSourceCode);
+        return uiSourceCode;
+    },
+
+    /**
+     * @param {string} url
+     */
+    removeFileForURL: function(url)
+    {
+        var splitURL = WebInspector.ParsedURL.splitURLIntoPathComponents(url);
+        var projectName = splitURL[0];
+        var path = splitURL.slice(1).join("/");
+        var projectDelegate = this._projectDelegates[projectName];
+        projectDelegate.removeFile(path);
+    },
+
+    reset: function()
+    {
+        for (var projectId in this._projectDelegates)
+            this._projectDelegates[projectId].reset();
+        this._projectDelegates = {};
+    },
+
     /**
      * @param {!WebInspector.Target} target
      */
@@ -54,7 +184,7 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
     {
         /**
          * @param {!WebInspector.ResourceTreeFrame} frame
-         * @this {WebInspector.NetworkUISourceCodeProvider}
+         * @this {WebInspector.NetworkProject}
          */
         function populateFrame(frame)
         {
@@ -63,7 +193,7 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
 
             var resources = frame.resources();
             for (var i = 0; i < resources.length; ++i)
-                this._addFile(resources[i].url, new WebInspector.NetworkUISourceCodeProvider.FallbackResource(resources[i]));
+                this._addFile(resources[i].url, new WebInspector.NetworkProject.FallbackResource(resources[i]));
         }
 
         var mainFrame = target.resourceTreeModel.mainFrame;
@@ -118,7 +248,7 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
     _resourceAdded: function(event)
     {
         var resource = /** @type {!WebInspector.Resource} */ (event.data);
-        this._addFile(resource.url, new WebInspector.NetworkUISourceCodeProvider.FallbackResource(resource));
+        this._addFile(resource.url, new WebInspector.NetworkProject.FallbackResource(resource));
     },
 
     /**
@@ -138,7 +268,7 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
      */
     _addFile: function(url, contentProvider, isContentScript)
     {
-        if (this._workspace.hasMappingForURL(url))
+        if (this._networkMapping.hasMappingForURL(url))
             return;
 
         var type = contentProvider.contentType();
@@ -147,7 +277,7 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
         if (this._processedURLs[url])
             return;
         this._processedURLs[url] = true;
-        this._networkWorkspaceBinding.addFileForURL(url, contentProvider, isContentScript);
+        this.addFileForURL(url, contentProvider, isContentScript);
     },
 
     /**
@@ -158,7 +288,7 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
         if (!this._processedURLs[url])
             return;
         this._processedURLs[url] = false;
-        this._networkWorkspaceBinding.removeFileForURL(url);
+        this.removeFileForURL(url);
     },
 
     /**
@@ -167,9 +297,11 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
     _reset: function(target)
     {
         this._processedURLs = {};
-        this._networkWorkspaceBinding.reset();
+        this.reset();
         this._populate(target);
-    }
+    },
+
+    __proto__: WebInspector.Object.prototype
 }
 
 /**
@@ -177,14 +309,15 @@ WebInspector.NetworkUISourceCodeProvider.prototype = {
  * @implements {WebInspector.ContentProvider}
  * @param {!WebInspector.Resource} resource
  */
-WebInspector.NetworkUISourceCodeProvider.FallbackResource = function(resource)
+WebInspector.NetworkProject.FallbackResource = function(resource)
 {
     this._resource = resource;
 }
 
-WebInspector.NetworkUISourceCodeProvider.FallbackResource.prototype = {
+WebInspector.NetworkProject.FallbackResource.prototype = {
 
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -193,6 +326,7 @@ WebInspector.NetworkUISourceCodeProvider.FallbackResource.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -201,12 +335,13 @@ WebInspector.NetworkUISourceCodeProvider.FallbackResource.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
     {
         /**
-         * @this {WebInspector.NetworkUISourceCodeProvider.FallbackResource}
+         * @this {WebInspector.NetworkProject.FallbackResource}
          */
         function loadFallbackContent()
         {
@@ -230,7 +365,7 @@ WebInspector.NetworkUISourceCodeProvider.FallbackResource.prototype = {
 
         /**
          * @param {?string} content
-         * @this {WebInspector.NetworkUISourceCodeProvider.FallbackResource}
+         * @this {WebInspector.NetworkProject.FallbackResource}
          */
         function requestContentLoaded(content)
         {
@@ -244,6 +379,7 @@ WebInspector.NetworkUISourceCodeProvider.FallbackResource.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex
@@ -275,6 +411,6 @@ WebInspector.NetworkUISourceCodeProvider.FallbackResource.prototype = {
 }
 
 /**
- * @type {!WebInspector.NetworkWorkspaceBinding}
+ * @type {!WebInspector.NetworkProject}
  */
-WebInspector.networkWorkspaceBinding;
+WebInspector.networkProject;

@@ -75,6 +75,7 @@ WebInspector.SampleCompletionDictionary = function() {
 
 WebInspector.SampleCompletionDictionary.prototype = {
     /**
+     * @override
      * @param {string} word
      */
     addWord: function(word)
@@ -86,6 +87,7 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
+     * @override
      * @param {string} word
      */
     removeWord: function(word)
@@ -99,6 +101,7 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
+     * @override
      * @param {string} prefix
      * @return {!Array.<string>}
      */
@@ -113,6 +116,7 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
+     * @override
      * @param {string} word
      * @return {boolean}
      */
@@ -122,6 +126,7 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
+     * @override
      * @param {string} word
      * @return {number}
      */
@@ -130,6 +135,9 @@ WebInspector.SampleCompletionDictionary.prototype = {
         return this._words[word] ? this._words[word] : 0;
     },
 
+    /**
+     * @override
+     */
     reset: function()
     {
         this._words = {};

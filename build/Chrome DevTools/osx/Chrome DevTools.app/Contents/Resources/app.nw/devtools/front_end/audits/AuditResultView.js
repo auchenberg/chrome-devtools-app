@@ -37,7 +37,7 @@ WebInspector.AuditResultView = function(categoryResults)
 {
     WebInspector.SidebarPaneStack.call(this);
     this.setMinimumSize(100, 25);
-    this.element.classList.add("audit-result-view", "fill");
+    this.element.classList.add("audit-result-view");
 
     function categorySorter(a, b) {
         return (a.title || "").localeCompare(b.title || "");
@@ -86,11 +86,11 @@ WebInspector.AuditCategoryResultPane = function(categoryResult)
 
 WebInspector.AuditCategoryResultPane.prototype = {
     /**
-     * @param {(!TreeOutline|!TreeElement)} parentTreeElement
+     * @param {!TreeContainerNode} parentTreeNode
      * @param {!WebInspector.AuditRuleResult} result
      * @param {?WebInspector.AuditRule.Severity=} severity
      */
-    _appendResult: function(parentTreeElement, result, severity)
+    _appendResult: function(parentTreeNode, result, severity)
     {
         var title = "";
 
@@ -103,13 +103,13 @@ WebInspector.AuditCategoryResultPane.prototype = {
         var titleFragment = createDocumentFragment();
         if (severity) {
             var severityElement = createElement("div");
-            severityElement.className = "severity-" + severity;
+            severityElement.classList.add("severity", severity);
             titleFragment.appendChild(severityElement);
         }
         titleFragment.createTextChild(title);
 
         var treeElement = new TreeElement(titleFragment, null, !!result.children);
-        parentTreeElement.appendChild(treeElement);
+        parentTreeNode.appendChild(treeElement);
 
         if (result.className)
             treeElement.listItemElement.classList.add(result.className);

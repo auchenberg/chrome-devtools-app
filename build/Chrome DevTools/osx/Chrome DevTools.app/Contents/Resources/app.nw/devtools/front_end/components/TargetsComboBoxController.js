@@ -24,6 +24,7 @@ WebInspector.TargetsComboBoxController = function(selectElement, elementToHide)
 WebInspector.TargetsComboBoxController.prototype = {
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -39,6 +40,7 @@ WebInspector.TargetsComboBoxController.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)

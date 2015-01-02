@@ -245,7 +245,7 @@ InspectorBackendClass._generateCommands = function(schema) {
     }
     function generateEnum(enumName, items)
     {
-        var members = []
+        var members = [];
         for (var m = 0; m < items.length; ++m) {
             var value = items[m];
             var name = value.replace(/-(\w)/g, toUpperCase.bind(null, 1)).toTitleCase();
@@ -352,7 +352,7 @@ InspectorBackendClass.Connection.prototype = {
         }
 
         for (var domain in dispatcherPrototypes)
-            this._dispatchers[domain] = Object.create(dispatcherPrototypes[domain])
+            this._dispatchers[domain] = Object.create(dispatcherPrototypes[domain]);
 
     },
 
@@ -395,7 +395,6 @@ InspectorBackendClass.Connection.prototype = {
      * @param {string} method
      * @param {?Object} params
      * @param {?function(*)} callback
-     * @private
      */
     _wrapCallbackAndSendMessageObject: function(domain, method, params, callback)
     {
@@ -427,7 +426,7 @@ InspectorBackendClass.Connection.prototype = {
      * @param {?function(*)} callback
      * @param {string} method
      * @param {string} domain
-     * @return {!function(*)}
+     * @return {function(*)}
      */
     _wrap: function(callback, domain, method)
     {
@@ -563,10 +562,10 @@ InspectorBackendClass.Connection.prototype = {
 
     _runPendingCallbacks: function()
     {
-        var keys = Object.keys(this._callbacks).map(function(num) {return parseInt(num, 10)});
+        var keys = Object.keys(this._callbacks).map(function(num) { return parseInt(num, 10); });
         for (var i = 0; i < keys.length; ++i) {
             var callback = this._callbacks[keys[i]];
-            this._dispatchConnectionErrorResponse(callback.domain, callback.methodName, callback)
+            this._dispatchConnectionErrorResponse(callback.domain, callback.methodName, callback);
         }
         this._callbacks = {};
     },
@@ -574,7 +573,7 @@ InspectorBackendClass.Connection.prototype = {
     /**
      * @param {string} domain
      * @param {string} methodName
-     * @param {!function(*)} callback
+     * @param {function(*)} callback
      */
     _dispatchConnectionErrorResponse: function(domain, methodName, callback)
     {
@@ -615,8 +614,8 @@ InspectorBackendClass.MainConnection = function()
 }
 
 InspectorBackendClass.MainConnection.prototype = {
-
     /**
+     * @override
      * @param {!Object} messageObject
      */
     sendMessage: function(messageObject)
@@ -659,7 +658,7 @@ InspectorBackendClass.MainConnection.prototype = {
  * @constructor
  * @extends {InspectorBackendClass.Connection}
  * @param {string} url
- * @param {!function(!InspectorBackendClass.Connection)} onConnectionReady
+ * @param {function(!InspectorBackendClass.Connection)} onConnectionReady
  */
 InspectorBackendClass.WebSocketConnection = function(url, onConnectionReady)
 {
@@ -673,7 +672,7 @@ InspectorBackendClass.WebSocketConnection = function(url, onConnectionReady)
 
 /**
  * @param {string} url
- * @param {!function(!InspectorBackendClass.Connection)} onConnectionReady
+ * @param {function(!InspectorBackendClass.Connection)} onConnectionReady
  */
 InspectorBackendClass.WebSocketConnection.Create = function(url, onConnectionReady)
 {
@@ -687,7 +686,7 @@ InspectorBackendClass.WebSocketConnection.prototype = {
      */
     _onMessage: function(message)
     {
-        var data = /** @type {string} */ (message.data)
+        var data = /** @type {string} */ (message.data);
         this.dispatch(data);
     },
 
@@ -700,6 +699,7 @@ InspectorBackendClass.WebSocketConnection.prototype = {
     },
 
     /**
+     * @override
      * @param {!Object} messageObject
      */
     sendMessage: function(messageObject)
@@ -722,13 +722,12 @@ InspectorBackendClass.StubConnection = function()
 }
 
 InspectorBackendClass.StubConnection.prototype = {
-
     /**
+     * @override
      * @param {!Object} messageObject
      */
     sendMessage: function(messageObject)
     {
-        var message = JSON.stringify(messageObject);
         setTimeout(this._echoResponse.bind(this, messageObject), 0);
     },
 
@@ -737,7 +736,7 @@ InspectorBackendClass.StubConnection.prototype = {
      */
     _echoResponse: function(messageObject)
     {
-        this.dispatch(messageObject)
+        this.dispatch(messageObject);
     },
 
     __proto__: InspectorBackendClass.Connection.prototype
@@ -753,6 +752,11 @@ InspectorBackendClass.AgentPrototype = function(domain)
     this._hasErrorData = {};
     this._domain = domain;
     this._suppressErrorLogging = false;
+    this._promisified = domain in InspectorBackendClass.AgentPrototype.PromisifiedDomains;
+}
+
+InspectorBackendClass.AgentPrototype.PromisifiedDomains = {
+    "Profiler": true
 }
 
 InspectorBackendClass.AgentPrototype.prototype = {
@@ -776,17 +780,30 @@ InspectorBackendClass.AgentPrototype.prototype = {
         var domainAndMethod = this._domain + "." + methodName;
 
         /**
+         * @param {...*} vararg
          * @this {InspectorBackendClass.AgentPrototype}
          */
         function sendMessage(vararg)
         {
-            var params = [domainAndMethod, signature].concat(Array.prototype.slice.call(arguments));
-            InspectorBackendClass.AgentPrototype.prototype._sendMessageToBackend.apply(this, params);
+            var params = Array.prototype.slice.call(arguments);
+            InspectorBackendClass.AgentPrototype.prototype._sendMessageToBackend.call(this, domainAndMethod, signature, params);
         }
 
-        this[methodName] = sendMessage;
+        /**
+         * @param {...*} vararg
+         * @this {InspectorBackendClass.AgentPrototype}
+         * @return {!Promise.<*>}
+         */
+        function sendMessagePromise(vararg)
+        {
+            var params = Array.prototype.slice.call(arguments);
+            return InspectorBackendClass.AgentPrototype.prototype._sendMessageToBackendPromise.call(this, domainAndMethod, signature, replyArgs, params);
+        }
+
+        this[methodName] = this._promisified ? sendMessagePromise : sendMessage;
 
         /**
+         * @param {...*} vararg
          * @this {InspectorBackendClass.AgentPrototype}
          */
         function invoke(vararg)
@@ -800,20 +817,18 @@ InspectorBackendClass.AgentPrototype.prototype = {
         this._replyArgs[domainAndMethod] = replyArgs;
         if (hasErrorData)
             this._hasErrorData[domainAndMethod] = true;
-
     },
 
     /**
      * @param {string} method
      * @param {!Array.<!Object>} signature
-     * @param {*} vararg
-     * @private
+     * @param {!Array.<*>} args
+     * @param {boolean} allowExtraUndefinedArg
+     * @param {function(string)} errorCallback
+     * @return {?Object}
      */
-    _sendMessageToBackend: function(method, signature, vararg)
+    _prepareParameters: function(method, signature, args, allowExtraUndefinedArg, errorCallback)
     {
-        var args = Array.prototype.slice.call(arguments, 2);
-        var callback = (args.length && typeof args[args.length - 1] === "function") ? args.pop() : null;
-
         var params = {};
         var hasParams = false;
         for (var i = 0; i < signature.length; ++i) {
@@ -823,30 +838,105 @@ InspectorBackendClass.AgentPrototype.prototype = {
             var optionalFlag = param["optional"];
 
             if (!args.length && !optionalFlag) {
-                console.error("Protocol Error: Invalid number of arguments for method '" + method + "' call. It must have the following arguments '" + JSON.stringify(signature) + "'.");
-                return;
+                errorCallback("Protocol Error: Invalid number of arguments for method '" + method + "' call. It must have the following arguments '" + JSON.stringify(signature) + "'.");
+                return null;
             }
 
             var value = args.shift();
-            if (optionalFlag && typeof value === "undefined") {
+            if (optionalFlag && typeof value === "undefined")
                 continue;
-            }
 
             if (typeof value !== typeName) {
-                console.error("Protocol Error: Invalid type of argument '" + paramName + "' for method '" + method + "' call. It must be '" + typeName + "' but it is '" + typeof value + "'.");
-                return;
+                errorCallback("Protocol Error: Invalid type of argument '" + paramName + "' for method '" + method + "' call. It must be '" + typeName + "' but it is '" + typeof value + "'.");
+                return null;
             }
 
             params[paramName] = value;
             hasParams = true;
         }
 
-        if (args.length === 1 && !callback && (typeof args[0] !== "undefined")) {
-            console.error("Protocol Error: Optional callback argument for method '" + method + "' call must be a function but its type is '" + typeof args[0] + "'.");
-            return;
+        if (args.length === 1 && (!allowExtraUndefinedArg || (typeof args[0] !== "undefined"))) {
+            errorCallback("Protocol Error: Optional callback argument for method '" + method + "' call must be a function but its type is '" + typeof args[0] + "'.");
+            return null;
         }
 
-        this._connection._wrapCallbackAndSendMessageObject(this._domain, method, hasParams ? params : null, callback);
+        if (args.length > 1) {
+            errorCallback("Protocol Error: Extra " + args.length + " arguments in a call to method '" + method + "'.");
+            return null;
+        }
+
+        return hasParams ? params : null
+    },
+
+    /**
+     * @param {string} method
+     * @param {!Array.<!Object>} signature
+     * @param {!Array.<*>} args
+     */
+    _sendMessageToBackend: function(method, signature, args)
+    {
+        var errorMessage;
+        /**
+         * @param {string} message
+         */
+        function onError(message)
+        {
+            console.error(message)
+            errorMessage = message;
+        }
+        var callback = (args.length && typeof args.peekLast() === "function") ? args.pop() : null;
+        var params = this._prepareParameters(method, signature, args, !callback, onError);
+        if (errorMessage)
+            return;
+        this._connection._wrapCallbackAndSendMessageObject(this._domain, method, params, callback);
+    },
+
+    /**
+     * @param {string} method
+     * @param {!Array.<!Object>} signature
+     * @param {!Array.<string>} replyArgs
+     * @param {!Array.<*>} args
+     * @return {!Promise.<*>}
+     */
+    _sendMessageToBackendPromise: function(method, signature, replyArgs, args)
+    {
+        var errorMessage;
+        /**
+         * @param {string} message
+         */
+        function onError(message)
+        {
+            console.error(message)
+            errorMessage = message;
+        }
+        var params = this._prepareParameters(method, signature, args, false, onError);
+        if (errorMessage)
+            return Promise.reject(new Error(errorMessage));
+        else
+            return new Promise(promiseAction.bind(this));
+
+        /**
+         * @param {function(?)} resolve
+         * @param {function(!Error)} reject
+         * @this {InspectorBackendClass.AgentPrototype}
+         */
+        function promiseAction(resolve, reject)
+        {
+            /**
+             * @param {?Protocol.Error} error
+             * @param {?Object} result
+             */
+            function callback(error, result)
+            {
+                if (error) {
+                    console.error(error);
+                    resolve(null);
+                    return;
+                }
+                resolve(replyArgs.length ? result : undefined);
+            }
+            this._connection._wrapCallbackAndSendMessageObject(this._domain, method, params, callback);
+        }
     },
 
     /**
@@ -862,12 +952,17 @@ InspectorBackendClass.AgentPrototype.prototype = {
     /**
      * @param {!Object} messageObject
      * @param {string} methodName
-     * @param {function(!Array.<*>)} callback
+     * @param {function(*)|function(?Protocol.Error, ?Object)} callback
      */
     dispatchResponse: function(messageObject, methodName, callback)
     {
         if (messageObject.error && messageObject.error.code !== InspectorBackendClass._DevToolsErrorCode && !InspectorBackendClass.Options.suppressRequestErrors && !this._suppressErrorLogging)
             console.error("Request with id = " + messageObject.id + " failed. " + JSON.stringify(messageObject.error));
+
+        if (this._promisified) {
+            callback(messageObject.error && messageObject.error.message, messageObject.result);
+            return;
+        }
 
         var argumentsArray = [];
         argumentsArray[0] = messageObject.error ? messageObject.error.message: null;
@@ -907,7 +1002,7 @@ InspectorBackendClass.DispatcherPrototype.prototype = {
      */
     registerEvent: function(eventName, params)
     {
-        this._eventArgs[eventName] = params
+        this._eventArgs[eventName] = params;
     },
 
     /**

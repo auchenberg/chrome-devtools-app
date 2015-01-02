@@ -48,7 +48,7 @@ WebInspector.WatchExpressionsSidebarPane = function()
     addButton.title = WebInspector.UIString("Add watch expression");
 
     this._requiresUpdate = true;
-    WebInspector.context.addFlavorChangeListener(WebInspector.ExecutionContext ,this.refreshExpressions, this);
+    WebInspector.context.addFlavorChangeListener(WebInspector.ExecutionContext, this.refreshExpressions, this);
 }
 
 WebInspector.WatchExpressionsSidebarPane.prototype = {
@@ -99,19 +99,15 @@ WebInspector.WatchExpressionsSidebarPane.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.PropertiesSection}
+ * @extends {WebInspector.Section}
  */
 WebInspector.WatchExpressionsSection = function()
 {
     this._watchObjectGroupId = "watch-group";
 
-    WebInspector.PropertiesSection.call(this, "");
-    this.treeElementConstructor = WebInspector.WatchedPropertyTreeElement;
+    WebInspector.Section.call(this, "");
+    this.treeElementConstructor = WebInspector.ObjectPropertyTreeElement;
     this.skipProto = false;
-    /** @type {!Set.<string>} */
-    this._expandedExpressions = new Set();
-    /** @type {!Set.<string>} */
-    this._expandedProperties = new Set();
 
     this.emptyElement = createElementWithClass("div", "info");
     this.emptyElement.textContent = WebInspector.UIString("No Watch Expressions");
@@ -121,7 +117,7 @@ WebInspector.WatchExpressionsSection = function()
 
     this.headerElement.className = "hidden";
     this.editable = true;
-    this.expanded = true;
+    this.expand();
     this.propertiesElement.classList.add("watch-expressions");
 
     this.element.addEventListener("mousemove", this._mouseMove.bind(this), true);
@@ -213,19 +209,13 @@ WebInspector.WatchExpressionsSection.prototype = {
 
         if (!propertyCount) {
             this.element.appendChild(this.emptyElement);
+            this.propertiesElement.remove();
             this.propertiesTreeOutline.removeChildren();
-            this._expandedExpressions.clear();
-            this._expandedProperties.clear();
         } else {
+            this.element.appendChild(this.propertiesElement);
             this.emptyElement.remove();
         }
-
-        // Note: this is setting the expansion of the tree, not the section;
-        // with no expressions, and expanded tree, we get some extra vertical
-        // white space.
-        this.expanded = (propertyCount != 0);
     },
-
 
     /**
      * @param {!Array.<!WebInspector.RemoteObjectProperty>} properties
@@ -355,11 +345,11 @@ WebInspector.WatchExpressionsSection.prototype = {
     _emptyElementContextMenu: function(event)
     {
         var contextMenu = new WebInspector.ContextMenu(event);
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add watch expression" : "Add Watch Expression"), this.addNewExpressionAndEdit.bind(this));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^watch ^expression"), this.addNewExpressionAndEdit.bind(this));
         contextMenu.show();
     },
 
-    __proto__: WebInspector.PropertiesSection.prototype
+    __proto__: WebInspector.Section.prototype
 }
 
 /**
@@ -388,26 +378,11 @@ WebInspector.WatchExpressionTreeElement = function(property)
 }
 
 WebInspector.WatchExpressionTreeElement.prototype = {
-    onexpand: function()
-    {
-        WebInspector.ObjectPropertyTreeElement.prototype.onexpand.call(this);
-        this.treeOutline.section._expandedExpressions.add(this._expression());
-    },
-
-    oncollapse: function()
-    {
-        WebInspector.ObjectPropertyTreeElement.prototype.oncollapse.call(this);
-        this.treeOutline.section._expandedExpressions.remove(this._expression());
-    },
-
-    onattach: function()
-    {
-        WebInspector.ObjectPropertyTreeElement.prototype.onattach.call(this);
-        if (this.treeOutline.section._expandedExpressions.has(this._expression()))
-            this.expanded = true;
-    },
-
-    _expression: function()
+    /**
+     * @override
+     * @return {*}
+     */
+    elementIdentity: function()
     {
         return this.property.name;
     },
@@ -423,9 +398,8 @@ WebInspector.WatchExpressionTreeElement.prototype = {
             this.listItemElement.classList.remove("dimmed");
         }
 
-        var deleteButton = createElementWithClass("input", "enabled-button delete-button");
-        deleteButton.type = "button";
-        deleteButton.title = WebInspector.UIString("Delete watch expression.");
+        var deleteButton = createElementWithClass("button", "delete-button");
+        deleteButton.title = WebInspector.UIString("Delete watch expression");
         deleteButton.addEventListener("click", this._deleteButtonClicked.bind(this), false);
         this.listItemElement.addEventListener("contextmenu", this._contextMenu.bind(this), false);
         this.listItemElement.insertBefore(deleteButton, this.listItemElement.firstChild);
@@ -438,13 +412,13 @@ WebInspector.WatchExpressionTreeElement.prototype = {
     populateContextMenu: function(contextMenu)
     {
         if (!this.isEditing()) {
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Add watch expression" : "Add Watch Expression"), this.treeOutline.section.addNewExpressionAndEdit.bind(this.treeOutline.section));
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Delete watch expression" : "Delete Watch Expression"), this._deleteButtonClicked.bind(this, null));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^watch ^expression"), this.treeOutline.section.addNewExpressionAndEdit.bind(this.treeOutline.section));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Delete ^watch ^expression"), this._deleteButtonClicked.bind(this, null));
         }
         if (this.treeOutline.section.watchExpressions.length > 1)
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Delete all watch expressions" : "Delete All Watch Expressions"), this._deleteAllButtonClicked.bind(this));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Delete ^all ^watch ^expressions"), this._deleteAllButtonClicked.bind(this));
         if (!this.isEditing() && (this.property.value.type === "number" || this.property.value.type === "string"))
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Copy value" : "Copy Value"), this._copyValueButtonClicked.bind(this));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Copy ^value"), this._copyValueButtonClicked.bind(this));
     },
 
     _contextMenu: function(event)
@@ -472,6 +446,7 @@ WebInspector.WatchExpressionTreeElement.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     renderPromptAsBlock: function()
@@ -508,40 +483,6 @@ WebInspector.WatchExpressionTreeElement.prototype = {
         expression = expression.trim();
         this.property.name = expression || null;
         this.treeOutline.section.updateExpression(this, expression);
-    },
-
-    __proto__: WebInspector.ObjectPropertyTreeElement.prototype
-}
-
-
-/**
- * @constructor
- * @extends {WebInspector.ObjectPropertyTreeElement}
- * @param {!WebInspector.RemoteObjectProperty} property
- */
-WebInspector.WatchedPropertyTreeElement = function(property)
-{
-    WebInspector.ObjectPropertyTreeElement.call(this, property);
-}
-
-WebInspector.WatchedPropertyTreeElement.prototype = {
-    onattach: function()
-    {
-        WebInspector.ObjectPropertyTreeElement.prototype.onattach.call(this);
-        if (this.hasChildren && this.treeOutline.section._expandedProperties.has(this.propertyPath()))
-            this.expand();
-    },
-
-    onexpand: function()
-    {
-        WebInspector.ObjectPropertyTreeElement.prototype.onexpand.call(this);
-        this.treeOutline.section._expandedProperties.add(this.propertyPath());
-    },
-
-    oncollapse: function()
-    {
-        WebInspector.ObjectPropertyTreeElement.prototype.oncollapse.call(this);
-        this.treeOutline.section._expandedProperties.remove(this.propertyPath());
     },
 
     __proto__: WebInspector.ObjectPropertyTreeElement.prototype

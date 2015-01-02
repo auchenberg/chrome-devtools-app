@@ -23,15 +23,6 @@ WebInspector.CPUProfileDataModel = function(profile)
     this._calculateTimes(profile);
 }
 
-/**
- * @param {string} name
- * @return {string}
- */
-WebInspector.CPUProfileDataModel.beautifyFunctionName = function(name)
-{
-    return name || WebInspector.UIString("(anonymous function)");
-}
-
 WebInspector.CPUProfileDataModel.prototype = {
     /**
      * @param {!ProfilerAgent.CPUProfile} profile
@@ -206,7 +197,6 @@ WebInspector.CPUProfileDataModel.prototype = {
         var stackTop = 0;
         var stackNodes = [];
         var prevId = this.profileHead.id;
-        var prevHeight = this.profileHead.depth;
         var sampleTime = timestamps[samplesCount];
         var gcParentNode = null;
 

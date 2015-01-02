@@ -30,15 +30,94 @@
 
 /**
  * @constructor
+ * @param {!Element=} parentElement
+ */
+WebInspector.StatusBar = function(parentElement)
+{
+    /** @type {!Array.<!WebInspector.StatusBarItem>} */
+    this._items = [];
+    this.element = parentElement ? parentElement.createChild("div", "status-bar") : createElementWithClass("div", "status-bar");
+
+    this._shadowRoot = this.element.createShadowRoot();
+    this._shadowRoot.appendChild(WebInspector.View.createStyleElement("ui/statusBar.css"));
+    this._contentElement = this._shadowRoot.createChild("div", "status-bar-shadow");
+    this._contentElement.createChild("content");
+    WebInspector.installComponentRootStyles(this._contentElement);
+}
+
+WebInspector.StatusBar.prototype = {
+    makeNarrow: function()
+    {
+        this._contentElement.classList.add("narrow");
+    },
+
+    makeVertical: function()
+    {
+        this._contentElement.classList.add("vertical");
+    },
+
+    /**
+     * @param {boolean} enabled
+     */
+    setEnabled: function(enabled)
+    {
+        for (var item of this._items)
+            item.setEnabled(enabled);
+    },
+
+    /**
+     * @param {!WebInspector.StatusBarItem} item
+     */
+    appendStatusBarItem: function(item)
+    {
+        this._items.push(item);
+        if (item._isLightDOM)
+            this.element.appendChild(item.element);
+        else
+            this._contentElement.insertBefore(item.element, this._contentElement.lastChild);
+    },
+
+    removeStatusBarItems: function()
+    {
+        this._items = [];
+        this._contentElement.removeChildren();
+        this._contentElement.createChild("content");
+    },
+
+    /**
+     * @param {string} color
+     */
+    setColor: function(color)
+    {
+        var style = createElement("style");
+        style.textContent = "button.status-bar-item .glyph { background-color: " + color + " !important }";
+        this._shadowRoot.appendChild(style);
+    },
+
+    /**
+     * @param {string} color
+     */
+    setToggledColor: function(color)
+    {
+        var style = createElement("style");
+        style.textContent = "button.status-bar-item.toggled-on .glyph { background-color: " + color + " !important }";
+        this._shadowRoot.appendChild(style);
+    }
+}
+
+/**
+ * @constructor
  * @extends {WebInspector.Object}
  * @param {!Element} element
+ * @param {boolean=} isLightDOM
  */
-WebInspector.StatusBarItem = function(element)
+WebInspector.StatusBarItem = function(element, isLightDOM)
 {
     this.element = element;
     this.element.classList.add("status-bar-item");
     this._enabled = true;
     this._visible = true;
+    this._isLightDOM = isLightDOM;
 }
 
 WebInspector.StatusBarItem.prototype = {
@@ -187,14 +266,14 @@ WebInspector.StatusBarText.prototype = {
  * @constructor
  * @extends {WebInspector.StatusBarItem}
  * @param {string=} placeholder
- * @param {number=} width
+ * @param {number=} growFactor
  */
-WebInspector.StatusBarInput = function(placeholder, width)
+WebInspector.StatusBarInput = function(placeholder, growFactor)
 {
     WebInspector.StatusBarItem.call(this, createElementWithClass("input", "status-bar-item"));
     this.element.addEventListener("input", this._onChangeCallback.bind(this), false);
-    if (width)
-        this.element.style.width = width + "px";
+    if (growFactor)
+        this.element.style.flexGrow = growFactor;
     if (placeholder)
         this.element.setAttribute("placeholder", placeholder);
     this._value = "";
@@ -254,7 +333,7 @@ WebInspector.StatusBarButtonBase = function(title, className, states)
     else
         this._state = "0";
 
-    this.title = title;
+    this.setTitle(title);
     this.className = className;
 }
 
@@ -296,6 +375,14 @@ WebInspector.StatusBarButtonBase.prototype = {
     enabled: function()
     {
         return this._enabled;
+    },
+
+    /**
+     * @return {string}
+     */
+    title: function()
+    {
+        return this._title;
     },
 
     /**
@@ -369,7 +456,7 @@ WebInspector.StatusBarButtonBase.prototype = {
             if (!this._longClickOptionsData) {
                 this.makeLongClickEnabled();
 
-                this.longClickGlyph = this.element.createChild("div", "fill long-click-glyph");
+                this.longClickGlyph = this.element.createChild("div", "fill long-click-glyph status-bar-button-theme");
 
                 var longClickDownListener = this._showOptions.bind(this);
                 this.addEventListener("longClickDown", longClickDownListener, this);
@@ -395,7 +482,7 @@ WebInspector.StatusBarButtonBase.prototype = {
     _showOptions: function()
     {
         var buttons = this._longClickOptionsData.buttonsProvider();
-        var mainButtonClone = new WebInspector.StatusBarButton(this.title, this.className, this._states);
+        var mainButtonClone = new WebInspector.StatusBarButton(this.title(), this.className, this._states);
         mainButtonClone.addEventListener("click", this._clicked, this);
         mainButtonClone.setState(this.state());
         buttons.push(mainButtonClone);
@@ -404,7 +491,9 @@ WebInspector.StatusBarButtonBase.prototype = {
         document.documentElement.addEventListener("mouseup", mouseUp, false);
 
         var optionsGlassPane = new WebInspector.GlassPane(document);
-        var optionsBarElement = optionsGlassPane.element.createChild("div", "alternate-status-bar-buttons-bar");
+        var optionsBar = new WebInspector.StatusBar(optionsGlassPane.element);
+        optionsBar.element.classList.add("fill");
+        optionsBar._contentElement.classList.add("floating");
         const buttonHeight = 23;
 
         var hostButtonPosition = this.element.totalOffset();
@@ -414,17 +503,17 @@ WebInspector.StatusBarButtonBase.prototype = {
         if (topNotBottom)
             buttons = buttons.reverse();
 
-        optionsBarElement.style.height = (buttonHeight * buttons.length) + "px";
+        optionsBar.element.style.height = (buttonHeight * buttons.length) + "px";
         if (topNotBottom)
-            optionsBarElement.style.top = (hostButtonPosition.top + 1) + "px";
+            optionsBar.element.style.top = (hostButtonPosition.top + 1) + "px";
         else
-            optionsBarElement.style.top = (hostButtonPosition.top - (buttonHeight * (buttons.length - 1))) + "px";
-        optionsBarElement.style.left = (hostButtonPosition.left + 1) + "px";
+            optionsBar.element.style.top = (hostButtonPosition.top - (buttonHeight * (buttons.length - 1))) + "px";
+        optionsBar.element.style.left = (hostButtonPosition.left + 1) + "px";
 
         for (var i = 0; i < buttons.length; ++i) {
             buttons[i].element.addEventListener("mousemove", mouseOver, false);
             buttons[i].element.addEventListener("mouseout", mouseOut, false);
-            optionsBarElement.appendChild(buttons[i].element);
+            optionsBar.appendStatusBarItem(buttons[i]);
         }
         var hostButtonIndex = topNotBottom ? 0 : buttons.length - 1;
         buttons[hostButtonIndex].element.classList.add("emulate-active");
@@ -476,7 +565,7 @@ WebInspector.StatusBarButton = function(title, className, states)
 {
     WebInspector.StatusBarButtonBase.call(this, title, className, states);
 
-    this._glyphElement = this.element.createChild("div", "glyph");
+    this._glyphElement = this.element.createChild("div", "glyph status-bar-button-theme");
 }
 
 WebInspector.StatusBarButton.prototype = {
@@ -490,43 +579,6 @@ WebInspector.StatusBarButton.prototype = {
     },
 
     __proto__: WebInspector.StatusBarButtonBase.prototype
-}
-
-/**
- * @constructor
- * @param {!Element=} parentElement
- */
-WebInspector.StatusBar = function(parentElement)
-{
-    /** @type {!Array.<!WebInspector.StatusBarItem>} */
-    this._items = [];
-    this.element = parentElement ? parentElement.createChild("div", "status-bar") : createElementWithClass("div", "status-bar");
-}
-
-WebInspector.StatusBar.prototype = {
-    /**
-     * @param {boolean} enabled
-     */
-    setEnabled: function(enabled)
-    {
-        for (var item of this._items)
-            item.setEnabled(enabled);
-    },
-
-    /**
-     * @param {!WebInspector.StatusBarItem} item
-     */
-    appendStatusBarItem: function(item)
-    {
-        this._items.push(item);
-        this.element.appendChild(item.element);
-    },
-
-    removeStatusBarItems: function()
-    {
-        this._items = [];
-        this.element.removeChildren();
-    }
 }
 
 /**
@@ -703,10 +755,9 @@ WebInspector.StatusBarComboBox.prototype = {
  */
 WebInspector.StatusBarCheckbox = function(text, title, setting)
 {
-    WebInspector.StatusBarItem.call(this, createElementWithClass("label", "checkbox"));
-    this.inputElement = this.element.createChild("input");
-    this.inputElement.type = "checkbox";
-    this.element.createTextChild(text);
+    WebInspector.StatusBarItem.call(this, createCheckboxLabel(text));
+    this.element.classList.add("checkbox");
+    this.inputElement = this.element.checkboxElement;
     if (title)
         this.element.title = title;
     if (setting)
@@ -744,6 +795,7 @@ WebInspector.StatusBarStatesSettingButton = function(className, states, titles, 
     this.addEventListener("click", onClickBound, this);
 
     this._states = states;
+    /** @type {!Array.<!WebInspector.StatusBarButton>} */
     this._buttons = [];
     for (var index = 0; index < states.length; index++) {
         var button = new WebInspector.StatusBarButton(titles[index], className, states.length);
@@ -758,7 +810,7 @@ WebInspector.StatusBarStatesSettingButton = function(className, states, titles, 
     this.setLongClickOptionsEnabled(this._createOptions.bind(this));
 
     this._currentState = null;
-    this.toggleState(initialState);
+    this._toggleState(initialState);
 }
 
 WebInspector.StatusBarStatesSettingButton.prototype = {
@@ -767,13 +819,13 @@ WebInspector.StatusBarStatesSettingButton.prototype = {
      */
     _onClick: function(e)
     {
-        this.toggleState(e.target.state());
+        this._toggleState(e.target.state());
     },
 
     /**
      * @param {string} state
      */
-    toggleState: function(state)
+    _toggleState: function(state)
     {
         if (this._currentState === state)
             return;
@@ -788,7 +840,15 @@ WebInspector.StatusBarStatesSettingButton.prototype = {
 
         var defaultState = this._defaultState();
         this.setState(defaultState);
-        this.title = this._buttons[this._states.indexOf(defaultState)].title;
+        this.setTitle(this._buttons[this._states.indexOf(defaultState)].title());
+    },
+
+    /**
+     * Toggle state similarly to user click.
+     */
+    toggle: function()
+    {
+        this._toggleState(this.state());
     },
 
     /**
@@ -818,4 +878,18 @@ WebInspector.StatusBarStatesSettingButton.prototype = {
     },
 
     __proto__: WebInspector.StatusBarButton.prototype
+}
+
+/**
+ * @constructor
+ * @extends {WebInspector.StatusBarItem}
+ * @param {!Element} element
+ */
+WebInspector.StatusBarItemWrapper = function(element)
+{
+    WebInspector.StatusBarItem.call(this, element, true);
+}
+
+WebInspector.StatusBarItemWrapper.prototype = {
+    __proto__: WebInspector.StatusBarItem.prototype
 }

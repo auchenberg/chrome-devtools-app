@@ -34,22 +34,18 @@ WebInspector.SettingsUI = {}
  * @param {string} name
  * @param {!WebInspector.Setting} setting
  * @param {boolean=} omitParagraphElement
- * @param {!Element=} inputElement
  * @param {string=} tooltip
  * @return {!Element}
  */
-WebInspector.SettingsUI.createSettingCheckbox = function(name, setting, omitParagraphElement, inputElement, tooltip)
+WebInspector.SettingsUI.createSettingCheckbox = function(name, setting, omitParagraphElement, tooltip)
 {
-    var input = inputElement || createElement("input");
-    input.type = "checkbox";
-    input.name = name;
-    WebInspector.SettingsUI.bindCheckbox(input, setting);
-
-    var label = createElement("label");
-    label.appendChild(input);
-    label.createTextChild(name);
+    var label = createCheckboxLabel(name);
     if (tooltip)
         label.title = tooltip;
+
+    var input = label.checkboxElement;
+    input.name = name;
+    WebInspector.SettingsUI.bindCheckbox(input, setting);
 
     if (omitParagraphElement)
         return label;

@@ -101,6 +101,7 @@ WebInspector.AuditExtensionCategoryResults = function(category, target, ruleResu
 
 WebInspector.AuditExtensionCategoryResults.prototype = {
     /**
+     * @override
      * @return {string}
      */
     id: function()
@@ -108,6 +109,9 @@ WebInspector.AuditExtensionCategoryResults.prototype = {
         return this._id;
     },
 
+    /**
+     * @override
+     */
     done: function()
     {
         WebInspector.extensionServer.stopAuditRun(this);
@@ -116,6 +120,7 @@ WebInspector.AuditExtensionCategoryResults.prototype = {
     },
 
     /**
+     * @override
      * @param {string} displayName
      * @param {string} description
      * @param {string} severity
@@ -153,6 +158,7 @@ WebInspector.AuditExtensionCategoryResults.prototype = {
     },
 
     /**
+     * @override
      * @param {number} progress
      */
     updateProgress: function(progress)
@@ -198,7 +204,7 @@ WebInspector.AuditExtensionFormatters = {
         function onEvaluate(remoteObject)
         {
             var section = new WebInspector.ObjectPropertiesSection(remoteObject, title);
-            section.expanded = true;
+            section.expand();
             section.editable = false;
             parentElement.appendChild(section.element);
         }
@@ -222,7 +228,7 @@ WebInspector.AuditExtensionFormatters = {
          */
         function onEvaluate(remoteObject)
         {
-            WebInspector.Renderer.renderPromise(remoteObject).then(appendRenderer).thenOrCatch(remoteObject.release.bind(remoteObject)).done();
+            WebInspector.Renderer.renderPromise(remoteObject).then(appendRenderer).then(remoteObject.release.bind(remoteObject));
 
             /**
              * @param {!Element} element

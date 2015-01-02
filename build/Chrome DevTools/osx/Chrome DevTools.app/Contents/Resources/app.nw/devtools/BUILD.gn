@@ -37,7 +37,6 @@ devtools_modules_js_files =
   gypi_values.devtools_audits_js_files +
   gypi_values.devtools_console_js_files +
   gypi_values.devtools_devices_js_files +
-  gypi_values.devtools_documentation_js_files +
   gypi_values.devtools_elements_js_files +
   devtools_extensions_js_files +
   gypi_values.devtools_heap_snapshot_worker_js_files +
@@ -133,7 +132,6 @@ action("generate_devtools_grd") {
       resources_out_dir + "audits_module.js",
       resources_out_dir + "console_module.js",
       resources_out_dir + "devices_module.js",
-      resources_out_dir + "documentation_module.js",
       resources_out_dir + "elements_module.js",
       resources_out_dir + "heap_snapshot_worker_module.js",
       resources_out_dir + "layers_module.js",
@@ -238,7 +236,6 @@ action("build_applications") {
       resources_out_dir + "audits_module.js",
       resources_out_dir + "console_module.js",
       resources_out_dir + "devices_module.js",
-      resources_out_dir + "documentation_module.js",
       resources_out_dir + "elements_module.js",
       resources_out_dir + "heap_snapshot_worker_module.js",
       resources_out_dir + "layers_module.js",

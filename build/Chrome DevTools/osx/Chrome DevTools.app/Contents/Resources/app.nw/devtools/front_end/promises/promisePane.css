@@ -9,16 +9,21 @@
     flex: 1 1;
 }
 
+.promises .data-grid th:hover {
+    background-color: inherit !important;
+}
+
 .promises .data-grid .odd {
     background-color: #eee;
 }
 
 .promises .data-grid .header-container {
     height: 30px;
+    border-bottom: 1px solid rgb(205, 205, 205);
 }
 
 .promises .data-grid .data-container {
-    top: 30px;
+    top: 29px;
 }
 
 .promises .data-grid table.data {
@@ -40,14 +45,16 @@
 }
 
 .promises .status {
-    border-radius: 25px;
-    width: 54px;
-    text-align: center;
-    color: white;
+    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
+    -webkit-mask-size: 320px 144px;
+    -webkit-mask-position: -294px -26px;
+    background-color: #bbb;
+    height: 20px;
+    width: 20px;
 }
 
 .promises .status.rejected {
-    background-color: #f66;
+    background-color: rgb(216, 0, 0);
 }
 
 .promises .status.resolved {

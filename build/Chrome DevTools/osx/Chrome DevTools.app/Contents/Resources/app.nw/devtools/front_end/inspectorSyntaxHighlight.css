@@ -66,6 +66,11 @@ body /deep/ .webkit-html-pseudo-element {
     color: brown;
 }
 
+body /deep/ .webkit-html-js-node,
+body /deep/ .webkit-html-css-node {
+    white-space: pre;
+}
+
 body /deep/ .webkit-html-text-node {
     unicode-bidi: -webkit-isolate;
 }
@@ -119,4 +124,13 @@ body /deep/ .webkit-html-end-of-file {
     /* Keep this in sync with view-source.css (.webkit-html-end-of-file) */
     color: rgb(255, 0, 0);
     font-weight: bold;
+}
+
+body /deep/ .stack-preview-async-description {
+    padding: 3px 0 1px;
+    font-style: italic;
+}
+
+body /deep/ .stack-preview-container .webkit-html-blackbox-link {
+    opacity: 0.6;
 }

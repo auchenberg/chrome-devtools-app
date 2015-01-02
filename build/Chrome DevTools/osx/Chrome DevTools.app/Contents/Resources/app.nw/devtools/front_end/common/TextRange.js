@@ -229,6 +229,7 @@ WebInspector.TextRange.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     toString: function()

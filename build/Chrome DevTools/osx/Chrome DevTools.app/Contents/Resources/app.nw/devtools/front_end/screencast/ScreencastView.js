@@ -58,7 +58,7 @@ WebInspector.ScreencastView.prototype = {
 
         this._viewportElement = this.element.createChild("div", "screencast-viewport hidden");
         this._canvasContainerElement = this._viewportElement.createChild("div", "screencast-canvas-container");
-        this._glassPaneElement = this._canvasContainerElement.createChild("div", "screencast-glasspane hidden");
+        this._glassPaneElement = this._canvasContainerElement.createChild("div", "screencast-glasspane fill hidden");
 
         this._canvasElement = this._canvasContainerElement.createChild("canvas");
         this._canvasElement.tabIndex = 1;
@@ -83,6 +83,8 @@ WebInspector.ScreencastView.prototype = {
         this._titleElement.createTextChild(" \u00D7 ");
         this._nodeHeightElement = this._titleElement.createChild("span");
         this._titleElement.createChild("span", "screencast-px").textContent = "px";
+        this._titleElement.style.top = "0";
+        this._titleElement.style.left = "0";
 
         this._imageElement = new Image();
         this._isCasting = false;
@@ -152,6 +154,9 @@ WebInspector.ScreencastView.prototype = {
         this._deviceHeight = metadata.deviceHeight;
         this._scrollOffsetX = metadata.scrollOffsetX;
         this._scrollOffsetY = metadata.scrollOffsetY;
+
+        if (event.data.frameNumber)
+            this._target.pageAgent().screencastFrameAck(event.data.frameNumber);
 
         var deviceSizeRatio = metadata.deviceHeight / metadata.deviceWidth;
         var dimensionsCSS = this._viewportDimensions();
@@ -383,6 +388,7 @@ WebInspector.ScreencastView.prototype = {
     },
 
     /**
+     * @override
      * @param {?WebInspector.DOMNode} node
      * @param {?DOMAgent.HighlightConfig} config
      * @param {!RuntimeAgent.RemoteObjectId=} objectId
@@ -467,26 +473,20 @@ WebInspector.ScreencastView.prototype = {
         if (model && config) {
             this._context.save();
             const transparentColor = "rgba(0, 0, 0, 0)";
-            var hasContent = model.content && config.contentColor !== transparentColor;
-            var hasPadding = model.padding && config.paddingColor !== transparentColor;
-            var hasBorder = model.border && config.borderColor !== transparentColor;
-            var hasMargin = model.margin && config.marginColor !== transparentColor;
+            var quads = [];
+            if (model.content && config.contentColor !== transparentColor)
+                quads.push({quad: model.content, color: config.contentColor});
+            if (model.padding && config.paddingColor !== transparentColor)
+                quads.push({quad: model.padding, color: config.paddingColor});
+            if (model.border && config.borderColor !== transparentColor)
+                quads.push({quad: model.border, color: config.borderColor});
+            if (model.margin && config.marginColor !== transparentColor)
+                quads.push({quad: model.margin, color: config.marginColor});
 
-            var clipQuad;
-            if (hasMargin && (!hasBorder || !this._quadsAreEqual(model.margin, model.border))) {
-                this._drawOutlinedQuadWithClip(model.margin, model.border, config.marginColor);
-                clipQuad = model.border;
-            }
-            if (hasBorder && (!hasPadding || !this._quadsAreEqual(model.border, model.padding))) {
-                this._drawOutlinedQuadWithClip(model.border, model.padding, config.borderColor);
-                clipQuad = model.padding;
-            }
-            if (hasPadding && (!hasContent || !this._quadsAreEqual(model.padding, model.content))) {
-                this._drawOutlinedQuadWithClip(model.padding, model.content, config.paddingColor);
-                clipQuad = model.content;
-            }
-            if (hasContent)
-                this._drawOutlinedQuad(model.content, config.contentColor);
+            for (var i = quads.length - 1; i > 0; --i)
+                this._drawOutlinedQuadWithClip(quads[i].quad, quads[i - 1].quad, quads[i].color);
+            if (quads.length > 0)
+                this._drawOutlinedQuad(quads[0].quad, quads[0].color);
             this._context.restore();
 
             this._drawElementTitle();
@@ -522,7 +522,7 @@ WebInspector.ScreencastView.prototype = {
     {
         if (!color)
             return "transparent";
-        return WebInspector.Color.fromRGBA([color.r, color.g, color.b, color.a]).toString(WebInspector.Color.Format.RGBA) || "";
+        return WebInspector.Color.fromRGBA([color.r, color.g, color.b, color.a]).asString(WebInspector.Color.Format.RGBA) || "";
     },
 
     /**
@@ -590,7 +590,7 @@ WebInspector.ScreencastView.prototype = {
         this._nodeWidthElement.textContent = this._model.width;
         this._nodeHeightElement.textContent = this._model.height;
 
-        var marginQuad = this._model.margin;
+        this._titleElement.classList.remove("hidden");
         var titleWidth = this._titleElement.offsetWidth + 6;
         var titleHeight = this._titleElement.offsetHeight + 4;
 
@@ -646,7 +646,6 @@ WebInspector.ScreencastView.prototype = {
 
         this._context.restore();
 
-        this._titleElement.classList.remove("hidden");
         this._titleElement.style.top = (boxY + 3) + "px";
         this._titleElement.style.left = (boxX + 3) + "px";
     },
@@ -664,6 +663,7 @@ WebInspector.ScreencastView.prototype = {
     },
 
     /**
+     * @override
      * @param {boolean} enabled
      * @param {boolean} inspectUAShadowDOM
      * @param {!DOMAgent.HighlightConfig} config

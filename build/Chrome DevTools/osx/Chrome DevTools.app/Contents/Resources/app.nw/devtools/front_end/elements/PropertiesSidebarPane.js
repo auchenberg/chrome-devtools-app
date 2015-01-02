@@ -45,6 +45,7 @@ WebInspector.PropertiesSidebarPane._objectGroupName = "properties-sidebar-pane";
 
 WebInspector.PropertiesSidebarPane.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Throttler.FinishCallback} finishCallback
      * @protected
      */

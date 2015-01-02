@@ -57,17 +57,9 @@ WebInspector.DOMSyntaxHighlighter.prototype = {
 
     /**
      * @param {!Element} node
+     * @return {!Promise.<undefined>}
      */
     syntaxHighlightNode: function(node)
-    {
-        this.syntaxHighlightNodePromise(node).done();
-    },
-
-    /**
-     * @param {!Element} node
-     * @return {!Promise}
-     */
-    syntaxHighlightNodePromise: function(node)
     {
         var lines = node.textContent.split("\n");
         var plainTextStart;

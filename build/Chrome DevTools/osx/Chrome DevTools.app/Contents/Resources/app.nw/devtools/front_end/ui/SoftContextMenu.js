@@ -56,19 +56,22 @@ WebInspector.SoftContextMenu.prototype = {
 
         // Create context menu.
         this._contextMenuElement = createElementWithClass("div", "soft-context-menu");
+        var root = this._contextMenuElement.createShadowRoot();
+        root.appendChild(WebInspector.View.createStyleElement("ui/softContextMenu.css"));
+        var menuElement = root.createChild("div");
         this._contextMenuElement.tabIndex = 0;
         this._contextMenuElement.style.top = y + "px";
         this._contextMenuElement.style.left = x + "px";
 
-        this._contextMenuElement.addEventListener("mouseup", consumeEvent, false);
-        this._contextMenuElement.addEventListener("keydown", this._menuKeyDown.bind(this), false);
+        menuElement.addEventListener("mouseup", consumeEvent, false);
+        menuElement.addEventListener("keydown", this._menuKeyDown.bind(this), false);
 
         for (var i = 0; i < this._items.length; ++i)
-            this._contextMenuElement.appendChild(this._createMenuItem(this._items[i]));
+            menuElement.appendChild(this._createMenuItem(this._items[i]));
 
         // Install glass pane capturing events.
         if (!this._parentMenu) {
-            this._glassPaneElement = createElementWithClass("div", "soft-context-menu-glass-pane");
+            this._glassPaneElement = createElementWithClass("div", "soft-context-menu-glass-pane fill");
             this._glassPaneElement.tabIndex = 0;
             this._glassPaneElement.addEventListener("mouseup", this._glassPaneMouseUp.bind(this), false);
             this._glassPaneElement.appendChild(this._contextMenuElement);

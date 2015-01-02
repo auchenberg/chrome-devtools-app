@@ -10,6 +10,10 @@
     overflow: hidden;
 }
 
+.responsive-design-view {
+    overflow: hidden;
+}
+
 .responsive-design-canvas {
     pointer-events: none;
 }
@@ -88,7 +92,7 @@
     cursor: default !important;
 }
 
-.responsive-design-page-scale-container .responsive-design-page-scale-button.status-bar-item {
+.responsive-design-page-scale-container .responsive-design-page-scale-button > .glyph {
     display: block;
     width: 18px;
     height: 18px;
@@ -96,11 +100,17 @@
     border-radius: 2px;
 }
 
-.responsive-design-page-scale-container .responsive-design-page-scale-button.status-bar-item:not(:disabled):hover {
+.responsive-design-page-scale-container .responsive-design-page-scale-button:not(:disabled):hover {
     box-shadow: rgb(255, 255, 255) 0 0 3px;
 }
 
-.responsive-design-page-scale-container .responsive-design-page-scale-button.status-bar-item > .glyph {
+.responsive-design-page-scale-container .responsive-design-page-scale-button {
+    border: none;
+    background-color: transparent;
+    padding: 2px 0 0 0;
+}
+
+.responsive-design-page-scale-container .responsive-design-page-scale-button > .glyph {
     background-color: rgb(180, 180, 180);
     -webkit-mask-image: url(Images/responsiveDesign.png);
     -webkit-mask-size: 112px 16px;
@@ -108,17 +118,17 @@
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
-    .responsive-design-page-scale-container .responsive-design-page-scale-button.status-bar-item > .glyph {
-        -webkit-mask-image: url(Images/responsiveDesign_2x.png);
-    }
+.responsive-design-page-scale-container .responsive-design-page-scale-button > .glyph {
+    -webkit-mask-image: url(Images/responsiveDesign_2x.png);
+}
 } /* media */
 
 .responsive-design-page-scale-increase > .glyph {
-    -webkit-mask-position: -81px 1px;
+    -webkit-mask-position: -80px 0;
 }
 
 .responsive-design-page-scale-decrease > .glyph {
-    -webkit-mask-position: -97px 1px;
+    -webkit-mask-position: -96px 0;
 }
 
 /* Toolbar */
@@ -225,7 +235,7 @@
 
 .responsive-design-toolbar input[type='checkbox'] {
     -webkit-appearance: none;
-    margin: auto 5px auto 2px;
+    margin: 0 5px auto 2px;
     border: 1px solid rgb(45, 45, 45);
     border-radius: 3px;
     background-color: rgb(102, 102, 102);
@@ -266,13 +276,13 @@
 
 /* Toolbar icons */
 
-.responsive-design-icon.status-bar-item > .glyph {
+.responsive-design-icon {
     background-color: rgb(180, 180, 180);
     -webkit-mask-image: url(Images/responsiveDesign.png);
     -webkit-mask-size: 112px 16px;
 }
 
-.responsive-design-icon.status-bar-item {
+.responsive-design-icon {
     display: inline-block;
     width: 16px;
     height: 16px;
@@ -280,14 +290,14 @@
     top: 3px;
 }
 
-.responsive-design-icon.status-bar-item:disabled .glyph {
+.responsive-design-icon:disabled {
     opacity: 1 !important;
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
-    .responsive-design-icon.status-bar-item > .glyph {
-        -webkit-mask-image: url(Images/responsiveDesign_2x.png);
-    }
+.responsive-design-icon {
+    -webkit-mask-image: url(Images/responsiveDesign_2x.png);
+}
 } /* media */
 
 .responsive-design-toolbar input[type='checkbox']:after {
@@ -302,15 +312,15 @@
     }
 } /* media */
 
-.responsive-design-icon-resolution.status-bar-item > .glyph {
+.responsive-design-icon-resolution {
     -webkit-mask-position: 0 0;
 }
 
-.responsive-design-icon-dpr.status-bar-item > .glyph {
+.responsive-design-icon-dpr {
     -webkit-mask-position: -16px 0;
 }
 
-.responsive-design-icon-swap.status-bar-item > .glyph {
+.responsive-design-icon-swap {
     background-color: rgb(255, 170, 0);
     -webkit-mask-position: -32px 0;
     -webkit-appearance: none;
@@ -322,7 +332,7 @@
     margin-left: 1px;
 }
 
-.responsive-design-icon-swap.status-bar-item:hover > .glyph {
+.responsive-design-icon-swap:hover {
     background-color: rgb(255, 180, 0);
 }
 
@@ -336,14 +346,6 @@
     padding: 4px 0 0 0;
     background: rgb(17, 17, 17);
     border-right: 2px solid rgb(0, 0, 0);
-}
-
-.responsive-design-section-buttons .status-bar-item {
-    margin: 2px 0;
-}
-
-.responsive-design-section-buttons .status-bar-item .glyph {
-    background-color: white;
 }
 
 .responsive-design-more-button-container {
@@ -449,15 +451,6 @@
     margin-right: 5px;
     text-decoration: underline;
     cursor: pointer;
-}
-
-.responsive-design-toggle-media-inspector .glyph {
-    background-color: rgb(180, 180, 180);
-    -webkit-mask-position: -128px -48px;
-}
-
-.responsive-design-toolbar button.responsive-design-toggle-media-inspector.toggled-on .glyph {
-    background-color: rgb(105, 194, 236) !important;
 }
 
 /* Media query inspector */

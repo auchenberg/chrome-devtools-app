@@ -159,7 +159,7 @@ WebInspector.AuditsPanel.prototype = {
         this._visibleView = x;
 
         if (x)
-            x.show(this.mainElement());
+            this.splitView().setMainView(x);
     },
 
     wasShown: function()
@@ -310,7 +310,7 @@ WebInspector.AuditRule.prototype = {
     /**
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
-     * @param {function(!WebInspector.AuditRuleResult)} callback
+     * @param {function(?WebInspector.AuditRuleResult)} callback
      * @param {!WebInspector.Progress} progress
      */
     run: function(target, requests, callback, progress)
@@ -327,7 +327,7 @@ WebInspector.AuditRule.prototype = {
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
      * @param {!WebInspector.AuditRuleResult} result
-     * @param {function(!WebInspector.AuditRuleResult)} callback
+     * @param {function(?WebInspector.AuditRuleResult)} callback
      * @param {!WebInspector.Progress} progress
      */
     doRun: function(target, requests, result, callback, progress)
@@ -479,6 +479,7 @@ WebInspector.AuditsSidebarTreeElement.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     onselect: function()
@@ -518,6 +519,7 @@ WebInspector.AuditResultSidebarTreeElement = function(panel, results, mainResour
 
 WebInspector.AuditResultSidebarTreeElement.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     onselect: function()
@@ -559,6 +561,7 @@ WebInspector.AuditsPanelFactory = function()
 
 WebInspector.AuditsPanelFactory.prototype = {
     /**
+     * @override
      * @return {!WebInspector.Panel}
      */
     createPanel: function()

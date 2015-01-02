@@ -13,9 +13,9 @@ WebInspector.LayerPaintProfilerView = function(showImageForLayerCallback)
 
     this._showImageForLayerCallback = showImageForLayerCallback;
     this._logTreeView = new WebInspector.PaintProfilerCommandLogView();
-    this._logTreeView.show(this.sidebarElement());
+    this.setSidebarView(this._logTreeView);
     this._paintProfilerView = new WebInspector.PaintProfilerView(this._showImage.bind(this));
-    this._paintProfilerView.show(this.mainElement());
+    this.setMainView(this._paintProfilerView);
 
     this._paintProfilerView.addEventListener(WebInspector.PaintProfilerView.Events.WindowChanged, this._onWindowChanged, this);
 }
@@ -27,7 +27,7 @@ WebInspector.LayerPaintProfilerView.prototype = {
     profileLayer: function(layer)
     {
         this._logTreeView.setCommandLog(null, []);
-        this._paintProfilerView.setSnapshotAndLog(null, []);
+        this._paintProfilerView.setSnapshotAndLog(null, [], null);
         layer.requestSnapshot(onSnapshotDone.bind(this));
 
         /**
@@ -48,7 +48,7 @@ WebInspector.LayerPaintProfilerView.prototype = {
         function onCommandLogDone(snapshot, log)
         {
             this._logTreeView.setCommandLog(snapshot.target(), log);
-            this._paintProfilerView.setSnapshotAndLog(snapshot || null, log || []);
+            this._paintProfilerView.setSnapshotAndLog(snapshot || null, log || [], null);
         }
     },
 

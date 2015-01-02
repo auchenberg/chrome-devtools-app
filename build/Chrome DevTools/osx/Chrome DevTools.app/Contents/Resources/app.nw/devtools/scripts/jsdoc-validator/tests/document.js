@@ -56,6 +56,9 @@ var bar = window + window.document;
 self.document = bar;
 self.addEventListener();
 self.removeEventListener();
+self.requestAnimationFrame();
+window.cancelAnimationFrame();
+getSelection();
 
 function g() {
     var self = this;

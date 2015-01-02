@@ -33,15 +33,17 @@
  * @implements {WebInspector.DebuggerSourceMapping}
  * @param {!WebInspector.DebuggerModel} debuggerModel
  * @param {!WebInspector.Workspace} workspace
+ * @param {!WebInspector.NetworkMapping} networkMapping
  * @param {!WebInspector.DebuggerWorkspaceBinding} debuggerWorkspaceBinding
  */
-WebInspector.ResourceScriptMapping = function(debuggerModel, workspace, debuggerWorkspaceBinding)
+WebInspector.ResourceScriptMapping = function(debuggerModel, workspace, networkMapping, debuggerWorkspaceBinding)
 {
     this._target = debuggerModel.target();
     this._debuggerModel = debuggerModel;
     this._workspace = workspace;
     this._workspace.addEventListener(WebInspector.Workspace.Events.UISourceCodeAdded, this._uiSourceCodeAdded, this);
     this._workspace.addEventListener(WebInspector.Workspace.Events.UISourceCodeRemoved, this._uiSourceCodeRemoved, this);
+    this._networkMapping = networkMapping;
     this._debuggerWorkspaceBinding = debuggerWorkspaceBinding;
     /** @type {!Set.<string>} */
     this._boundURLs = new Set();
@@ -54,6 +56,7 @@ WebInspector.ResourceScriptMapping = function(debuggerModel, workspace, debugger
 
 WebInspector.ResourceScriptMapping.prototype = {
     /**
+     * @override
      * @param {!WebInspector.DebuggerModel.Location} rawLocation
      * @return {?WebInspector.UILocation}
      */
@@ -75,6 +78,7 @@ WebInspector.ResourceScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @param {number} columnNumber
@@ -107,6 +111,7 @@ WebInspector.ResourceScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isIdentity: function()
@@ -115,6 +120,7 @@ WebInspector.ResourceScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @return {boolean}
@@ -151,7 +157,7 @@ WebInspector.ResourceScriptMapping.prototype = {
     _uiSourceCodeAdded: function(event)
     {
         var uiSourceCode = /** @type {!WebInspector.UISourceCode} */ (event.data);
-        if (!uiSourceCode.url)
+        if (!this._networkMapping.networkURL(uiSourceCode))
             return;
         if (uiSourceCode.project().isServiceProject())
             return;
@@ -169,7 +175,7 @@ WebInspector.ResourceScriptMapping.prototype = {
     _uiSourceCodeRemoved: function(event)
     {
         var uiSourceCode = /** @type {!WebInspector.UISourceCode} */ (event.data);
-        if (!uiSourceCode.url)
+        if (!this._networkMapping.networkURL(uiSourceCode))
             return;
         if (uiSourceCode.project().isServiceProject())
             return;
@@ -209,7 +215,7 @@ WebInspector.ResourceScriptMapping.prototype = {
     {
         if (script.isAnonymousScript())
             return null;
-        return this._workspace.uiSourceCodeForURL(script.sourceURL);
+        return this._networkMapping.uiSourceCodeForURL(script.sourceURL);
     },
 
     /**
@@ -218,9 +224,9 @@ WebInspector.ResourceScriptMapping.prototype = {
      */
     _scriptsForUISourceCode: function(uiSourceCode)
     {
-        if (!uiSourceCode.url)
+        if (!this._networkMapping.networkURL(uiSourceCode))
             return [];
-        return this._debuggerModel.scriptsForSourceURL(uiSourceCode.url);
+        return this._debuggerModel.scriptsForSourceURL(this._networkMapping.networkURL(uiSourceCode));
     },
 
     /**
@@ -235,7 +241,7 @@ WebInspector.ResourceScriptMapping.prototype = {
         for (var i = 0; i < scripts.length; ++i)
             this._debuggerWorkspaceBinding.updateLocations(scripts[i]);
         this._debuggerWorkspaceBinding.setSourceMapping(this._target, uiSourceCode, this);
-        this._boundURLs.add(uiSourceCode.url);
+        this._boundURLs.add(this._networkMapping.networkURL(uiSourceCode));
     },
 
     /**
@@ -256,7 +262,7 @@ WebInspector.ResourceScriptMapping.prototype = {
         var boundURLs = this._boundURLs.valuesArray();
         for (var i = 0; i < boundURLs.length; ++i)
         {
-            var uiSourceCode = this._workspace.uiSourceCodeForURL(boundURLs[i]);
+            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(boundURLs[i]);
             if (!uiSourceCode)
                 continue;
             this._unbindUISourceCode(uiSourceCode);

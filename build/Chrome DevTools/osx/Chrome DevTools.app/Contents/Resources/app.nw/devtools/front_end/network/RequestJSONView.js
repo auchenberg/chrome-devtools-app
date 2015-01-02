@@ -100,12 +100,12 @@ WebInspector.RequestJSONView._buildObjectFromJSON = function(text)
             if (!tip)
                 break;
         } else if (code === 0x2C) { // ,
-            if ((tip instanceof Array) && (lastToken === undefined || lastToken === "[" || lastToken === ","))
+            if (Array.isArray(tip) && (lastToken === undefined || lastToken === "[" || lastToken === ","))
                 tip[tip.length] = undefined;
         } else if (code === 0x22) { // "
             token = WebInspector.RequestJSONView._unescapeString(token.substring(1, token.length - 1));
             if (!key) {
-                if (tip instanceof Array) {
+                if (Array.isArray(tip)) {
                   key = tip.length;
                 } else {
                     key = token || "";

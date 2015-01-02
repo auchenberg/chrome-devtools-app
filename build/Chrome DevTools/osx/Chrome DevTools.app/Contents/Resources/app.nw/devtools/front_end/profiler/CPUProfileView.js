@@ -59,15 +59,15 @@ WebInspector.CPUProfileView = function(profileHeader)
     var option = options[optionName] || options[WebInspector.CPUProfileView._TypeFlame];
     this.viewSelectComboBox.select(option);
 
-    this.focusButton = new WebInspector.StatusBarButton(WebInspector.UIString("Focus selected function."), "focus-profile-node-status-bar-item");
+    this.focusButton = new WebInspector.StatusBarButton(WebInspector.UIString("Focus selected function."), "focus-status-bar-item");
     this.focusButton.setEnabled(false);
     this.focusButton.addEventListener("click", this._focusClicked, this);
 
-    this.excludeButton = new WebInspector.StatusBarButton(WebInspector.UIString("Exclude selected function."), "exclude-profile-node-status-bar-item");
+    this.excludeButton = new WebInspector.StatusBarButton(WebInspector.UIString("Exclude selected function."), "delete-status-bar-item");
     this.excludeButton.setEnabled(false);
     this.excludeButton.addEventListener("click", this._excludeClicked, this);
 
-    this.resetButton = new WebInspector.StatusBarButton(WebInspector.UIString("Restore all functions."), "reset-profile-status-bar-item");
+    this.resetButton = new WebInspector.StatusBarButton(WebInspector.UIString("Restore all functions."), "refresh-status-bar-item");
     this.resetButton.setVisible(false);
     this.resetButton.addEventListener("click", this._resetClicked, this);
 
@@ -127,8 +127,8 @@ WebInspector.CPUProfileView.prototype = {
     },
 
     /**
-     * @param {!number} timeLeft
-     * @param {!number} timeRight
+     * @param {number} timeLeft
+     * @param {number} timeRight
      */
     selectRange: function(timeLeft, timeRight)
     {
@@ -204,6 +204,7 @@ WebInspector.CPUProfileView.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsCaseSensitiveSearch: function()
@@ -212,6 +213,7 @@ WebInspector.CPUProfileView.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsRegexSearch: function()
@@ -219,12 +221,16 @@ WebInspector.CPUProfileView.prototype = {
         return false;
     },
 
+    /**
+     * @override
+     */
     searchCanceled: function()
     {
         this._searchableElement.searchCanceled();
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {boolean} shouldJump
      * @param {boolean=} jumpBackwards
@@ -236,12 +242,18 @@ WebInspector.CPUProfileView.prototype = {
         this._searchableView.updateCurrentMatchIndex(this._searchableElement.currentSearchResultIndex());
     },
 
+    /**
+     * @override
+     */
     jumpToNextSearchResult: function()
     {
         this._searchableElement.jumpToNextSearchResult();
         this._searchableView.updateCurrentMatchIndex(this._searchableElement.currentSearchResultIndex());
     },
 
+    /**
+     * @override
+     */
     jumpToPreviousSearchResult: function()
     {
         this._searchableElement.jumpToPreviousSearchResult();
@@ -267,7 +279,7 @@ WebInspector.CPUProfileView.prototype = {
         var target = this._profileHeader.target();
         if (!node || !node.scriptId || !target)
             return;
-        var script = target.debuggerModel.scriptForId(node.scriptId)
+        var script = target.debuggerModel.scriptForId(node.scriptId);
         if (!script)
             return;
         var location = /** @type {!WebInspector.DebuggerModel.Location} */ (script.target().debuggerModel.createRawLocation(script, node.lineNumber, 0));
@@ -326,7 +338,7 @@ WebInspector.CPUProfileView.prototype = {
 
     _excludeClicked: function(event)
     {
-        var selectedNode = this.dataGrid.selectedNode
+        var selectedNode = this.dataGrid.selectedNode;
 
         if (!selectedNode)
             return;
@@ -523,11 +535,10 @@ WebInspector.CPUProfileType.prototype = {
             return;
 
         /**
-         * @param {?string} error
-         * @param {?ProfilerAgent.CPUProfile} profile
+         * @param {!ProfilerAgent.CPUProfile} profile
          * @this {WebInspector.CPUProfileType}
          */
-        function didStopProfiling(error, profile)
+        function didStopProfiling(profile)
         {
             if (!this._profileBeingRecorded)
                 return;
@@ -537,7 +548,7 @@ WebInspector.CPUProfileType.prototype = {
             this.setProfileBeingRecorded(null);
             this.dispatchEventToListeners(WebInspector.ProfileType.Events.ProfileComplete, recordedProfile);
         }
-        this._profileBeingRecorded.target().cpuProfilerModel.stopRecording(didStopProfiling.bind(this));
+        this._profileBeingRecorded.target().cpuProfilerModel.stopRecording().then(didStopProfiling.bind(this));
     },
 
     /**
@@ -577,6 +588,9 @@ WebInspector.CPUProfileHeader = function(target, type, title)
 }
 
 WebInspector.CPUProfileHeader.prototype = {
+    /**
+     * @override
+     */
     onTransferStarted: function()
     {
         this._jsonifiedProfile = "";
@@ -584,6 +598,7 @@ WebInspector.CPUProfileHeader.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.ChunkedReader} reader
      */
     onChunkTransferred: function(reader)
@@ -591,6 +606,9 @@ WebInspector.CPUProfileHeader.prototype = {
         this.updateStatus(WebInspector.UIString("Loading\u2026 %d\%", Number.bytesToString(this._jsonifiedProfile.length)));
     },
 
+    /**
+     * @override
+     */
     onTransferFinished: function()
     {
         this.updateStatus(WebInspector.UIString("Parsing\u2026"), true);
@@ -603,6 +621,7 @@ WebInspector.CPUProfileHeader.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.ChunkedReader} reader
      * @param {!Event} e
      */
@@ -625,6 +644,7 @@ WebInspector.CPUProfileHeader.prototype = {
     },
 
     /**
+     * @override
      * @param {string} text
      */
     write: function(text)
@@ -632,6 +652,9 @@ WebInspector.CPUProfileHeader.prototype = {
         this._jsonifiedProfile += text;
     },
 
+    /**
+     * @override
+     */
     close: function() { },
 
     /**
@@ -644,7 +667,7 @@ WebInspector.CPUProfileHeader.prototype = {
 
     /**
      * @override
-     * @param {!WebInspector.ProfilesPanel} panel
+     * @param {!WebInspector.ProfileType.DataDisplayDelegate} panel
      * @return {!WebInspector.ProfileSidebarTreeElement}
      */
     createSidebarTreeElement: function(panel)
@@ -703,6 +726,7 @@ WebInspector.CPUProfileHeader.prototype = {
     },
 
     /**
+     * @override
      * @param {!File} file
      */
     loadFromFile: function(file)
@@ -763,12 +787,12 @@ WebInspector.CPUProfileHeader.prototype = {
             return;
         }
         /**
-         * @param {boolean} success
+         * @param {number} fileSize
          * @this {WebInspector.CPUProfileHeader}
          */
-        function didWriteToTempFile(success)
+        function didWriteToTempFile(fileSize)
         {
-            if (!success)
+            if (!fileSize)
                 this._failedToCreateTempFile = true;
             tempFile.finishWriting();
             this._notifyTempFileReady();

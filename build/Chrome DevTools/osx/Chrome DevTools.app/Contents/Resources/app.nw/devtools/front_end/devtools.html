@@ -14,7 +14,13 @@
 </head>
 <body class="undocked" id="-blink-dev-tools">
 <script>
-document.write("<iframe class='inspector-app-iframe' src='inspector.html" + window.location.search + "'></iframe>");
+(function() {
+    var remoteFrontendUrl = Runtime.queryParam("remoteFrontendUrl");
+    var src = remoteFrontendUrl
+        ? decodeURIComponent(remoteFrontendUrl) + Runtime.constructQueryParams(["remoteFrontendUrl"])
+        : "inspector.html" + window.location.search;
+    document.write("<iframe id='inspector-app-iframe' class='fill' src='" + src + "'></iframe>");
+})();
 </script>
 </body>
 </html>

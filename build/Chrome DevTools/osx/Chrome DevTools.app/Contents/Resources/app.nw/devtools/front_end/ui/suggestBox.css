@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-.suggest-box-overlay {
+:host {
     position: absolute;
     background-color: transparent;
     z-index: 1000;
@@ -38,27 +38,27 @@
     flex-direction: row;
 }
 
-.suggest-box-overlay .suggest-box-left-spacer {
+.suggest-box-left-spacer {
     flex: 0 1 auto;
 }
 
-.suggest-box-overlay .suggest-box-horizontal {
+.suggest-box-horizontal {
     display: flex;
     flex-direction: column;
     flex: 0 0 auto;
     max-width: 300px;
 }
 
-.suggest-box-overlay .suggest-box-top-spacer {
+.suggest-box-top-spacer {
     flex: auto;
 }
 
-.suggest-box-overlay.under-anchor .suggest-box-top-spacer,
-.suggest-box-overlay:not(.under-anchor) .suggest-box-bottom-spacer {
+:host(.under-anchor) .suggest-box-top-spacer,
+:host(:not(.under-anchor)) .suggest-box-bottom-spacer {
     flex: 0 0 auto;
 }
 
-.suggest-box-overlay .suggest-box {
+.suggest-box {
     background-color: #FFFFFF;
     border: 1px solid rgb(66%, 66%, 66%);
     pointer-events: auto;
@@ -71,34 +71,34 @@
     border-radius: 5px 5px 5px 0;
 }
 
-.suggest-box-overlay.under-anchor .suggest-box {
+:host(.under-anchor) .suggest-box {
     border-radius: 0 5px 5px 5px;
 }
 
-.suggest-box-overlay .suggest-box .suggest-box-content-item {
+.suggest-box .suggest-box-content-item {
     padding: 1px;
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     border: 1px solid transparent;
     flex: 0 0 auto;
-    padding-right: 0px;
+    padding-right: 0;
     white-space: nowrap;
 }
 
-.suggest-box-overlay .suggest-box .suggest-box-content-item .prefix {
+.suggest-box .suggest-box-content-item .prefix {
     font-weight: bold;
 }
 
-.suggest-box-overlay .suggest-box .suggest-box-content-item .spacer {
+.suggest-box .suggest-box-content-item .spacer {
     display: inline-block;
     width: 20px;
 }
 
-.suggest-box-overlay .suggest-box .suggest-box-content-item.selected {
+.suggest-box .suggest-box-content-item.selected {
     background-color: rgba(56, 121, 217, 0.1);
 }
 
-.suggest-box-overlay .suggest-box .suggest-box-content-item:hover:not(.selected) {
+.suggest-box .suggest-box-content-item:hover:not(.selected) {
     border: 1px solid rgb(204, 204, 204);
 }

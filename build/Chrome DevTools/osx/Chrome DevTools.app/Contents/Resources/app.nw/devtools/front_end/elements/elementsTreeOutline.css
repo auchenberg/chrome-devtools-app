@@ -18,13 +18,12 @@
 }
 
 .outline-disclosure li.parent {
-    margin-left: -12px
+    margin-left: -13px;
 }
 
 .outline-disclosure li.parent::before {
     float: left;
     width: 10px;
-    padding-right: 2px;
     box-sizing: border-box;
 }
 
@@ -160,34 +159,6 @@ button, input, select {
   font-size: inherit;
 }
 
-.text-button {
-    background-image: linear-gradient(hsl(0, 0%, 93%), hsl(0, 0%, 93%) 38%, hsl(0, 0%, 87%));
-    border: 1px solid hsla(0, 0%, 0%, 0.25);
-    border-radius: 2px;
-    box-shadow: 0 1px 0 hsla(0, 0%, 0%, 0.08), inset 0 1px 2px hsla(0, 100%, 100%, 0.75);
-    color: hsl(0, 0%, 27%);
-    font-size: 12px;
-    margin: 0 1px 0 0;
-    text-shadow: 0 1px 0 hsl(0, 0%, 94%);
-    min-height: 2em;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
-.text-button:not(:disabled):hover {
-    background-image: linear-gradient(hsl(0, 0%, 94%), hsl(0, 0%, 94%) 38%, hsl(0, 0%, 88%));
-    border-color: hsla(0, 0%, 0%, 0.3);
-    box-shadow: 0 1px 0 hsla(0, 0%, 0%, 0.12), inset 0 1px 2px hsla(0, 100%, 100%, 0.95);
-    color: hsl(0, 0%, 0%);
-}
-
-body.inactive button.text-button, .text-button:disabled {
-    background-image: linear-gradient(#f1f1f1, #f1f1f1 38%, #e6e6e6);
-    border-color: rgba(80, 80, 80, 0.2);
-    box-shadow: 0 1px 0 rgba(80, 80, 80, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.75);
-    color: #aaa;
-}
-
 .editing {
     -webkit-user-select: text;
     box-shadow: rgba(0, 0, 0, .5) 3px 3px 4px;
@@ -265,11 +236,11 @@ body.inactive button.text-button, .text-button:disabled {
     cursor: default !important;
 }
 
-.nowrap, .nowrap .li {
+.elements-tree-nowrap, .elements-tree-nowrap .li {
     white-space: pre !important;
 }
 
-.outline-disclosure .nowrap li {
+.outline-disclosure .elements-tree-nowrap li {
     word-wrap: normal;
 }
 
@@ -295,4 +266,33 @@ body.inactive button.text-button, .text-button:disabled {
 
 .outline-disclosure.single-node li {
     padding-left: 2px;
+}
+
+
+li.parent.shadow-root {
+    /* display: none; */
+}
+
+.shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
+    border: 0;
+    margin: 0;
+    background-color: inherit;
+    height: 13px;
+    opacity: 0.2;
+}
+
+.shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled {
+    opacity: 0.7;
+}
+
+.shadow-host-display-mode-toolbar:hover .shadow-host-display-mode-toolbar-button {
+    opacity: 1;
+}
+
+.shadow-host-display-mode-toolbar-button.toggled {
+    color: rgb(66, 129, 235);
+}
+
+.shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled.custom-mode {
+    opacity: 1;
 }

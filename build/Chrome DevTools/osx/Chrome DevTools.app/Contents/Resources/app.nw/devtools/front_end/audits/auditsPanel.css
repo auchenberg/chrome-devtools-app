@@ -85,11 +85,6 @@
     margin: 0 5px 0 0;
 }
 
-.audit-launcher-view button:active {
-    background-color: rgb(215, 215, 215);
-    background-image: linear-gradient(to bottom, rgb(194, 194, 194), rgb(239, 239, 239));
-}
-
 .panel-enabler-view.audit-launcher-view label {
     padding: 0 0 5px 0;
     margin: 0;
@@ -109,21 +104,15 @@
 
 .audit-result-view {
     overflow: auto;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     display: none;
 }
 
 .audit-result-view.visible {
     display: block;
+    flex: auto;
 }
 
-.audit-result-view .severity-severe,
-.audit-result-view .severity-warning,
-.audit-result-view .severity-info {
+.audit-result-view .severity {
     background-image: url(Images/statusbarButtonGlyphs.png);
     background-size: 320px 144px;
     display: inline-block;
@@ -136,22 +125,20 @@
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
-.audit-result-view .severity-severe,
-.audit-result-view .severity-warning,
-.audit-result-view .severity-info {
+.audit-result-view .severity {
     background-image: url(Images/statusbarButtonGlyphs_2x.png);
 }
 } /* media */
 
-.audit-result-view .severity-severe {
+.audit-result-view .severity.severe {
     background-position: -224px -96px;
 }
 
-.audit-result-view .severity-warning {
+.audit-result-view .severity.warning {
     background-position: -246px -96px;
 }
 
-.audit-result-view .severity-info {
+.audit-result-view .severity.info {
     background-position: -235px -96px;
 }
 
@@ -241,10 +228,6 @@
     font-weight: bold;
 }
 
-.audit-launcher-view .progress-bar-container {
+.audit-launcher-view .progress-indicator {
     display: inline-block;
-}
-
-.audit-launcher-view .progress-bar-container .progress-bar-stop-button {
-    display: none;
 }

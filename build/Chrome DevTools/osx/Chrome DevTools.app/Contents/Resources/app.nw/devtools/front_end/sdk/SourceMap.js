@@ -241,7 +241,9 @@ WebInspector.SourceMap.prototype = {
     },
 
     /**
-     * @override
+     * @param {!SourceMapV3} map
+     * @param {number} lineNumber
+     * @param {number} columnNumber
      */
     _parseMap: function(map, lineNumber, columnNumber)
     {

@@ -37,9 +37,11 @@
 WebInspector.PieChart = function(size, formatter, showTotal)
 {
     var shadowSize = WebInspector.PieChart._ShadowSizePercent;
-    this.element = createElementWithClass("div", "pie-chart");
-    this.element.appendChild(WebInspector.View.createStyleElement("ui/pieChart.css"));
-    var svg = this._createSVGChild(this.element, "svg");
+    this.element = createElement("div");
+    this._shadowRoot = this.element.createShadowRoot();
+    this._shadowRoot.appendChild(WebInspector.View.createStyleElement("ui/pieChart.css"));
+    var root = this._shadowRoot.createChild("div", "root");
+    var svg = this._createSVGChild(root, "svg");
     svg.setAttribute("width", (100 * (1 + 2 * shadowSize)) + "%");
     svg.setAttribute("height", (100 * (1 + 2 * shadowSize)) + "%");
     this._group = this._createSVGChild(svg, "g");
@@ -50,7 +52,7 @@ WebInspector.PieChart = function(size, formatter, showTotal)
     var background = this._createSVGChild(this._group, "circle");
     background.setAttribute("r", 1);
     background.setAttribute("fill", "hsl(0,0%,92%)");
-    this._foregroundElement = this.element.createChild("div", "pie-chart-foreground");
+    this._foregroundElement = root.createChild("div", "pie-chart-foreground");
     if (showTotal)
         this._totalElement = this._foregroundElement.createChild("div", "pie-chart-total");
     this._formatter = formatter;
@@ -117,11 +119,10 @@ WebInspector.PieChart.prototype = {
      * @param {!Element} parent
      * @param {string} childType
      * @return {!Element}
-     * @suppressGlobalPropertiesCheck
      */
     _createSVGChild: function(parent, childType)
     {
-        var child = document.createElementNS("http://www.w3.org/2000/svg", childType);
+        var child = parent.ownerDocument.createElementNS("http://www.w3.org/2000/svg", childType);
         parent.appendChild(child);
         return child;
     }

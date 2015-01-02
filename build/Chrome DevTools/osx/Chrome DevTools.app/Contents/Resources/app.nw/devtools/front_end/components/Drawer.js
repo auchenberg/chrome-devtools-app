@@ -39,14 +39,14 @@ WebInspector.Drawer = function(splitView)
 
     this._splitView = splitView;
     splitView.hideDefaultResizer();
-    this.show(splitView.sidebarElement());
+    splitView.setSidebarView(this);
 
     this._toggleDrawerButton = new WebInspector.StatusBarButton(WebInspector.UIString("Show drawer."), "console-status-bar-item");
     this._toggleDrawerButton.addEventListener("click", this.toggle, this);
 
     this._tabbedPane = new WebInspector.TabbedPane();
     this._tabbedPane.element.id = "drawer-tabbed-pane";
-    this._tabbedPane.closeableTabs = false;
+    this._tabbedPane.setCloseableTabs(false);
     this._tabbedPane.addEventListener(WebInspector.TabbedPane.EventTypes.TabSelected, this._tabSelected, this);
     new WebInspector.ExtensibleTabbedPaneController(this._tabbedPane, "drawer-view");
 
@@ -224,6 +224,7 @@ WebInspector.Drawer.SingletonViewFactory = function(constructor)
 
 WebInspector.Drawer.SingletonViewFactory.prototype = {
     /**
+     * @override
      * @return {!WebInspector.View}
      */
     createView: function()

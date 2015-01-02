@@ -762,65 +762,112 @@ WebInspector.PageDispatcher.prototype = {
         this._resourceTreeModel.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.Load, time);
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     * @param {!PageAgent.FrameId} parentFrameId
+     */
     frameAttached: function(frameId, parentFrameId)
     {
         this._resourceTreeModel._frameAttached(frameId, parentFrameId);
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.Frame} frame
+     */
     frameNavigated: function(frame)
     {
         this._resourceTreeModel._frameNavigated(frame);
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     */
     frameDetached: function(frameId)
     {
         this._resourceTreeModel._frameDetached(frameId);
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     */
     frameStartedLoading: function(frameId)
     {
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     */
     frameStoppedLoading: function(frameId)
     {
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     * @param {number} delay
+     */
     frameScheduledNavigation: function(frameId, delay)
     {
     },
 
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     */
     frameClearedScheduledNavigation: function(frameId)
     {
     },
 
+    /**
+     * @override
+     */
     frameResized: function()
     {
         this._resourceTreeModel.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.FrameResized, null);
     },
 
+    /**
+     * @override
+     * @param {string} message
+     */
     javascriptDialogOpening: function(message)
     {
     },
 
+    /**
+     * @override
+     */
     javascriptDialogClosed: function()
     {
     },
 
+    /**
+     * @override
+     * @param {boolean} isEnabled
+     */
     scriptsEnabled: function(isEnabled)
     {
         WebInspector.settings.javaScriptDisabled.set(!isEnabled);
     },
 
     /**
+     * @override
      * @param {string} data
      * @param {!PageAgent.ScreencastFrameMetadata=} metadata
+     * @param {number=} frameNumber
      */
-    screencastFrame: function(data, metadata)
+    screencastFrame: function(data, metadata, frameNumber)
     {
-        this._resourceTreeModel.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.ScreencastFrame, {data:data, metadata:metadata});
+        this._resourceTreeModel.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.ScreencastFrame, {data:data, metadata:metadata, frameNumber:frameNumber});
     },
 
     /**
+     * @override
      * @param {boolean} visible
      */
     screencastVisibilityChanged: function(visible)
@@ -829,6 +876,7 @@ WebInspector.PageDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!PageAgent.Viewport=} viewport
      */
     viewportChanged: function(viewport)
@@ -837,6 +885,7 @@ WebInspector.PageDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!DOMAgent.RGBA} color
      */
     colorPicked: function(color)
@@ -844,11 +893,17 @@ WebInspector.PageDispatcher.prototype = {
         this._resourceTreeModel.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.ColorPicked, color);
     },
 
+    /**
+     * @override
+     */
     interstitialShown: function()
     {
         // Frontend is not interested in interstitials.
     },
 
+    /**
+     * @override
+     */
     interstitialHidden: function()
     {
         // Frontend is not interested in interstitials.

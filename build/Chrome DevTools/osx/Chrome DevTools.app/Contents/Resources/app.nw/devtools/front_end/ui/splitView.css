@@ -26,27 +26,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-.split-view {
+.shadow-split-view {
     display: flex;
     overflow: hidden;
 }
 
-.split-view-contents {
-    overflow: auto;
+.shadow-split-view-contents {
     display: flex;
     position: relative;
     flex-direction: column;
 }
 
-.split-view-sidebar {
+.shadow-split-view-sidebar {
     flex: none;
 }
 
-.split-view-main, .split-view-sidebar.maximized {
+.shadow-split-view-main, .shadow-split-view-sidebar.maximized {
     flex: auto;
 }
 
-.split-view.hbox > .split-view-resizer {
+.shadow-split-view.hbox > .shadow-split-view-resizer {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -54,7 +53,7 @@
     z-index: 500;
 }
 
-.split-view.vbox > .split-view-resizer {
+.shadow-split-view.vbox > .shadow-split-view-resizer {
     position: absolute;
     left: 0;
     right: 0;
@@ -62,105 +61,123 @@
     z-index: 500;
 }
 
-.split-view.hbox.split-view-first-is-sidebar {
+.shadow-split-view.hbox.shadow-split-view-first-is-sidebar {
     flex-direction: row-reverse !important;
 }
 
-.split-view.vbox.split-view-first-is-sidebar {
+.shadow-split-view.vbox.shadow-split-view-first-is-sidebar {
     flex-direction: column-reverse !important;
 }
 
-.split-view-resizer-border {
+.shadow-split-view-resizer-border {
     pointer-events: none;
 }
 
-.split-view.vbox > .split-view-resizer > .split-view-resizer-border {
-    width: 100%;
-    margin-top: 3px;
-    height: 1px;
+.shadow-split-view.vbox > .shadow-split-view-sidebar:not(.maximized) {
+    border: 0;
     border-top: 1px solid rgb(64%, 64%, 64%);
 }
 
-.split-view.hbox > .split-view-resizer > .split-view-resizer-border {
-    height: 100%;
-    margin-left: 3px;
-    width: 1px;
+.shadow-split-view.vbox.shadow-split-view-first-is-sidebar > .shadow-split-view-sidebar:not(.maximized) {
+    border: 0;
+    border-bottom: 1px solid rgb(64%, 64%, 64%);
+}
+
+.shadow-split-view.hbox > .shadow-split-view-sidebar:not(.maximized) {
+    border: 0;
     border-left: 1px solid rgb(64%, 64%, 64%);
 }
 
-.split-view button.sidebar-show-hide-button {
+.shadow-split-view.hbox.shadow-split-view-first-is-sidebar > .shadow-split-view-sidebar:not(.maximized) {
+    border: 0;
+    border-right: 1px solid rgb(64%, 64%, 64%);
+}
+
+.shadow-split-view button.sidebar-show-hide-button {
     position: absolute;
-    background-image: none;
+    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
+    -webkit-mask-size: 320px 144px;
     height: 16px;
     width: 16px;
     border: none;
     z-index: 10;
+    background-color: rgba(0, 0, 0, 0.6);
 }
 
-.split-view button.left-sidebar-show-hide-button,
-.split-view button.top-sidebar-show-hide-button {
-    top: 4px;
+.shadow-split-view button.sidebar-show-hide-button:disabled {
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+@media (-webkit-min-device-pixel-ratio: 1.5) {
+.shadow-split-view button.sidebar-show-hide-button {
+    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+}
+} /* media */
+
+.shadow-split-view button.left-sidebar-show-hide-button,
+.shadow-split-view button.top-sidebar-show-hide-button {
+    top: 3px;
     left: 4px;
 }
 
-.split-view button.left-sidebar-show-hide-button:active,
-.split-view button.top-sidebar-show-hide-button:active {
-    top: 5px;
+.shadow-split-view button.left-sidebar-show-hide-button:active,
+.shadow-split-view button.top-sidebar-show-hide-button:active {
+    top: 4px;
     left: 3px;
 }
 
-.split-view button.right-sidebar-show-hide-button {
+.shadow-split-view button.right-sidebar-show-hide-button {
     top: 3px;
     right:2px;
 }
 
-.split-view button.right-sidebar-show-hide-button:active {
-    top: 5px;
+.shadow-split-view button.right-sidebar-show-hide-button:active {
+    top: 4px;
     right: 1px;
 }
 
-.split-view button.bottom-sidebar-show-hide-button {
+.shadow-split-view button.bottom-sidebar-show-hide-button {
     bottom: 1px;
     right: 1px;
 }
 
-.split-view button.bottom-sidebar-show-hide-button:active {
+.shadow-split-view button.bottom-sidebar-show-hide-button:active {
     bottom: 0;
     right: 0;
 }
 
-.split-view button.left-sidebar-show-hide-button.toggled-show > .glyph {
+.shadow-split-view button.left-sidebar-show-hide-button.toggled-show {
     -webkit-mask-position: -168px -76px; /* |> */
 }
 
-.split-view button.left-sidebar-show-hide-button.toggled-hide > .glyph {
+.shadow-split-view button.left-sidebar-show-hide-button.toggled-hide {
     -webkit-mask-position: -199px -76px; /* |< */
 }
 
-.split-view button.right-sidebar-show-hide-button.toggled-show > .glyph {
+.shadow-split-view button.right-sidebar-show-hide-button.toggled-show {
     -webkit-mask-position: -296px -76px; /* <| */
 }
 
-.split-view button.right-sidebar-show-hide-button.toggled-hide > .glyph {
+.shadow-split-view button.right-sidebar-show-hide-button.toggled-hide {
     -webkit-mask-position: -264px -76px; /* >| */
 }
 
-.split-view button.top-sidebar-show-hide-button.toggled-show > .glyph {
+.shadow-split-view button.top-sidebar-show-hide-button.toggled-show {
     -webkit-mask-position: -168px -76px; /* |> */
     transform: rotate(90deg);
 }
 
-.split-view button.top-sidebar-show-hide-button.toggled-hide > .glyph {
+.shadow-split-view button.top-sidebar-show-hide-button.toggled-hide {
     -webkit-mask-position: -199px -76px; /* |< */
     transform: rotate(90deg);
 }
 
-.split-view button.bottom-sidebar-show-hide-button.toggled-show > .glyph {
+.shadow-split-view button.bottom-sidebar-show-hide-button.toggled-show {
     -webkit-mask-position: -296px -76px; /* <| */
     transform: rotate(90deg);
 }
 
-.split-view button.bottom-sidebar-show-hide-button.toggled-hide > .glyph {
+.shadow-split-view button.bottom-sidebar-show-hide-button.toggled-hide {
     -webkit-mask-position: -264px -76px; /* >| */
     transform: rotate(90deg);
 }

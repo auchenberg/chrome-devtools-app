@@ -39,8 +39,11 @@ type_traits = {
     "object": "!Object",
 }
 
-ref_types = {}
+promisified_domains = {
+    "Profiler"
+}
 
+ref_types = {}
 
 def full_qualified_type_id(domain_name, type_id):
     if type_id.find(".") == -1:
@@ -108,6 +111,7 @@ Protocol.Error;
 
     for domain in json_api:
         domain_name = domain["domain"]
+        promisified = domain_name in promisified_domains
 
         output_file.write("\n\n/**\n * @constructor\n*/\n")
         output_file.write("Protocol.%sAgent = function(){};\n" % domain_name)
@@ -124,18 +128,33 @@ Protocol.Error;
                         else:
                             params.append(in_param["name"])
                             output_file.write(" * @param {%s} %s\n" % (param_type(domain_name, in_param), in_param["name"]))
-                returns = ["?Protocol.Error"]
-                if ("error" in command):
-                    returns.append("%s=" % param_type(domain_name, command["error"]))
+                returns = []
+                if (not promisified):
+                    returns.append("?Protocol.Error")
+                    if ("error" in command):
+                        returns.append("%s=" % param_type(domain_name, command["error"]))
                 if ("returns" in command):
                     for out_param in command["returns"]:
                         if ("optional" in out_param):
                             returns.append("%s=" % param_type(domain_name, out_param))
                         else:
                             returns.append("%s" % param_type(domain_name, out_param))
-                output_file.write(" * @param {function(%s):void=} opt_callback\n" % ", ".join(returns))
+                if (promisified):
+                    returns_len = len(command["returns"]) if "returns" in command else 0
+                    if returns_len == 0:
+                        output_file.write(" * @return {!Promise.<undefined>}\n")
+                    else:
+                        promise_returns = []
+                        for out_param in command["returns"]:
+                            type = param_type(domain_name, out_param)
+                            if "optional" in out_param:
+                                type = "(%s|undefined)" % type
+                            promise_returns.append("%s: %s" % (out_param["name"], type))
+                        output_file.write(" * @return {!Promise.<!{%s}>}\n" % ", ".join(promise_returns))
+                else:
+                    output_file.write(" * @param {function(%s):void=} opt_callback\n" % ", ".join(returns))
+                    params.append("opt_callback")
                 output_file.write(" */\n")
-                params.append("opt_callback")
                 output_file.write("Protocol.%sAgent.prototype.%s = function(%s) {}\n" % (domain_name, command["name"], ", ".join(params)))
                 output_file.write("/** @param {function(%s):void=} opt_callback */\n" % ", ".join(returns))
                 output_file.write("Protocol.%sAgent.prototype.invoke_%s = function(obj, opt_callback) {}\n" % (domain_name, command["name"]))

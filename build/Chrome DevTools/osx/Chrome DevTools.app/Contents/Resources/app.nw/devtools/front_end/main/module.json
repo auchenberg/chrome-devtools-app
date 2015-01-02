@@ -72,6 +72,21 @@
         },
         {
             "type": "@WebInspector.ActionDelegate",
+            "actionId": "main.toggle-dock",
+            "className": "WebInspector.DockController.ToggleDockActionDelegate",
+            "bindings": [
+                {
+                    "platform": "windows,linux",
+                    "shortcut": "Ctrl+Shift+D"
+                },
+                {
+                    "platform": "mac",
+                    "shortcut": "Meta+Shift+D"
+                }
+            ]
+        },
+        {
+            "type": "@WebInspector.ActionDelegate",
             "actionId": "main.zoom-in",
             "className": "WebInspector.Main.ZoomInActionDelegate",
             "bindings": [
@@ -216,6 +231,13 @@
             "section": "Appearance",
             "title": "Don't show emulation warnings",
             "settingName": "disableOverridesWarning",
+            "settingType": "checkbox"
+        },
+        {
+            "type": "ui-setting",
+            "section": "Appearance",
+            "title": "Disable paused state overlay",
+            "settingName": "disablePausedStateOverlay",
             "settingType": "checkbox"
         },
         {

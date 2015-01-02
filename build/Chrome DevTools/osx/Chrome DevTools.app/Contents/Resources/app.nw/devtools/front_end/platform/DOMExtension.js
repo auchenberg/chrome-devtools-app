@@ -275,6 +275,14 @@ Node.prototype.parentNodeOrShadowHost = function()
 }
 
 /**
+ * @return {!Window}
+ */
+Node.prototype.window = function()
+{
+    return this.ownerDocument.defaultView;
+}
+
+/**
  * @param {string} query
  * @return {?Node}
  */
@@ -294,7 +302,7 @@ Element.prototype.removeChildren = function()
  */
 Element.prototype.isInsertionCaretInside = function()
 {
-    var selection = window.getSelection();
+    var selection = this.window().getSelection();
     if (!selection.rangeCount || !selection.isCollapsed)
         return false;
     var selectionRange = selection.getRangeAt(0);
@@ -303,12 +311,13 @@ Element.prototype.isInsertionCaretInside = function()
 
 /**
  * @param {string} tagName
+ * @param {string=} customElementType
  * @return {!Element}
  * @suppressGlobalPropertiesCheck
  */
-function createElement(tagName)
+function createElement(tagName, customElementType)
 {
-    return document.createElement(tagName);
+    return document.createElement(tagName, customElementType || "");
 }
 
 /**
@@ -324,11 +333,12 @@ function createTextNode(data)
 /**
  * @param {string} elementName
  * @param {string=} className
+ * @param {string=} customElementType
  * @return {!Element}
  */
-Document.prototype.createElementWithClass = function(elementName, className)
+Document.prototype.createElementWithClass = function(elementName, className, customElementType)
 {
-    var element = this.createElement(elementName);
+    var element = this.createElement(elementName, customElementType || "");
     if (className)
         element.className = className;
     return element;
@@ -337,12 +347,13 @@ Document.prototype.createElementWithClass = function(elementName, className)
 /**
  * @param {string} elementName
  * @param {string=} className
+ * @param {string=} customElementType
  * @return {!Element}
  * @suppressGlobalPropertiesCheck
  */
-function createElementWithClass(elementName, className)
+function createElementWithClass(elementName, className, customElementType)
 {
-    return document.createElementWithClass(elementName, className);
+    return document.createElementWithClass(elementName, className, customElementType);
 }
 
 /**
@@ -357,11 +368,12 @@ function createDocumentFragment()
 /**
  * @param {string} elementName
  * @param {string=} className
+ * @param {string=} customElementType
  * @return {!Element}
  */
-Element.prototype.createChild = function(elementName, className)
+Element.prototype.createChild = function(elementName, className, customElementType)
 {
-    var element = this.ownerDocument.createElementWithClass(elementName, className);
+    var element = this.ownerDocument.createElementWithClass(elementName, className, customElementType);
     this.appendChild(element);
     return element;
 }
@@ -588,7 +600,7 @@ Element.prototype.selectionLeftOffset = function()
 {
     // Calculate selection offset relative to the current element.
 
-    var selection = window.getSelection();
+    var selection = this.window().getSelection();
     if (!selection.containsNode(this, true))
         return null;
 
@@ -779,7 +791,7 @@ function consumeEvent(e)
 }
 
 /**
- * @param {!function()} callback
+ * @param {function()} callback
  * @suppressGlobalPropertiesCheck
  */
 function runOnWindowLoad(callback)
@@ -793,7 +805,7 @@ function runOnWindowLoad(callback)
         callback();
     }
 
-    if (document.readyState === "complete")
+    if (document.readyState === "complete" || document.readyState === "interactive")
         callback();
     else
         window.addEventListener("DOMContentLoaded", windowLoaded, false);

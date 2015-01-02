@@ -54,39 +54,32 @@ WebInspector.NetworkPanel = function()
     this._splitView.show(contentsElement);
     this._splitView.hideMain();
 
-    var defaultColumnsVisibility = WebInspector.NetworkLogView.defaultColumnsVisibility;
-    var networkLogColumnsVisibilitySetting = WebInspector.settings.createSetting("networkLogColumnsVisibility", defaultColumnsVisibility);
-    var savedColumnsVisibility = networkLogColumnsVisibilitySetting.get();
-    var columnsVisibility = {};
-    for (var columnId in defaultColumnsVisibility)
-        columnsVisibility[columnId] = savedColumnsVisibility.hasOwnProperty(columnId) ? savedColumnsVisibility[columnId] : defaultColumnsVisibility[columnId];
-    networkLogColumnsVisibilitySetting.set(columnsVisibility);
+    this._progressBarContainer = createElement("div");
+    this._createStatusbarButtons();
 
     /** @type {!WebInspector.NetworkLogView} */
-    this._networkLogView = new WebInspector.NetworkLogView(this._filterBar, networkLogColumnsVisibilitySetting);
-    this._networkLogView.show(this._splitView.sidebarElement());
+    this._networkLogView = new WebInspector.NetworkLogView(this._filterBar, this._progressBarContainer);
+    this._splitView.setSidebarView(this._networkLogView);
 
-    var viewsContainerView = new WebInspector.VBox();
-    this._viewsContainerElement = viewsContainerView.element;
-    this._viewsContainerElement.id = "network-views";
-    if (!this._networkLogView.usesLargeRows())
-        this._viewsContainerElement.classList.add("small");
-    viewsContainerView.show(this._splitView.mainElement());
+    this._detailsView = new WebInspector.VBox();
+    this._detailsView.element.classList.add("network-details-view");
+    this._splitView.setMainView(this._detailsView);
 
-    this._networkLogView.addEventListener(WebInspector.NetworkLogView.EventTypes.ViewCleared, this._onViewCleared, this);
-    this._networkLogView.addEventListener(WebInspector.NetworkLogView.EventTypes.RowSizeChanged, this._onRowSizeChanged, this);
+    this._closeButtonElement = createElementWithClass("div", "close-button");
+    this._closeButtonElement.classList.add("network-close-button");
+    this._closeButtonElement.addEventListener("click", this._showRequest.bind(this, null), false);
+
+    this._toggleRecordButton(true);
+    this._toggleHideColumnsButton(WebInspector.settings.networkLogHideColumns.get());
+    this._toggleLargerRequests(WebInspector.settings.resourcesLargeRows.get());
+    this._dockSideChanged();
+
+    WebInspector.dockController.addEventListener(WebInspector.DockController.Events.DockSideChanged, this._dockSideChanged.bind(this));
+    WebInspector.settings.splitVerticallyWhenDockedToRight.addChangeListener(this._dockSideChanged.bind(this));
+    WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.WillReloadPage, this._willReloadPage, this);
     this._networkLogView.addEventListener(WebInspector.NetworkLogView.EventTypes.RequestSelected, this._onRequestSelected, this);
     this._networkLogView.addEventListener(WebInspector.NetworkLogView.EventTypes.SearchCountUpdated, this._onSearchCountUpdated, this);
     this._networkLogView.addEventListener(WebInspector.NetworkLogView.EventTypes.SearchIndexUpdated, this._onSearchIndexUpdated, this);
-
-    this._closeButtonElement = this._viewsContainerElement.createChild("div", "close-button");
-    this._closeButtonElement.id = "network-close-button";
-    this._closeButtonElement.addEventListener("click", this._toggleGridMode.bind(this), false);
-    this._viewsContainerElement.appendChild(this._closeButtonElement);
-
-    var statusBarItems = this._networkLogView.statusBarItems();
-    for (var i = 0; i < statusBarItems.length; ++i)
-        this._panelStatusBar.appendStatusBarItem(statusBarItems[i]);
 
     /**
      * @this {WebInspector.NetworkPanel}
@@ -100,6 +93,134 @@ WebInspector.NetworkPanel = function()
 }
 
 WebInspector.NetworkPanel.prototype = {
+    _createStatusbarButtons: function()
+    {
+        this._recordButton = new WebInspector.StatusBarButton("", "record-status-bar-item");
+        this._recordButton.addEventListener("click", this._onRecordButtonClicked, this);
+        this._panelStatusBar.appendStatusBarItem(this._recordButton);
+
+        this._clearButton = new WebInspector.StatusBarButton(WebInspector.UIString("Clear"), "clear-status-bar-item");
+        this._clearButton.addEventListener("click", this._onClearButtonClicked, this);
+        this._panelStatusBar.appendStatusBarItem(this._clearButton);
+
+        this._panelStatusBar.appendStatusBarItem(this._filterBar.filterButton());
+
+        this._largerRequestsButton = new WebInspector.StatusBarButton("", "large-list-status-bar-item");
+        this._largerRequestsButton.addEventListener("click", this._onLargerRequestsClicked, this);
+        this._panelStatusBar.appendStatusBarItem(this._largerRequestsButton);
+
+        this._hideColumnsButton = new WebInspector.StatusBarButton("", "waterfall-status-bar-item");
+        this._hideColumnsButton.addEventListener("click", this._onHideColumnsButtonClicked, this);
+        this._panelStatusBar.appendStatusBarItem(this._hideColumnsButton);
+
+        this._preserveLogCheckbox = new WebInspector.StatusBarCheckbox(WebInspector.UIString("Preserve log"), WebInspector.UIString("Do not clear log on page reload / navigation."));
+        this._preserveLogCheckbox.inputElement.addEventListener("change", this._onPreserveLogCheckboxChanged.bind(this), false);
+        this._panelStatusBar.appendStatusBarItem(this._preserveLogCheckbox);
+
+        this._disableCacheCheckbox = new WebInspector.StatusBarCheckbox(WebInspector.UIString("Disable cache"), WebInspector.UIString("Disable cache (while DevTools is open)."), WebInspector.settings.cacheDisabled);
+        this._panelStatusBar.appendStatusBarItem(this._disableCacheCheckbox);
+
+        this._panelStatusBar.appendStatusBarItem(new WebInspector.StatusBarItemWrapper(this._progressBarContainer));
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _onRecordButtonClicked: function(event)
+    {
+        if (!this._recordButton.toggled())
+            this._networkLogView.reset();
+        this._toggleRecordButton(!this._recordButton.toggled());
+    },
+
+    /**
+     * @param {boolean} toggled
+     */
+    _toggleRecordButton: function(toggled)
+    {
+        this._recordButton.setToggled(toggled);
+        this._recordButton.setTitle(toggled ? WebInspector.UIString("Stop Recording Network Log") : WebInspector.UIString("Record Network Log"));
+        this._networkLogView.setRecording(toggled);
+    },
+
+    /**
+     * @param {!Event} event
+     */
+    _onPreserveLogCheckboxChanged: function(event)
+    {
+        this._networkLogView.setPreserveLog(this._preserveLogCheckbox.checked());
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _onClearButtonClicked: function(event)
+    {
+        this._networkLogView.reset();
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _willReloadPage: function(event)
+    {
+        this._toggleRecordButton(true);
+        if (!this._preserveLogCheckbox.checked())
+            this._networkLogView.reset();
+    },
+
+    /**
+     * @param {!WebInspector.Event=} event
+     */
+    _onLargerRequestsClicked: function(event)
+    {
+        this._toggleLargerRequests(!this._largerRequestsButton.toggled());
+    },
+
+    /**
+     * @param {boolean} toggled
+     */
+    _toggleLargerRequests: function(toggled)
+    {
+        WebInspector.settings.resourcesLargeRows.set(toggled);
+        this._largerRequestsButton.setToggled(toggled);
+        this._largerRequestsButton.setTitle(WebInspector.UIString(toggled ? "Use small resource rows." : "Use large resource rows."));
+        this._updateUI();
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _onHideColumnsButtonClicked: function(event)
+    {
+        this._toggleHideColumnsButton(!WebInspector.settings.networkLogHideColumns.get());
+    },
+
+    /**
+     * @param {boolean} toggled
+     */
+    _toggleHideColumnsButton: function(toggled)
+    {
+        WebInspector.settings.networkLogHideColumns.set(toggled);
+        this._hideColumnsButton.title = toggled ? WebInspector.UIString("Show columns.") : WebInspector.UIString("Hide columns.");
+        this._hideColumnsButton.setToggled(toggled);
+    },
+
+    /**
+     * @return {boolean}
+     */
+    _isDetailsPaneAtBottom: function()
+    {
+        return WebInspector.settings.splitVerticallyWhenDockedToRight.get() && WebInspector.dockController.isVertical();
+    },
+
+    _dockSideChanged: function()
+    {
+        var detailsViewAtBottom = this._isDetailsPaneAtBottom();
+        this._splitView.setVertical(!detailsViewAtBottom);
+        this._updateUI();
+    },
+
     /**
      * @param {!WebInspector.Event} event
      */
@@ -107,11 +228,11 @@ WebInspector.NetworkPanel.prototype = {
     {
         var toggled = /** @type {boolean} */ (event.data);
         this._filtersContainer.classList.toggle("hidden", !toggled);
-        this.element.classList.toggle("filters-toggled", toggled);
         this.doResize();
     },
 
     /**
+     * @override
      * @return {!Array.<!Element>}
      */
     elementsToRestoreScrollPositionsFor: function()
@@ -120,6 +241,7 @@ WebInspector.NetworkPanel.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.SearchableView}
      */
     searchableView: function()
@@ -128,12 +250,13 @@ WebInspector.NetworkPanel.prototype = {
     },
 
     /**
+     * @override
      * @param {!KeyboardEvent} event
      */
     handleShortcut: function(event)
     {
-        if (this._viewingRequestMode && event.keyCode === WebInspector.KeyboardShortcut.Keys.Esc.code) {
-            this._toggleGridMode();
+        if (this._networkItemView && event.keyCode === WebInspector.KeyboardShortcut.Keys.Esc.code) {
+            this._showRequest(null);
             event.handled = true;
             return;
         }
@@ -151,7 +274,7 @@ WebInspector.NetworkPanel.prototype = {
      */
     revealAndHighlightRequest: function(request)
     {
-        this._toggleGridMode();
+        this._showRequest(null);
         if (request)
             this._networkLogView.revealAndHighlightRequest(request);
     },
@@ -159,20 +282,9 @@ WebInspector.NetworkPanel.prototype = {
     /**
      * @param {!WebInspector.Event} event
      */
-    _onViewCleared: function(event)
-    {
-        this._closeVisibleRequest();
-        this._toggleGridMode();
-        this._viewsContainerElement.removeChildren();
-        this._viewsContainerElement.appendChild(this._closeButtonElement);
-    },
-
-    /**
-     * @param {!WebInspector.Event} event
-     */
     _onRowSizeChanged: function(event)
     {
-        this._viewsContainerElement.classList.toggle("small", !event.data.largeRows);
+        this._updateUI();
     },
 
     /**
@@ -198,7 +310,7 @@ WebInspector.NetworkPanel.prototype = {
      */
     _onRequestSelected: function(event)
     {
-        var request = /** @type {!WebInspector.NetworkRequest} */ (event.data);
+        var request = /** @type {?WebInspector.NetworkRequest} */ (event.data);
         this._showRequest(request);
     },
 
@@ -207,54 +319,33 @@ WebInspector.NetworkPanel.prototype = {
      */
     _showRequest: function(request)
     {
-        if (!request)
-            return;
-
-        this._toggleViewingRequestMode();
-
         if (this._networkItemView) {
             this._networkItemView.detach();
-            delete this._networkItemView;
+            this._networkItemView = null;
         }
 
-        var view = new WebInspector.NetworkItemView(request);
-        view.show(this._viewsContainerElement);
-        this._networkItemView = view;
-    },
-
-    _closeVisibleRequest: function()
-    {
-        this.element.classList.remove("viewing-resource");
-
-        if (this._networkItemView) {
-            this._networkItemView.detach();
-            delete this._networkItemView;
+        if (request) {
+            this._networkItemView = new WebInspector.NetworkItemView(request, this._networkLogView.timeCalculator());
+            this._networkItemView.insertBeforeTabStrip(this._closeButtonElement);
+            this._networkItemView.show(this._detailsView.element);
         }
-    },
 
-    _toggleGridMode: function()
-    {
-        if (this._viewingRequestMode) {
-            this._viewingRequestMode = false;
-            this.element.classList.remove("viewing-resource");
+        if (!!request)
+            this._splitView.showBoth();
+        else
             this._splitView.hideMain();
-        }
-
-        this._networkLogView.switchViewMode(true);
+        this._updateUI();
     },
 
-    _toggleViewingRequestMode: function()
+    _updateUI: function()
     {
-        if (this._viewingRequestMode)
-            return;
-        this._viewingRequestMode = true;
-
-        this.element.classList.add("viewing-resource");
-        this._splitView.showBoth();
-        this._networkLogView.switchViewMode(false);
+        var detailsPaneAtBottom = this._isDetailsPaneAtBottom();
+        this._detailsView.element.classList.toggle("network-details-view-tall-header", WebInspector.settings.resourcesLargeRows.get() && !detailsPaneAtBottom);
+        this._networkLogView.switchViewMode(!this._splitView.isResizable() || detailsPaneAtBottom);
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {boolean} shouldJump
      * @param {boolean=} jumpBackwards
@@ -264,12 +355,16 @@ WebInspector.NetworkPanel.prototype = {
         this._networkLogView.performSearch(searchConfig, shouldJump, jumpBackwards);
     },
 
+    /**
+     * @override
+     */
     jumpToPreviousSearchResult: function()
     {
         this._networkLogView.jumpToPreviousSearchResult();
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsCaseSensitiveSearch: function()
@@ -278,6 +373,7 @@ WebInspector.NetworkPanel.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsRegexSearch: function()
@@ -285,17 +381,24 @@ WebInspector.NetworkPanel.prototype = {
         return false;
     },
 
+    /**
+     * @override
+     */
     jumpToNextSearchResult: function()
     {
         this._networkLogView.jumpToNextSearchResult();
     },
 
+    /**
+     * @override
+     */
     searchCanceled: function()
     {
         this._networkLogView.searchCanceled();
     },
 
     /**
+     * @override
      * @param {!Event} event
      * @param {!WebInspector.ContextMenu} contextMenu
      * @param {!Object} target
@@ -317,9 +420,11 @@ WebInspector.NetworkPanel.prototype = {
          */
         function appendRevealItem(request)
         {
-            var revealText = WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Reveal in Network panel" : "Reveal in Network Panel");
-            contextMenu.appendItem(revealText, reveal.bind(this, request));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Reveal in Network ^panel"), reveal.bind(this, request));
         }
+
+        if (event.target.isSelfOrDescendant(this.element))
+            return;
 
         if (target instanceof WebInspector.Resource) {
             var resource = /** @type {!WebInspector.Resource} */ (target);
@@ -329,7 +434,7 @@ WebInspector.NetworkPanel.prototype = {
         }
         if (target instanceof WebInspector.UISourceCode) {
             var uiSourceCode = /** @type {!WebInspector.UISourceCode} */ (target);
-            var resource = WebInspector.resourceForURL(uiSourceCode.url);
+            var resource = WebInspector.resourceForURL(WebInspector.networkMapping.networkURL(uiSourceCode));
             if (resource && resource.request)
                 appendRevealItem.call(this, resource.request);
             return;
@@ -357,6 +462,7 @@ WebInspector.NetworkPanel.ContextMenuProvider = function()
 
 WebInspector.NetworkPanel.ContextMenuProvider.prototype = {
     /**
+     * @override
      * @param {!Event} event
      * @param {!WebInspector.ContextMenu} contextMenu
      * @param {!Object} target
@@ -377,355 +483,22 @@ WebInspector.NetworkPanel.RequestRevealer = function()
 
 WebInspector.NetworkPanel.RequestRevealer.prototype = {
     /**
+     * @override
      * @param {!Object} request
      * @param {number=} lineNumber
      * @return {!Promise}
      */
     reveal: function(request, lineNumber)
     {
-        if (request instanceof WebInspector.NetworkRequest) {
-
-            var panel = WebInspector.NetworkPanel._instance();
-            WebInspector.inspectorView.setCurrentPanel(panel);
-            panel.revealAndHighlightRequest(request);
-            return Promise.resolve();
-        }
-        return Promise.rejectWithError("Internal error: not a network request");
+        if (!(request instanceof WebInspector.NetworkRequest))
+            return Promise.reject(new Error("Internal error: not a network request"));
+        var panel = WebInspector.NetworkPanel._instance();
+        WebInspector.inspectorView.setCurrentPanel(panel);
+        panel.revealAndHighlightRequest(request);
+        return Promise.resolve();
     }
 }
 
-/**
- * @constructor
- * @implements {WebInspector.TimelineGrid.Calculator}
- */
-WebInspector.NetworkTimeCalculator = function(startAtZero)
-{
-    this.startAtZero = startAtZero;
-}
-
-/** @type {!WebInspector.UIStringFormat} */
-WebInspector.NetworkTimeCalculator._latencyDownloadTotalFormat = new WebInspector.UIStringFormat("%s latency, %s download (%s total)");
-
-/** @type {!WebInspector.UIStringFormat} */
-WebInspector.NetworkTimeCalculator._latencyFormat = new WebInspector.UIStringFormat("%s latency");
-
-/** @type {!WebInspector.UIStringFormat} */
-WebInspector.NetworkTimeCalculator._downloadFormat = new WebInspector.UIStringFormat("%s download");
-
-/** @type {!WebInspector.UIStringFormat} */
-WebInspector.NetworkTimeCalculator._fromServiceWorkerFormat = new WebInspector.UIStringFormat("%s (from ServiceWorker)");
-
-/** @type {!WebInspector.UIStringFormat} */
-WebInspector.NetworkTimeCalculator._fromCacheFormat = new WebInspector.UIStringFormat("%s (from cache)");
-
-WebInspector.NetworkTimeCalculator.prototype = {
-    /**
-     * @override
-     * @return {number}
-     */
-    paddingLeft: function()
-    {
-        return 0;
-    },
-
-    /**
-     * @override
-     * @param {number} time
-     * @return {number}
-     */
-    computePosition: function(time)
-    {
-        return (time - this._minimumBoundary) / this.boundarySpan() * this._workingArea;
-    },
-
-    /**
-     * @override
-     * @param {number} value
-     * @param {number=} precision
-     * @return {string}
-     */
-    formatTime: function(value, precision)
-    {
-        return Number.secondsToString(value);
-    },
-
-    /**
-     * @override
-     * @return {number}
-     */
-    minimumBoundary: function()
-    {
-        return this._minimumBoundary;
-    },
-
-    /**
-     * @override
-     * @return {number}
-     */
-    zeroTime: function()
-    {
-        return this._minimumBoundary;
-    },
-
-    /**
-     * @override
-     * @return {number}
-     */
-    maximumBoundary: function()
-    {
-        return this._maximumBoundary;
-    },
-
-    /**
-     * @override
-     * @return {number}
-     */
-    boundarySpan: function()
-    {
-        return this._maximumBoundary - this._minimumBoundary;
-    },
-
-    reset: function()
-    {
-        delete this._minimumBoundary;
-        delete this._maximumBoundary;
-    },
-
-    /**
-     * @return {number}
-     */
-    _value: function(item)
-    {
-        return 0;
-    },
-
-    /**
-     * @param {number} clientWidth
-     */
-    setDisplayWindow: function(clientWidth)
-    {
-        this._workingArea = clientWidth;
-    },
-
-    /**
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {!{start: number, middle: number, end: number}}
-     */
-    computeBarGraphPercentages: function(request)
-    {
-        if (request.startTime !== -1)
-            var start = ((request.startTime - this._minimumBoundary) / this.boundarySpan()) * 100;
-        else
-            var start = 0;
-
-        if (request.responseReceivedTime !== -1)
-            var middle = ((request.responseReceivedTime - this._minimumBoundary) / this.boundarySpan()) * 100;
-        else
-            var middle = (this.startAtZero ? start : 100);
-
-        if (request.endTime !== -1)
-            var end = ((request.endTime - this._minimumBoundary) / this.boundarySpan()) * 100;
-        else
-            var end = (this.startAtZero ? middle : 100);
-
-        if (this.startAtZero) {
-            end -= start;
-            middle -= start;
-            start = 0;
-        }
-
-        return {start: start, middle: middle, end: end};
-    },
-
-    /**
-     * @param {number} eventTime
-     * @return {number}
-     */
-    computePercentageFromEventTime: function(eventTime)
-    {
-        // This function computes a percentage in terms of the total loading time
-        // of a specific event. If startAtZero is set, then this is useless, and we
-        // want to return 0.
-        if (eventTime !== -1 && !this.startAtZero)
-            return ((eventTime - this._minimumBoundary) / this.boundarySpan()) * 100;
-
-        return 0;
-    },
-
-    /**
-     * @param {number} eventTime
-     * @return {boolean}
-     */
-    updateBoundariesForEventTime: function(eventTime)
-    {
-        if (eventTime === -1 || this.startAtZero)
-            return false;
-
-        if (typeof this._maximumBoundary === "undefined" || eventTime > this._maximumBoundary) {
-            this._maximumBoundary = eventTime;
-            return true;
-        }
-        return false;
-    },
-
-    /**
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {!{left: string, right: string, tooltip: (string|undefined)}}
-     */
-    computeBarGraphLabels: function(request)
-    {
-        var rightLabel = "";
-        if (request.responseReceivedTime !== -1 && request.endTime !== -1)
-            rightLabel = Number.secondsToString(request.endTime - request.responseReceivedTime);
-
-        var hasLatency = request.latency > 0;
-        if (hasLatency)
-            var leftLabel = Number.secondsToString(request.latency);
-        else
-            var leftLabel = rightLabel;
-
-        if (request.timing)
-            return {left: leftLabel, right: rightLabel};
-
-        if (hasLatency && rightLabel) {
-            var total = Number.secondsToString(request.duration);
-            var tooltip = WebInspector.NetworkTimeCalculator._latencyDownloadTotalFormat.format(leftLabel, rightLabel, total);
-        } else if (hasLatency)
-            var tooltip = WebInspector.NetworkTimeCalculator._latencyFormat.format(leftLabel);
-        else if (rightLabel)
-            var tooltip = WebInspector.NetworkTimeCalculator._downloadFormat.format(rightLabel);
-
-        if (request.fetchedViaServiceWorker)
-            tooltip = WebInspector.NetworkTimeCalculator._fromServiceWorkerFormat.format(tooltip);
-        else if (request.cached())
-            tooltip = WebInspector.NetworkTimeCalculator._fromCacheFormat.format(tooltip);
-        return {left: leftLabel, right: rightLabel, tooltip: tooltip};
-    },
-
-    /**
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {boolean}
-     */
-    updateBoundaries: function(request)
-    {
-        var didChange = false;
-
-        var lowerBound;
-        if (this.startAtZero)
-            lowerBound = 0;
-        else
-            lowerBound = this._lowerBound(request);
-
-        if (lowerBound !== -1 && (typeof this._minimumBoundary === "undefined" || lowerBound < this._minimumBoundary)) {
-            this._minimumBoundary = lowerBound;
-            didChange = true;
-        }
-
-        var upperBound = this._upperBound(request);
-        if (upperBound !== -1 && (typeof this._maximumBoundary === "undefined" || upperBound > this._maximumBoundary)) {
-            this._maximumBoundary = upperBound;
-            didChange = true;
-        }
-
-        return didChange;
-    },
-
-    /**
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {number}
-     */
-    _lowerBound: function(request)
-    {
-        return 0;
-    },
-
-    /**
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {number}
-     */
-    _upperBound: function(request)
-    {
-        return 0;
-    }
-}
-
-/**
- * @constructor
- * @extends {WebInspector.NetworkTimeCalculator}
- */
-WebInspector.NetworkTransferTimeCalculator = function()
-{
-    WebInspector.NetworkTimeCalculator.call(this, false);
-}
-
-WebInspector.NetworkTransferTimeCalculator.prototype = {
-    /**
-     * @override
-     * @param {number} value
-     * @param {number=} precision
-     * @return {string}
-     */
-    formatTime: function(value, precision)
-    {
-        return Number.secondsToString(value - this.zeroTime());
-    },
-
-    /**
-     * @override
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {number}
-     */
-    _lowerBound: function(request)
-    {
-        return request.startTime;
-    },
-
-    /**
-     * @override
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {number}
-     */
-    _upperBound: function(request)
-    {
-        return request.endTime;
-    },
-
-    __proto__: WebInspector.NetworkTimeCalculator.prototype
-}
-
-/**
- * @constructor
- * @extends {WebInspector.NetworkTimeCalculator}
- */
-WebInspector.NetworkTransferDurationCalculator = function()
-{
-    WebInspector.NetworkTimeCalculator.call(this, true);
-}
-
-WebInspector.NetworkTransferDurationCalculator.prototype = {
-    /**
-     * @override
-     * @param {number} value
-     * @param {number=} precision
-     * @return {string}
-     */
-    formatTime: function(value, precision)
-    {
-        return Number.secondsToString(value);
-    },
-
-    /**
-     * @override
-     * @param {!WebInspector.NetworkRequest} request
-     * @return {number}
-     */
-    _upperBound: function(request)
-    {
-        return request.duration;
-    },
-
-    __proto__: WebInspector.NetworkTimeCalculator.prototype
-}
 
 WebInspector.NetworkPanel.show = function()
 {
@@ -752,104 +525,11 @@ WebInspector.NetworkPanelFactory = function()
 
 WebInspector.NetworkPanelFactory.prototype = {
     /**
+     * @override
      * @return {!WebInspector.Panel}
      */
     createPanel: function()
     {
         return WebInspector.NetworkPanel._instance();
-    }
-}
-
-/**
- * @constructor
- */
-WebInspector.HARWriter = function()
-{
-}
-
-WebInspector.HARWriter.prototype = {
-    /**
-     * @param {!WebInspector.OutputStream} stream
-     * @param {!Array.<!WebInspector.NetworkRequest>} requests
-     * @param {!WebInspector.Progress} progress
-     */
-    write: function(stream, requests, progress)
-    {
-        this._stream = stream;
-        this._harLog = (new WebInspector.HARLog(requests)).build();
-        this._pendingRequests = 1; // Guard against completing resource transfer before all requests are made.
-        var entries = this._harLog.entries;
-        for (var i = 0; i < entries.length; ++i) {
-            var content = requests[i].content;
-            if (typeof content === "undefined" && requests[i].finished) {
-                ++this._pendingRequests;
-                requests[i].requestContent(this._onContentAvailable.bind(this, entries[i], requests[i]));
-            } else if (content !== null)
-                this._setEntryContent(entries[i], requests[i]);
-        }
-        var compositeProgress = new WebInspector.CompositeProgress(progress);
-        this._writeProgress = compositeProgress.createSubProgress();
-        if (--this._pendingRequests) {
-            this._requestsProgress = compositeProgress.createSubProgress();
-            this._requestsProgress.setTitle(WebInspector.UIString("Collecting content…"));
-            this._requestsProgress.setTotalWork(this._pendingRequests);
-        } else
-            this._beginWrite();
-    },
-
-    /**
-     * @param {!Object} entry
-     * @param {!WebInspector.NetworkRequest} request
-     */
-    _setEntryContent: function(entry, request)
-    {
-        if (request.content !== null)
-            entry.response.content.text = request.content;
-        if (request.contentEncoded)
-            entry.response.content.encoding = "base64";
-    },
-
-    /**
-     * @param {!Object} entry
-     * @param {!WebInspector.NetworkRequest} request
-     * @param {?string} content
-     */
-    _onContentAvailable: function(entry, request, content)
-    {
-        this._setEntryContent(entry, request);
-        if (this._requestsProgress)
-            this._requestsProgress.worked();
-        if (!--this._pendingRequests) {
-            this._requestsProgress.done();
-            this._beginWrite();
-        }
-    },
-
-    _beginWrite: function()
-    {
-        const jsonIndent = 2;
-        this._text = JSON.stringify({log: this._harLog}, null, jsonIndent);
-        this._writeProgress.setTitle(WebInspector.UIString("Writing file…"));
-        this._writeProgress.setTotalWork(this._text.length);
-        this._bytesWritten = 0;
-        this._writeNextChunk(this._stream);
-    },
-
-    /**
-     * @param {!WebInspector.OutputStream} stream
-     * @param {string=} error
-     */
-    _writeNextChunk: function(stream, error)
-    {
-        if (this._bytesWritten >= this._text.length || error) {
-            stream.close();
-            this._writeProgress.done();
-            return;
-        }
-        const chunkSize = 100000;
-        var text = this._text.substring(this._bytesWritten, this._bytesWritten + chunkSize);
-        this._bytesWritten += text.length;
-        stream.write(text, this._writeNextChunk.bind(this));
-        this._writeProgress.setWorked(this._bytesWritten);
     }
 }

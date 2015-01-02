@@ -28,6 +28,7 @@ WebInspector.FileBasedSearchResultsPane.fileMatchesShownAtOnce = 20;
 
 WebInspector.FileBasedSearchResultsPane.prototype = {
     /**
+     * @override
      * @param {!WebInspector.FileBasedSearchResult} searchResult
      */
     addSearchResult: function(searchResult)
@@ -183,7 +184,7 @@ WebInspector.FileBasedSearchResultsPane.FileTreeElement.prototype = {
      */
     _createAnchor: function(uiSourceCode, lineNumber, columnNumber)
     {
-        return WebInspector.Linkifier.linkifyUsingRevealer(uiSourceCode.uiLocation(lineNumber, columnNumber), "", uiSourceCode.url, lineNumber);
+        return WebInspector.Linkifier.linkifyUsingRevealer(uiSourceCode.uiLocation(lineNumber, columnNumber), "");
     },
 
     /**
@@ -208,7 +209,6 @@ WebInspector.FileBasedSearchResultsPane.FileTreeElement.prototype = {
     {
         regex.lastIndex = 0;
         var match;
-        var offset = 0;
         var matchRanges = [];
         while ((regex.lastIndex < lineContent.length) && (match = regex.exec(lineContent)))
             matchRanges.push(new WebInspector.SourceRange(match.index, match[0].length));

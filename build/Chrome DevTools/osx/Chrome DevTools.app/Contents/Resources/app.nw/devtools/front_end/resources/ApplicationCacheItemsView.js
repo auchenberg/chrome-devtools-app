@@ -33,11 +33,10 @@ WebInspector.ApplicationCacheItemsView = function(model, frameId)
 
     this._model = model;
 
-    this.element.classList.add("storage-view");
-    this.element.classList.add("table");
+    this.element.classList.add("storage-view", "table");
 
     // FIXME: Needs better tooltip. (Localized)
-    this.deleteButton = new WebInspector.StatusBarButton(WebInspector.UIString("Delete"), "delete-storage-status-bar-item");
+    this.deleteButton = new WebInspector.StatusBarButton(WebInspector.UIString("Delete"), "delete-status-bar-item");
     this.deleteButton.setVisible(false);
     this.deleteButton.addEventListener("click", this._deleteButtonClicked, this);
 
@@ -45,8 +44,6 @@ WebInspector.ApplicationCacheItemsView = function(model, frameId)
     this.connectivityMessage = createElement("span");
     this.connectivityMessage.className = "storage-application-cache-connectivity";
     this.connectivityMessage.textContent = "";
-
-    this.divider = new WebInspector.StatusBarSeparator();
 
     this.statusIcon = createElement("div");
     this.statusMessage = createElement("span");
@@ -78,11 +75,10 @@ WebInspector.ApplicationCacheItemsView.prototype = {
     {
         return [
             this.deleteButton,
-            new WebInspector.StatusBarItem(this.connectivityIcon),
-            new WebInspector.StatusBarItem(this.connectivityMessage),
-            this.divider,
-            new WebInspector.StatusBarItem(this.statusIcon),
-            new WebInspector.StatusBarItem(this.statusMessage)
+            new WebInspector.StatusBarItemWrapper(this.connectivityIcon),
+            new WebInspector.StatusBarItemWrapper(this.connectivityMessage),
+            new WebInspector.StatusBarItemWrapper(this.statusIcon),
+            new WebInspector.StatusBarItemWrapper(this.statusMessage)
         ];
     },
 
@@ -218,7 +214,7 @@ WebInspector.ApplicationCacheItemsView.prototype = {
         }
         function localeCompare(field, resource1, resource2)
         {
-             return sortDirection * (resource1[field] + "").localeCompare(resource2[field] + "")
+             return sortDirection * (resource1[field] + "").localeCompare(resource2[field] + "");
         }
 
         var comparator;

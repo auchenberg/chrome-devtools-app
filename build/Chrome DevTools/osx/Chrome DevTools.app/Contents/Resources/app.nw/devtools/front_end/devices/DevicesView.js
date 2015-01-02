@@ -26,18 +26,6 @@ WebInspector.DevicesView = function()
 WebInspector.DevicesView.MinVersionNewTab = 29;
 
 
-var Adb = {};
-
-/**
- * @typedef {{id: string, adbBrowserChromeVersion: string, compatibleVersion: boolean, adbBrowserName: string, source: string, adbBrowserVersion: string}}
- */
-Adb.Browser;
-
-/**
- * @typedef {{id: string, adbModel: string, adbSerial: string, browsers: !Array.<!Adb.Browser>, adbPortStatus: !Array.<number>, adbConnected: boolean}}
- */
-Adb.Device;
-
 WebInspector.DevicesView.Events = {
     DevicesChanged: "DevicesChanged"
 };
@@ -138,7 +126,7 @@ WebInspector.DevicesView.prototype = {
 
             var browsers = device.browsers.filter(function(browser) { return browser.adbBrowserChromeVersion; });
 
-            var newBrowserIds = browsers.map(function(browser) { return browser.id });
+            var newBrowserIds = browsers.map(function(browser) { return browser.id; });
             Array.prototype.forEach.call(deviceSection.querySelectorAll(".browser"), removeObsolete.bind(null, newBrowserIds));
 
             for (var b = 0; b < browsers.length; b++) {
@@ -161,10 +149,8 @@ WebInspector.DevicesView.prototype = {
                             ? WebInspector.UIString("You may need a newer version of desktop Chrome. Please try Chrome %s  or later.", browser.adbBrowserVersion)
                             : WebInspector.UIString("You may need a newer version of Chrome on your device. Please try Chrome %s or later.", WebInspector.DevicesView.MinVersionNewTab);
                     } else {
-                        var newPageButton = browserSection.createChild("button", "text-button");
-                        newPageButton.textContent = WebInspector.UIString("Try here");
-                        newPageButton.title = WebInspector.UIString("Inspect current page in this browser.");
-                        newPageButton.addEventListener("click", InspectorFrontendHost.openUrlOnRemoteDeviceAndInspect.bind(null, browser.id, WebInspector.targetManager.inspectedPageURL()), true);
+                        var clickHandler = InspectorFrontendHost.openUrlOnRemoteDeviceAndInspect.bind(null, browser.id, WebInspector.targetManager.inspectedPageURL());
+                        browserSection.appendChild(createTextButton(WebInspector.UIString("Try here"), clickHandler, "", WebInspector.UIString("Inspect current page in this browser.")));
                     }
                 }
 

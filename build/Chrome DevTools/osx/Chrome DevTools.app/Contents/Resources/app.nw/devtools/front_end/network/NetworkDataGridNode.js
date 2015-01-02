@@ -41,6 +41,7 @@ WebInspector.NetworkDataGridNode = function(parentView, request)
     this._request = request;
     this._linkifier = new WebInspector.Linkifier();
     this._staleGraph = true;
+    this._isNavigationRequest = false;
 }
 
 WebInspector.NetworkDataGridNode._hoveredRowSymbol = Symbol("hoveredRow");
@@ -54,6 +55,12 @@ WebInspector.NetworkDataGridNode.prototype = {
         return this._request;
     },
 
+    markAsNavigationRequest: function()
+    {
+        this._isNavigationRequest = true;
+        this.refresh();
+    },
+
     /**
      * @override
      * @return {number}
@@ -63,14 +70,18 @@ WebInspector.NetworkDataGridNode.prototype = {
         return this._parentView.rowHeight();
     },
 
-    /** override */
+    /**
+     * @override
+     */
     createCells: function()
     {
+        this._showTiming = Runtime.experiments.isEnabled("requestTimingInNetworkTimeline") && WebInspector.settings.networkShowRequestTimingInTimeline.get();
         this._nameCell = null;
         this._timelineCell = null;
         this._initiatorCell = null;
 
         this._element.classList.toggle("network-error-row", this._isFailed());
+        this._element.classList.toggle("network-navigation-row", this._isNavigationRequest);
         WebInspector.SortableDataGridNode.prototype.createCells.call(this);
 
         this._updateGraph();
@@ -89,6 +100,7 @@ WebInspector.NetworkDataGridNode.prototype = {
         case "timeline": this._createTimelineBar(cell); break;
         case "method": cell.setTextAndTitle(this._request.requestMethod); break;
         case "status": this._renderStatusCell(cell); break;
+        case "protocol": cell.setTextAndTitle(this._request.protocol); break;
         case "scheme": cell.setTextAndTitle(this._request.scheme); break;
         case "domain": cell.setTextAndTitle(this._request.domain); break;
         case "remoteAddress": cell.setTextAndTitle(this._request.remoteAddress()); break;
@@ -191,6 +203,9 @@ WebInspector.NetworkDataGridNode.prototype = {
 
         this._barAreaElement = cell.createChild("div", "network-graph-bar-area");
         this._barAreaElement.request = this._request;
+
+        if (this._showTiming)
+            return;
 
         var type = this._request.resourceType().name();
         var cached = this._request.cached();
@@ -380,11 +395,41 @@ WebInspector.NetworkDataGridNode.prototype = {
             this.dataGrid.scheduleUpdate();
     },
 
+    _updateTimingGraph: function()
+    {
+        var calculator = this._parentView.calculator();
+        var timeRanges = WebInspector.RequestTimingView.calculateRequestTimeRanges(this._request);
+
+        var container = this._barAreaElement;
+        var nextBar = container.firstChild;
+        for (var i = 0; i < timeRanges.length; ++i) {
+            var range = timeRanges[i];
+            var start = calculator.computePercentageFromEventTime(range.start);
+            var end = calculator.computePercentageFromEventTime(range.end);
+            if (!nextBar)
+                nextBar = container.createChild("div");
+            nextBar.className = "network-graph-bar request-timing";
+            nextBar.classList.add(range.name);
+            nextBar.style.setProperty("left", start + "%");
+            nextBar.style.setProperty("right", (100 - end) + "%");
+            nextBar = nextBar.nextSibling;
+        }
+        while (nextBar) {
+            var nextSibling = nextBar.nextSibling;
+            nextBar.remove();
+            nextBar = nextSibling;
+        }
+    },
+
     _updateGraph: function()
     {
         this._staleGraph = false;
         if (!this._timelineCell)
             return;
+        if (this._showTiming) {
+            this._updateTimingGraph();
+            return;
+        }
 
         var calculator = this._parentView.calculator();
         var percentages = calculator.computeBarGraphPercentages(this._request);

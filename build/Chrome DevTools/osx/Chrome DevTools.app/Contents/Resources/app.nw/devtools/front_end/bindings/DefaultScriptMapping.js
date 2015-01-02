@@ -48,6 +48,7 @@ WebInspector.DefaultScriptMapping = function(debuggerModel, workspace, debuggerW
 
 WebInspector.DefaultScriptMapping.prototype = {
     /**
+     * @override
      * @param {!WebInspector.DebuggerModel.Location} rawLocation
      * @return {!WebInspector.UILocation}
      */
@@ -64,6 +65,7 @@ WebInspector.DefaultScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @param {number} columnNumber
@@ -96,6 +98,7 @@ WebInspector.DefaultScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isIdentity: function()
@@ -104,6 +107,7 @@ WebInspector.DefaultScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @return {boolean}
@@ -160,6 +164,7 @@ WebInspector.DebuggerProjectDelegate = function(workspace, id, type)
 
 WebInspector.DebuggerProjectDelegate.prototype = {
     /**
+     * @override
      * @return {string}
      */
     displayName: function()

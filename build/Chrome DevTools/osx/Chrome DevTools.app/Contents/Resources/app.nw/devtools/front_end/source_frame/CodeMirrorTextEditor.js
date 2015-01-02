@@ -534,6 +534,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this.setSelections(selections);
     },
 
+    /**
+     * @override
+     */
     dispose: function()
     {
         WebInspector.settings.textEditorIndent.removeChangeListener(this._updateEditorIndentation, this);
@@ -547,6 +550,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.setOption("autoCloseBrackets", WebInspector.settings.textEditorBracketMatching.get() ? { explode: false } : false);
     },
 
+    /**
+     * @override
+     */
     wasShown: function()
     {
         if (this._wasOnceShown)
@@ -555,6 +561,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.refresh();
     },
 
+    /**
+     * @override
+     */
     willHide: function()
     {
         delete this._editorSizeInSync;
@@ -625,6 +634,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     indent: function()
@@ -641,6 +651,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!RegExp} regex
      * @param {?WebInspector.TextRange} range
      */
@@ -677,25 +688,28 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         }
     },
 
+    /**
+     * @override
+     */
     undo: function()
     {
         this._codeMirror.undo();
     },
 
+    /**
+     * @override
+     */
     redo: function()
     {
         this._codeMirror.redo();
     },
 
-    /**
-     * // FIXME: remove this suppression.
-     * @suppressGlobalPropertiesCheck
-     */
     _setupWhitespaceHighlight: function()
     {
-        if (WebInspector.CodeMirrorTextEditor._whitespaceStyleInjected || !WebInspector.settings.showWhitespacesInEditor.get())
+        var doc = this.element.ownerDocument;
+        if (doc._codeMirrorWhitespaceStyleInjected || !WebInspector.settings.showWhitespacesInEditor.get())
             return;
-        WebInspector.CodeMirrorTextEditor._whitespaceStyleInjected = true;
+        doc._codeMirrorWhitespaceStyleInjected = true;
         const classBase = ".show-whitespaces .CodeMirror .cm-whitespace-";
         const spaceChar = "·";
         var spaceChars = "";
@@ -705,9 +719,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
             var rule = classBase + i + "::before { content: '" + spaceChars + "';}\n";
             rules += rule;
         }
-        var style = createElement("style");
+        var style = doc.createElement("style");
         style.textContent = rules;
-        document.head.appendChild(style);
+        doc.head.appendChild(style);
     },
 
     _handleKeyDown: function(e)
@@ -723,6 +737,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {?WebInspector.CompletionDictionary} dictionary
      */
     setCompletionDictionary: function(dictionary)
@@ -735,6 +750,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {number} column
      * @return {?{x: number, y: number, height: number}}
@@ -754,11 +770,10 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} x
      * @param {number} y
      * @return {?WebInspector.TextRange}
-     * // FIXME: remove this suppression.
-     * @suppressGlobalPropertiesCheck
      */
     coordinatesToCursorPosition: function(x, y)
     {
@@ -774,6 +789,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {number} column
      * @return {?{startColumn: number, endColumn: number, type: string}}
@@ -793,6 +809,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextRange} textRange
      * @return {string}
      */
@@ -803,6 +820,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isClean: function()
@@ -810,6 +828,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         return this._codeMirror.isClean();
     },
 
+    /**
+     * @override
+     */
     markClean: function()
     {
         this._codeMirror.markClean();
@@ -885,6 +906,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {string} mimeType
      */
     setMimeType: function(mimeType)
@@ -899,15 +921,17 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {boolean} readOnly
      */
     setReadOnly: function(readOnly)
     {
-        this.element.classList.toggle("CodeMirror-readonly", readOnly)
+        this.element.classList.toggle("CodeMirror-readonly", readOnly);
         this._codeMirror.setOption("readOnly", readOnly);
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     readOnly: function()
@@ -916,6 +940,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!Object} highlightDescriptor
      */
     removeHighlight: function(highlightDescriptor)
@@ -924,6 +949,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextRange} range
      * @param {string} cssClass
      * @return {!Object}
@@ -941,6 +967,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -958,11 +985,17 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.focus();
     },
 
+    /**
+     * @override
+     */
     beginUpdates: function()
     {
         ++this._nestedUpdatesCounter;
     },
 
+    /**
+     * @override
+     */
     endUpdates: function()
     {
         if (!--this._nestedUpdatesCounter)
@@ -1013,6 +1046,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {boolean} disabled
      * @param {boolean} conditional
@@ -1026,6 +1060,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      */
     removeBreakpoint: function(lineNumber)
@@ -1043,6 +1078,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      */
     setExecutionLine: function(lineNumber)
@@ -1054,6 +1090,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.addLineClass(this._executionLine, "wrap", "cm-execution-line");
     },
 
+    /**
+     * @override
+     */
     clearExecutionLine: function()
     {
         this.clearPositionHighlight();
@@ -1063,6 +1102,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {string} className
      * @param {boolean} toggled
@@ -1090,10 +1130,11 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         var lineInfo = this._codeMirror.lineInfo(lineNumber);
         var wrapClass = lineInfo.wrapClass || "";
         var classNames = wrapClass.split(" ");
-        return classNames.indexOf(className) !== -1
+        return classNames.indexOf(className) !== -1;
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {!Element} element
      */
@@ -1104,6 +1145,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {!Element} element
      */
@@ -1115,6 +1157,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber 0-based
      * @param {number=} columnNumber
      * @param {boolean=} shouldHighlight
@@ -1138,6 +1181,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this.setSelection(WebInspector.TextRange.createFromLocation(lineNumber, columnNumber));
     },
 
+    /**
+     * @override
+     */
     clearPositionHighlight: function()
     {
         if (this._clearHighlightTimeout)
@@ -1150,6 +1196,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!Element>}
      */
     elementsToRestoreScrollPositionsFor: function()
@@ -1158,6 +1205,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextEditor} textEditor
      */
     inheritScrollPositions: function(textEditor)
@@ -1197,6 +1245,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.scrollTo(scrollLeft, scrollTop);
     },
 
+    /**
+     * @override
+     */
     onResize: function()
     {
         this._autocompleteController.finishAutocomplete();
@@ -1209,6 +1260,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextRange} range
      * @param {string} text
      * @return {!WebInspector.TextRange}
@@ -1346,6 +1398,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      */
     scrollToLine: function(lineNumber)
@@ -1356,6 +1409,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     firstVisibleLine: function()
@@ -1364,6 +1418,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     lastVisibleLine: function()
@@ -1373,6 +1428,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.TextRange}
      */
     selection: function()
@@ -1384,6 +1440,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!WebInspector.TextRange>}
      */
     selections: function()
@@ -1398,6 +1455,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.TextRange}
      */
     lastSelection: function()
@@ -1406,6 +1464,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextRange} textRange
      */
     setSelection: function(textRange)
@@ -1446,6 +1505,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {string} text
      */
     setText: function(text)
@@ -1466,6 +1526,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     text: function()
@@ -1474,6 +1535,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.TextRange}
      */
     range: function()
@@ -1484,6 +1546,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @return {string}
      */
@@ -1493,6 +1556,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     get linesCount()
@@ -1501,6 +1565,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} line
      * @param {string} name
      * @param {?Object} value
@@ -1515,6 +1580,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} line
      * @param {string} name
      * @return {?Object} value
@@ -1528,6 +1594,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} line
      * @param {string} name
      */
@@ -1541,6 +1608,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     },
 
     /**
+     * @override
      * @param {number} lineNumber
      * @param {number} columnNumber
      * @return {!WebInspector.TextEditorPositionHandle}
@@ -1568,6 +1636,7 @@ WebInspector.CodeMirrorPositionHandle = function(codeMirror, pos)
 
 WebInspector.CodeMirrorPositionHandle.prototype = {
     /**
+     * @override
      * @return {?{lineNumber: number, columnNumber: number}}
      */
     resolve: function()
@@ -1582,6 +1651,7 @@ WebInspector.CodeMirrorPositionHandle.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.TextEditorPositionHandle} positionHandle
      * @return {boolean}
      */
@@ -1664,7 +1734,7 @@ WebInspector.CodeMirrorTextEditor.TokenHighlighter.prototype = {
         var selectedText = selections[0];
         if (this._isWord(selectedText, selectionStart.line, selectionStart.ch, selectionEnd.ch)) {
             if (selectionStart)
-                this._codeMirror.addLineClass(selectionStart.line, "wrap", "cm-line-with-selection")
+                this._codeMirror.addLineClass(selectionStart.line, "wrap", "cm-line-with-selection");
             this._setHighlighter(this._tokenHighlighter.bind(this, selectedText, selectionStart), selectionStart);
         }
     },
@@ -1721,7 +1791,7 @@ WebInspector.CodeMirrorTextEditor.TokenHighlighter.prototype = {
             return "search-highlight search-highlight-start";
         }
 
-        while (!stream.match(regex, false) && stream.next()) {};
+        while (!stream.match(regex, false) && stream.next()) {}
     },
 
     /**
@@ -1945,23 +2015,35 @@ WebInspector.CodeMirrorTextEditor.AutocompleteControllerAPI.prototype = {
 WebInspector.CodeMirrorTextEditor.DummyAutocompleteController = function() { }
 
 WebInspector.CodeMirrorTextEditor.DummyAutocompleteController.prototype = {
+    /**
+     * @override
+     */
     dispose: function() { },
 
     /**
+     * @override
      * @param {boolean} enabled
      */
     setEnabled: function(enabled) { },
 
     /**
+     * @override
      * @param {string} mimeType
      */
     setMimeType: function(mimeType) { },
 
+    /**
+     * @override
+     */
     autocomplete: function() { },
 
+    /**
+     * @override
+     */
     finishAutocomplete: function() { },
 
     /**
+     * @override
      * @param {!Event} e
      * @return {boolean}
      */
@@ -2016,6 +2098,9 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
         this._addTextToCompletionDictionary(this._textEditor.text());
     },
 
+    /**
+     * @override
+     */
     dispose: function()
     {
         this._codeMirror.off("changes", this._changes);
@@ -2028,6 +2113,7 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
     },
 
     /**
+     * @override
      * @param {boolean} enabled
      */
     setEnabled: function(enabled)
@@ -2042,6 +2128,7 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
     },
 
     /**
+     * @override
      * @param {string} mimeType
      */
     setMimeType: function(mimeType)
@@ -2180,6 +2267,9 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
         return true;
     },
 
+    /**
+     * @override
+     */
     autocomplete: function()
     {
         this._initializeIfNeeded();
@@ -2227,6 +2317,9 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
             this.finishAutocomplete();
     },
 
+    /**
+     * @override
+     */
     finishAutocomplete: function()
     {
         if (!this._suggestBox)
@@ -2238,6 +2331,7 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
     },
 
     /**
+     * @override
      * @param {!Event} e
      * @return {boolean}
      */
@@ -2258,6 +2352,7 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
     },
 
     /**
+     * @override
      * @param {string} suggestion
      * @param {boolean=} isIntermediateSuggestion
      */
@@ -2266,6 +2361,9 @@ WebInspector.CodeMirrorTextEditor.AutocompleteController.prototype = {
         this._currentSuggestion = suggestion;
     },
 
+    /**
+     * @override
+     */
     acceptSuggestion: function()
     {
         if (this._prefixRange.endColumn - this._prefixRange.startColumn === this._currentSuggestion.length)

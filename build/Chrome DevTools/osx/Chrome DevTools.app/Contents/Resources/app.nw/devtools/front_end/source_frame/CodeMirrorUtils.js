@@ -46,7 +46,7 @@ WebInspector.CodeMirrorUtils.toPos = function(range)
     return {
         start: new CodeMirror.Pos(range.startLine, range.startColumn),
         end: new CodeMirror.Pos(range.endLine, range.endColumn)
-    }
+    };
 }
 
 /**
@@ -61,6 +61,7 @@ WebInspector.CodeMirrorUtils.toRange = function(start, end)
 
 WebInspector.CodeMirrorUtils.prototype = {
     /**
+     * @override
      * @return {string}
      */
     editorContent: function(editingContext) {
@@ -134,6 +135,7 @@ WebInspector.CodeMirrorUtils.TokenizerFactory = function() { }
 
 WebInspector.CodeMirrorUtils.TokenizerFactory.prototype = {
     /**
+     * @override
      * @param {string} mimeType
      * @return {function(string, function(string, ?string, number, number))}
      */

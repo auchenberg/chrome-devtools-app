@@ -122,7 +122,7 @@ WebInspector.RevisionHistoryView.prototype = {
 
         WebInspector.notifications.dispatchEventToListeners(WebInspector.UserMetrics.UserAction, {
             action: WebInspector.UserMetrics.UserActionNames.ApplyOriginalContent,
-            url: uiSourceCode.url
+            url: WebInspector.networkMapping.networkURL(uiSourceCode)
         });
     },
 
@@ -135,7 +135,7 @@ WebInspector.RevisionHistoryView.prototype = {
 
         WebInspector.notifications.dispatchEventToListeners(WebInspector.UserMetrics.UserAction, {
             action: WebInspector.UserMetrics.UserActionNames.RevertRevision,
-            url: uiSourceCode.url
+            url: WebInspector.networkMapping.networkURL(uiSourceCode)
         });
     },
 
@@ -267,8 +267,6 @@ WebInspector.RevisionHistoryTreeElement.prototype = {
                 var n = code[3];
                 var ne = code[4];
                 var rowCount = Math.max(be - b, ne - n);
-                var topRows = [];
-                var bottomRows = [];
                 for (var i = 0; i < rowCount; i++) {
                     if (change === "delete" || (change === "replace" && b < be)) {
                         var lineNumber = b++;
@@ -310,7 +308,6 @@ WebInspector.RevisionHistoryTreeElement.prototype = {
         var child = new TreeElement("", null, false);
         child.selectable = false;
         this.appendChild(child);
-        var lineElement = createElement("span");
 
         function appendLineNumber(lineNumber)
         {

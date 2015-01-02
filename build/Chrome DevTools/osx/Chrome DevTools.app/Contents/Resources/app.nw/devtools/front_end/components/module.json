@@ -1,4 +1,14 @@
 {
+    "extensions": [
+        {
+            "type": "ui-setting",
+            "section": "Console",
+            "title": "Enable custom formatters",
+            "settingName": "enableCustomFormatters",
+            "settingType": "checkbox",
+            "experiment": "customObjectFormatters"
+        }
+    ],
     "dependencies": [
         "bindings",
         "platform",
@@ -18,7 +28,8 @@
         "ObjectPopoverHelper.js",
         "ObjectPropertiesSection.js",
         "ShortcutsScreen.js",
-        "TargetsComboBoxController.js"
+        "TargetsComboBoxController.js",
+        "CustomPreviewSection.js"
     ],
     "stylesheets": [
         "breakpointsList.css"

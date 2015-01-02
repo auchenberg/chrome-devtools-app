@@ -107,13 +107,13 @@ WebInspector.AuditFormatters.prototype = {
         case "boolean":
         case "number":
             formatter = WebInspector.AuditFormatters.Registry.text;
-        args = [ value.toString() ];
+        args = [value.toString()];
         break;
 
         case "object":
             if (value instanceof Node)
                 return value;
-            if (value instanceof Array) {
+            if (Array.isArray(value)) {
                 formatter = WebInspector.AuditFormatters.Registry.concat;
                 args = value;
             } else if (value.type && value.arguments) {
@@ -135,7 +135,7 @@ WebInspector.AuditFormatters.prototype = {
      */
     partiallyApply: function(formatters, thisArgument, value)
     {
-        if (value instanceof Array)
+        if (Array.isArray(value))
             return value.map(this.partiallyApply.bind(this, formatters, thisArgument));
         if (typeof value === "object" && typeof formatters[value.type] === "function" && value.arguments)
             return formatters[value.type].apply(thisArgument, value.arguments);

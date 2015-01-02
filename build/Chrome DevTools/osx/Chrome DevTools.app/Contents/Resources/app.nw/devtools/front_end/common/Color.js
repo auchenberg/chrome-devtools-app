@@ -249,7 +249,7 @@ WebInspector.Color.prototype = {
     /**
      * @return {?string}
      */
-    toString: function(format)
+    asString: function(format)
     {
         if (!format)
             format = this._format;
@@ -471,6 +471,7 @@ WebInspector.Color._hsl2rgb = function(hsl)
 WebInspector.Color.Nicknames = {
     "aliceblue":          [240,248,255],
     "antiquewhite":       [250,235,215],
+    "aqua":               [0,255,255],
     "aquamarine":         [127,255,212],
     "azure":              [240,255,255],
     "beige":              [245,245,220],
@@ -516,6 +517,7 @@ WebInspector.Color.Nicknames = {
     "firebrick":          [178,34,34],
     "floralwhite":        [255,250,240],
     "forestgreen":        [34,139,34],
+    "fuchsia":            [255,0,255],
     "gainsboro":          [220,220,220],
     "ghostwhite":         [248,248,255],
     "gold":               [255,215,0],
@@ -633,6 +635,9 @@ WebInspector.Color.PageHighlight = {
     ShapeMargin: WebInspector.Color.fromRGBA([96, 82, 127, .6])
 }
 
+/**
+ * @enum {string}
+ */
 WebInspector.Color.Format = {
     Original: "original",
     Nickname: "nickname",

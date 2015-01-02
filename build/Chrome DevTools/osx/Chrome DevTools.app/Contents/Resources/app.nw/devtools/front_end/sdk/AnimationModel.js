@@ -11,10 +11,12 @@
 WebInspector.AnimationModel = function(target)
 {
     WebInspector.SDKModel.call(this, WebInspector.AnimationModel, target);
-
     this._agent = target.animationAgent();
-    /** @type {!Object.<*, !Array.<function(?Array.<!WebInspector.AnimationModel.AnimationPlayer>)>>} */
-    this._nodeIdToCallbackData = {};
+    target.registerAnimationDispatcher(new WebInspector.AnimationDispatcher(this));
+}
+
+WebInspector.AnimationModel.Events = {
+    AnimationPlayerCreated: "AnimationPlayerCreated"
 }
 
 WebInspector.AnimationModel.prototype = {
@@ -40,6 +42,36 @@ WebInspector.AnimationModel.prototype = {
         }
 
         this._agent.getAnimationPlayersForNode(nodeId, showSubtreeAnimations, resultCallback.bind(this));
+    },
+
+    /**
+     * @param {!DOMAgent.NodeId} nodeId
+     * @param {boolean} showSubtreeAnimations
+     */
+    startListening: function(nodeId, showSubtreeAnimations)
+    {
+        if (!this._enabled)
+            this._agent.enable(this._wasEnabled.bind(this));
+        this._agent.startListening(nodeId, showSubtreeAnimations);
+    },
+
+    stopListening: function()
+    {
+        this._agent.stopListening();
+    },
+
+    _wasEnabled: function()
+    {
+        this._enabled = true;
+    },
+
+    /**
+     * @param {!AnimationAgent.AnimationPlayer} payload
+     */
+    animationPlayerCreated: function(payload)
+    {
+        var player = WebInspector.AnimationModel.AnimationPlayer.parsePayload(this.target(), payload);
+        this.dispatchEventToListeners(WebInspector.AnimationModel.Events.AnimationPlayerCreated, player);
     },
 
     __proto__: WebInspector.SDKModel.prototype
@@ -96,7 +128,7 @@ WebInspector.AnimationModel.AnimationPlayer.prototype = {
     /**
      * @return {boolean}
      */
-    paused: function ()
+    paused: function()
     {
         return this._payload.pausedState;
     },
@@ -387,4 +419,24 @@ WebInspector.AnimationModel.KeyframeStyle.prototype = {
     },
 
     __proto__: WebInspector.SDKObject.prototype
+}
+
+/**
+ * @constructor
+ * @implements {AnimationAgent.Dispatcher}
+ */
+WebInspector.AnimationDispatcher = function(animationModel)
+{
+    this._animationModel = animationModel;
+}
+
+WebInspector.AnimationDispatcher.prototype = {
+    /**
+     * @override
+     * @param {!AnimationAgent.AnimationPlayer} payload
+     */
+    animationPlayerCreated: function(payload)
+    {
+        this._animationModel.animationPlayerCreated(payload);
+    }
 }

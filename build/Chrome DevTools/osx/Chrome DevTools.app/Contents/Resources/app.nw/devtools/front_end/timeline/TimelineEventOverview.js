@@ -57,7 +57,88 @@ WebInspector.TimelineEventOverview._numberOfStrips = 3;
 /** @const */
 WebInspector.TimelineEventOverview._stripGradientHeight = 120;
 
+/**
+ * @constructor
+ * @template T
+ */
+WebInspector.Dithering = function()
+{
+    /** @type {!Map.<?T,number>} */
+    this._groupError = new Map();
+    this._position = 0;
+    this._lastReportedPosition = 0;
+}
+
+WebInspector.Dithering.prototype = {
+    /**
+     * @param {!T} group
+     * @param {number} start
+     * @param {number} end
+     * @return {?{start: number, end: number}}
+     * @template T
+     */
+    appendInterval: function(group, start, end)
+    {
+        this._innerAppend(null, start); // Append an empty space before.
+        return this._innerAppend(group, end); // Append the interval itself.
+    },
+
+    /**
+     * @param {?T} group
+     * @param {number} position
+     * @return {?{start: number, end: number}}
+     * @template T
+     */
+    _innerAppend: function(group, position)
+    {
+        if (position < this._position)
+            return null;
+        var result = null;
+        var length = position - this._position;
+        length += this._groupError.get(group) || 0;
+        if (length >= 1) {
+            if (!group)
+                length -= this._distributeExtraAmount(length - 1);
+            var newReportedPosition = this._lastReportedPosition + Math.floor(length);
+            result = { start: this._lastReportedPosition, end: newReportedPosition };
+            this._lastReportedPosition = newReportedPosition;
+            length %= 1;
+        }
+        this._groupError.set(group, length);
+        this._position = position;
+        return result;
+    },
+
+    /**
+     * @param {number} amount
+     * @return {number}
+     */
+    _distributeExtraAmount: function(amount)
+    {
+        var canConsume = 0;
+        for (var g of this._groupError.keys()) {
+            if (g)
+                canConsume += 1 - this._groupError.get(g);
+        }
+        var toDistribute = Math.min(amount, canConsume);
+        if (toDistribute <= 0)
+            return 0;
+        var ratio = toDistribute / canConsume;
+        for (var g of this._groupError.keys()) {
+            if (!g)
+                continue;
+            var value = this._groupError.get(g);
+            value += (1 - value) * ratio;
+            this._groupError.set(g, value);
+        }
+        return toDistribute;
+    }
+}
+
 WebInspector.TimelineEventOverview.prototype = {
+    /**
+     * @override
+     */
     dispose: function()
     {
         var categories = WebInspector.TimelineUIUtils.categories();
@@ -65,6 +146,9 @@ WebInspector.TimelineEventOverview.prototype = {
             categories[category].removeEventListener(WebInspector.TimelineCategory.Events.VisibilityChanged, this._onCategoryVisibilityChanged, this);
     },
 
+    /**
+     * @override
+     */
     update: function()
     {
         this.resetCanvas();
@@ -74,11 +158,14 @@ WebInspector.TimelineEventOverview.prototype = {
         var timeSpan = this._model.maximumRecordTime() - timeOffset;
         var scale = this._canvas.width / timeSpan;
 
-        var lastBarByGroup = [];
+        var categories = WebInspector.TimelineUIUtils.categories();
+        var ditherers = new Map();
+        for (var category in categories)
+            ditherers.set(categories[category].overviewStripGroupIndex, new WebInspector.Dithering());
 
         this._context.fillStyle = "rgba(0, 0, 0, 0.05)";
         for (var i = 1; i < WebInspector.TimelineEventOverview._numberOfStrips; i += 2)
-            this._context.fillRect(0.5, i * stripHeight + 0.5, this._canvas.width, stripHeight);
+            this._context.fillRect(0, i * stripHeight, this._canvas.width, stripHeight);
 
         /**
          * @param {!WebInspector.TimelineModel.Record} record
@@ -88,30 +175,16 @@ WebInspector.TimelineEventOverview.prototype = {
         {
             if (record.type() === WebInspector.TimelineModel.RecordType.BeginFrame)
                 return;
-            var recordStart = Math.floor((record.startTime() - timeOffset) * scale);
-            var recordEnd = Math.ceil((record.endTime() - timeOffset) * scale);
+            var recordStart = (record.startTime() - timeOffset) * scale;
+            var recordEnd = (record.endTime() - timeOffset) * scale;
             var category = WebInspector.TimelineUIUtils.categoryForRecord(record);
             if (category.overviewStripGroupIndex < 0)
                 return;
-            var bar = lastBarByGroup[category.overviewStripGroupIndex];
-            // This bar may be merged with previous -- so just adjust the previous bar.
-            if (bar) {
-                // If record fits entirely into previous bar just absorb it ignoring the category match.
-                if (recordEnd <= bar.end)
-                    return;
-                if (bar.category === category && recordStart <= bar.end) {
-                    bar.end = recordEnd;
-                    return;
-                }
-                this._renderBar(bar.start, bar.end, stripHeight, bar.category);
-            }
-            lastBarByGroup[category.overviewStripGroupIndex] = { start: recordStart, end: recordEnd, category: category };
+            var bar = ditherers.get(category.overviewStripGroupIndex).appendInterval(category, recordStart, recordEnd);
+            if (bar)
+                this._renderBar(bar.start, bar.end, stripHeight, category);
         }
         this._model.forAllRecords(appendRecord.bind(this));
-        for (var i = 0; i < lastBarByGroup.length; ++i) {
-            if (lastBarByGroup[i])
-                this._renderBar(lastBarByGroup[i].start, lastBarByGroup[i].end, stripHeight, lastBarByGroup[i].category);
-        }
     },
 
     _onCategoryVisibilityChanged: function()

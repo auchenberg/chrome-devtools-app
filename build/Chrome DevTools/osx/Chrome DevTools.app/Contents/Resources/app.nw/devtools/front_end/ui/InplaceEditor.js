@@ -43,7 +43,7 @@ WebInspector.InplaceEditor.startMultilineEditing = function(element, config)
     {
         var controller = /** @type {!WebInspector.InplaceEditor} */ (inplaceEditor).startEditing(element, config);
         if (!controller)
-            return Promise.rejectWithError("Editing is already in progress");
+            return Promise.reject(new Error("Editing is already in progress"));
         return controller;
     }
 }
@@ -236,7 +236,7 @@ WebInspector.InplaceEditor.prototype = {
 WebInspector.InplaceEditor.Config = function(commitHandler, cancelHandler, context, blurHandler)
 {
     this.commitHandler = commitHandler;
-    this.cancelHandler = cancelHandler
+    this.cancelHandler = cancelHandler;
     this.context = context;
     this.blurHandler = blurHandler;
 

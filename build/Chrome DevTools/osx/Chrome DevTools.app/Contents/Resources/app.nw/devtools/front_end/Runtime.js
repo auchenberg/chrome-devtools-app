@@ -33,6 +33,11 @@ var allDescriptors = [];
 var applicationDescriptor;
 var _loadedScripts = {};
 
+// FIXME: This is a workaround to force Closure compiler provide
+// the standard ES6 runtime for all modules. This should be removed
+// once Closure provides standard externs for Map et al.
+for (var k of []);
+
 /**
  * @param {string} url
  * @return {!Promise.<string>}
@@ -192,7 +197,7 @@ function Runtime(descriptors, coreModuleNames)
     for (var i = 0; i < descriptors.length; ++i)
         this._registerModule(descriptors[i]);
     if (coreModuleNames)
-        this._loadAutoStartModules(coreModuleNames).catch(Runtime._reportError);
+        this._loadAutoStartModules(coreModuleNames);
 }
 
 /**
@@ -255,7 +260,7 @@ Runtime.startApplication = function(appName)
                 coreModuleNames.push(name);
         }
 
-        Promise.all(moduleJSONPromises).then(instantiateRuntime).catch(Runtime._reportError);
+        Promise.all(moduleJSONPromises).then(instantiateRuntime);
         /**
          * @param {!Array.<!Object>} moduleDescriptors
          */
@@ -275,6 +280,21 @@ Runtime.startApplication = function(appName)
 Runtime.queryParam = function(name)
 {
     return Runtime._queryParamsObject[name] || null;
+}
+
+/**
+ * @param {!Array.<string>} banned
+ * @return {string}
+ */
+Runtime.constructQueryParams = function(banned)
+{
+    var params = [];
+    for (var key in Runtime._queryParamsObject) {
+        if (!key || banned.indexOf(key) !== -1)
+            continue;
+        params.push(key + "=" + Runtime._queryParamsObject[key]);
+    }
+    return params.length ? "?" + params.join("&") : "";
 }
 
 /**
@@ -341,17 +361,6 @@ Runtime._assert = function(value, message)
     if (value)
         return;
     Runtime._originalAssert.call(Runtime._console, value, message);
-}
-
-/**
- * @param {*} e
- */
-Runtime._reportError = function(e)
-{
-    if (e instanceof Error)
-        console.error(e.stack);
-    else
-        console.error(e);
 }
 
 Runtime.prototype = {
@@ -700,7 +709,7 @@ Runtime.Module.prototype = {
         if (Runtime.isReleaseMode())
             return loadScriptsPromise([this._name + "_module.js"]);
 
-        return loadScriptsPromise(this._descriptor.scripts.map(this._modularizeURL, this)).catch(Runtime._reportError);
+        return loadScriptsPromise(this._descriptor.scripts.map(this._modularizeURL, this));
     },
 
     /**

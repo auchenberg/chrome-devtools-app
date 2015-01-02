@@ -63,6 +63,7 @@ WebInspector.FilteredItemSelectionDialog = function(delegate)
 
 WebInspector.FilteredItemSelectionDialog.prototype = {
     /**
+     * @override
      * @param {!Element} element
      * @param {!Element} relativeToElement
      */
@@ -168,7 +169,6 @@ WebInspector.FilteredItemSelectionDialog.prototype = {
 
         var query = this._delegate.rewriteQuery(this._promptElement.value.trim());
         this._query = query;
-        var queryLength = query.length;
         var filterRegex = query ? WebInspector.FilePathScoreFunction.filterRegex(query) : null;
 
         var oldSelectedAbsoluteIndex = this._selectedIndexInFiltered ? this._filteredItems[this._selectedIndexInFiltered] : null;
@@ -343,6 +343,7 @@ WebInspector.FilteredItemSelectionDialog.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     itemCount: function()
@@ -351,6 +352,7 @@ WebInspector.FilteredItemSelectionDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} index
      * @return {number}
      */
@@ -365,6 +367,7 @@ WebInspector.FilteredItemSelectionDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} index
      * @return {!WebInspector.ViewportElement}
      */
@@ -378,6 +381,7 @@ WebInspector.FilteredItemSelectionDialog.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     minimumRowHeight: function()
@@ -493,7 +497,7 @@ WebInspector.SelectionDialogContentProvider.prototype = {
     },
 
     /**
-     * @param {?number} itemIndex
+     * @param {number} itemIndex
      * @param {string} promptValue
      */
     selectItem: function(itemIndex, promptValue)
@@ -560,13 +564,14 @@ WebInspector.JavaScriptOutlineDialog.prototype = {
         for (var i = 0; i < chunk.length; ++i)
             this._functionItems.push(chunk[i]);
 
-        if (data.total === data.index + 1)
+        if (data.isLastChunk)
             this.dispose();
 
         this.refresh();
     },
 
     /**
+     * @override
      * @return {number}
      */
     itemCount: function()
@@ -575,15 +580,18 @@ WebInspector.JavaScriptOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @return {string}
      */
     itemKeyAt: function(itemIndex)
     {
-        return this._functionItems[itemIndex].name;
+        var item = this._functionItems[itemIndex];
+        return item.name + (item.arguments ? item.arguments : "");
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} query
      * @return {number}
@@ -595,6 +603,7 @@ WebInspector.JavaScriptOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} query
      * @param {!Element} titleElement
@@ -609,6 +618,7 @@ WebInspector.JavaScriptOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {?number} itemIndex
      * @param {string} promptValue
      */
@@ -692,6 +702,7 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     itemCount: function()
@@ -700,6 +711,7 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @return {string}
      */
@@ -709,6 +721,7 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} query
      * @return {number}
@@ -730,11 +743,11 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} query
      * @param {!Element} titleElement
      * @param {!Element} subtitleElement
-     * @return {!Array.<!Element>}
      */
     renderItem: function(itemIndex, query, titleElement, subtitleElement)
     {
@@ -752,13 +765,14 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
         if (indexes[0] > fileNameIndex) {
             for (var i = 0; i < ranges.length; ++i)
                 ranges[i].offset -= fileNameIndex + 1;
-            return WebInspector.highlightRangesWithStyleClass(titleElement, ranges, "highlight");
+            WebInspector.highlightRangesWithStyleClass(titleElement, ranges, "highlight");
         } else {
-            return WebInspector.highlightRangesWithStyleClass(subtitleElement, ranges, "highlight");
+            WebInspector.highlightRangesWithStyleClass(subtitleElement, ranges, "highlight");
         }
     },
 
     /**
+     * @override
      * @param {?number} itemIndex
      * @param {string} promptValue
      */
@@ -779,6 +793,7 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @return {string}
      */
@@ -800,7 +815,7 @@ WebInspector.SelectUISourceCodeDialog.prototype = {
         var uiSourceCode = /** @type {!WebInspector.UISourceCode} */ (event.data);
         if (!this.filterProject(uiSourceCode.project()))
             return;
-        this._uiSourceCodes.push(uiSourceCode)
+        this._uiSourceCodes.push(uiSourceCode);
         this.refresh();
     },
 
@@ -828,6 +843,7 @@ WebInspector.OpenResourceDialog = function(sourcesView, defaultScores)
 WebInspector.OpenResourceDialog.prototype = {
 
     /**
+     * @override
      * @param {?WebInspector.UISourceCode} uiSourceCode
      * @param {number=} lineNumber
      * @param {number=} columnNumber
@@ -842,6 +858,7 @@ WebInspector.OpenResourceDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @return {boolean}
      */
@@ -851,6 +868,7 @@ WebInspector.OpenResourceDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Project} project
      * @return {boolean}
      */
@@ -884,7 +902,7 @@ WebInspector.OpenResourceDialog.show = function(sourcesView, relativeToElement, 
  * @constructor
  * @extends {WebInspector.SelectUISourceCodeDialog}
  * @param {!Array.<string>} types
- * @param {function(!WebInspector.UISourceCode)} callback
+ * @param {function(?WebInspector.UISourceCode)} callback
  */
 WebInspector.SelectUISourceCodeForProjectTypesDialog = function(types, callback)
 {
@@ -895,7 +913,8 @@ WebInspector.SelectUISourceCodeForProjectTypesDialog = function(types, callback)
 
 WebInspector.SelectUISourceCodeForProjectTypesDialog.prototype = {
     /**
-     * @param {!WebInspector.UISourceCode} uiSourceCode
+     * @override
+     * @param {?WebInspector.UISourceCode} uiSourceCode
      * @param {number=} lineNumber
      * @param {number=} columnNumber
      */
@@ -905,6 +924,7 @@ WebInspector.SelectUISourceCodeForProjectTypesDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Project} project
      * @return {boolean}
      */
@@ -919,7 +939,7 @@ WebInspector.SelectUISourceCodeForProjectTypesDialog.prototype = {
 /**
  * @param {string} name
  * @param {!Array.<string>} types
- * @param {function(!WebInspector.UISourceCode)} callback
+ * @param {function(?WebInspector.UISourceCode)} callback
  * @param {!Element} relativeToElement
  */
 WebInspector.SelectUISourceCodeForProjectTypesDialog.show = function(name, types, callback, relativeToElement)
@@ -934,6 +954,6 @@ WebInspector.SelectUISourceCodeForProjectTypesDialog.show = function(name, types
 }
 
 /**
- * @typedef {{index: number, total: number, chunk: !Array.<!{selectorText: string, lineNumber: number, columnNumber: number}>}}
+ * @typedef {{isLastChunk: boolean, chunk: !Array.<!{selectorText: string, lineNumber: number, columnNumber: number}>}}
  */
 WebInspector.JavaScriptOutlineDialog.MessageEventData;

@@ -70,7 +70,7 @@ WebInspector.UISourceCode.prototype = {
     /**
      * @return {string}
      */
-    get url()
+    networkURL: function()
     {
         return this._url;
     },
@@ -195,6 +195,7 @@ WebInspector.UISourceCode.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -203,6 +204,7 @@ WebInspector.UISourceCode.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -227,6 +229,7 @@ WebInspector.UISourceCode.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -534,6 +537,7 @@ WebInspector.UISourceCode.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex
@@ -675,6 +679,7 @@ WebInspector.Revision.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -683,6 +688,7 @@ WebInspector.Revision.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -691,6 +697,7 @@ WebInspector.Revision.prototype = {
     },
 
     /**
+     * @override
      * @param {function(string)} callback
      */
     requestContent: function(callback)
@@ -699,6 +706,7 @@ WebInspector.Revision.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex

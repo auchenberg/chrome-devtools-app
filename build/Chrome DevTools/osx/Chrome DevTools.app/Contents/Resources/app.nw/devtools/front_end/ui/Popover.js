@@ -58,7 +58,7 @@ WebInspector.Popover.prototype = {
      * @param {?number=} preferredHeight
      * @param {?WebInspector.Popover.Orientation=} arrowDirection
      */
-    show: function(element, anchor, preferredWidth, preferredHeight, arrowDirection)
+    showForAnchor: function(element, anchor, preferredWidth, preferredHeight, arrowDirection)
     {
         this._innerShow(null, element, anchor, preferredWidth, preferredHeight, arrowDirection);
     },
@@ -353,6 +353,14 @@ WebInspector.PopoverHelper.prototype = {
             clearTimeout(this._hoverTimer);
             delete this._hoverTimer;
         }
+    },
+
+    /**
+     * @return {boolean}
+     */
+    isHoverTimerActive: function()
+    {
+        return !!this._hoverTimer;
     },
 
     /**

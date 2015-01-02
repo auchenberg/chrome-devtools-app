@@ -39,7 +39,7 @@
 WebInspector.ExtensionView = function(server, id, src, className)
 {
     WebInspector.View.call(this);
-    this.element.className = "extension-view fill"; // Override
+    this.element.className = "flex-auto fill"; // Override
 
     this._server = server;
     this._id = id;

@@ -252,7 +252,7 @@ Size.prototype.addHeight = function(size)
 
 /**
  * @constructor
- * @param {!Size} minimum
+ * @param {!Size=} minimum
  * @param {?Size=} preferred
  */
 function Constraints(minimum, preferred)
@@ -260,12 +260,12 @@ function Constraints(minimum, preferred)
     /**
      * @type {!Size}
      */
-    this.minimum = minimum;
+    this.minimum = minimum || new Size(0, 0);
 
     /**
      * @type {!Size}
      */
-    this.preferred = preferred || minimum;
+    this.preferred = preferred || this.minimum;
 
     if (this.minimum.width > this.preferred.width || this.minimum.height > this.preferred.height)
         throw new Error("Minimum size is greater than preferred.");

@@ -5,28 +5,38 @@
  */
 
 .request-headers-view {
-    display: none;
-    margin: 6px;
     -webkit-user-select: text;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     overflow: auto;
 }
 
-.request-headers-view.visible {
-    display: block;
+.request-headers-view .outline-disclosure {
+    -webkit-padding-start: 4px;
 }
 
 .request-headers-view .outline-disclosure > .parent {
     -webkit-user-select: none;
     font-weight: bold;
+    color: #616161;
+    margin-top: -1px;
+    height: 20px;
+    border-top: solid 1px #e0e0e0;
+    display: flex;
+    align-items: center;
 }
 
-.request-headers-view .outline-disclosure > .parent > .section {
-    font-weight: normal;
+.request-headers-view .outline-disclosure li.parent::before {
+    position: static;
+    width: 9px;
+    height: 9px;
+    -webkit-mask-position: -4px -98px;
+}
+
+.request-headers-view .outline-disclosure li.parent.expanded::before {
+    -webkit-mask-position: -20px -98px;
+}
+
+.request-headers-view .properties-tree li.parent {
+    margin-left: -1px;
 }
 
 .request-headers-view .outline-disclosure .children li {
@@ -84,4 +94,12 @@
     margin-top: -2px;
     margin-right: 3px;
     vertical-align: middle;
+}
+
+.request-headers-view .section {
+    margin-left: -16px;
+}
+
+.request-headers-view .section.expanded .properties {
+    -webkit-padding-start: 0;
 }

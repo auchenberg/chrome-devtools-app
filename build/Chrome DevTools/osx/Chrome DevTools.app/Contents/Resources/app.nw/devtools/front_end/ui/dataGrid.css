@@ -129,7 +129,7 @@
     text-align: right;
 }
 
-.data-grid th.sortable div {
+.data-grid th.sortable {
     position: relative;
 }
 
@@ -137,33 +137,39 @@
     background-color: rgba(0, 0, 0, 0.15);
 }
 
-.data-grid th.sort-ascending > div::after,
-.data-grid th.sort-descending > div::after {
+.data-grid th .sort-order-icon-container {
     position: absolute;
     top: 1px;
     right: 0;
+    bottom: 1px;
+    display: flex;
+    align-items: center;
+}
+
+.data-grid th .sort-order-icon {
+    margin-right: 4px;
     background-image: url(Images/statusbarButtonGlyphs.png);
     background-size: 320px 144px;
     opacity: 0.5;
     width: 8px;
-    height: 10px;
-    content: "a";
-    color: transparent;
+    height: 7px;
+    display: none;
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
-.data-grid th.sort-ascending > div::after,
-.data-grid th.sort-descending > div::after {
+.data-grid th .sort-order-icon {
     background-image: url(Images/statusbarButtonGlyphs_2x.png);
 }
 } /* media */
 
-.data-grid th.sort-ascending > div::after {
-    background-position: -4px -108px;
+.data-grid th.sort-ascending .sort-order-icon {
+    display: block;
+    background-position: -4px -111px;
 }
 
-.data-grid th.sort-descending > div::after {
-    background-position: -20px -96px;
+.data-grid th.sort-descending .sort-order-icon {
+    display: block;
+    background-position: -20px -99px;
 }
 
 .data-grid th:hover {
@@ -181,6 +187,7 @@
     -webkit-mask-size: 320px 144px;
     float: left;
     width: 8px;
+    height: 12px;
     margin-right: 2px;
     content: "a";
     color: transparent;

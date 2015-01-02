@@ -67,6 +67,7 @@ WebInspector.EventListenersSidebarPane._objectGroupName = "event-listeners-sideb
 
 WebInspector.EventListenersSidebarPane.prototype = {
     /**
+     * @override
      * @param {!WebInspector.Throttler.FinishCallback} finishCallback
      * @protected
      */
@@ -151,13 +152,13 @@ WebInspector.EventListenersSidebarPane.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.PropertiesSection}
+ * @extends {WebInspector.Section}
  */
 WebInspector.EventListenersSection = function(title, nodeId, linkifier)
 {
     this._nodeId = nodeId;
     this._linkifier = linkifier;
-    WebInspector.PropertiesSection.call(this, title);
+    WebInspector.Section.call(this, title);
 
     // Changed from a Properties List
     this.propertiesElement.remove();
@@ -177,7 +178,7 @@ WebInspector.EventListenersSection.prototype = {
         this._eventBars.appendChild(eventListenerBar.element);
     },
 
-    __proto__: WebInspector.PropertiesSection.prototype
+    __proto__: WebInspector.Section.prototype
 }
 
 /**
@@ -198,9 +199,9 @@ WebInspector.EventListenerBar = function(eventListener, nodeId, linkifier)
     this._setNodeTitle();
     this._setFunctionSubtitle(linkifier);
     this.editable = false;
-    this.element.className = "event-bar"; /* Changed from "section" */
+    this.element.classList.add("event-bar");
     this.headerElement.classList.add("source-code");
-    this.propertiesElement.className = "event-properties properties-tree source-code"; /* Changed from "properties" */
+    this.propertiesElement.classList.add("event-properties");
 }
 
 WebInspector.EventListenerBar.prototype = {

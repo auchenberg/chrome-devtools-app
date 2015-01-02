@@ -56,6 +56,7 @@ WebInspector.ScriptSnippetModel = function(workspace)
 WebInspector.ScriptSnippetModel.prototype = {
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetAdded: function(target)
@@ -64,6 +65,7 @@ WebInspector.ScriptSnippetModel.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Target} target
      */
     targetRemoved: function(target)
@@ -210,7 +212,7 @@ WebInspector.ScriptSnippetModel.prototype = {
         var breakpointLocations = this._removeBreakpoints(uiSourceCode);
         this._releaseSnippetScript(uiSourceCode);
         this._restoreBreakpoints(uiSourceCode, breakpointLocations);
-        this._mappingForTarget.valuesArray().forEach(function(mapping) {mapping._restoreBreakpoints(uiSourceCode, breakpointLocations)});
+        this._mappingForTarget.valuesArray().forEach(function(mapping) {mapping._restoreBreakpoints(uiSourceCode, breakpointLocations);});
     },
 
     /**
@@ -376,7 +378,7 @@ WebInspector.ScriptSnippetModel.prototype = {
      */
     _releaseSnippetScript: function(uiSourceCode)
     {
-        this._mappingForTarget.valuesArray().forEach(function(mapping) {mapping._releaseSnippetScript(uiSourceCode)});
+        this._mappingForTarget.valuesArray().forEach(function(mapping) {mapping._releaseSnippetScript(uiSourceCode);});
     },
 
     /**
@@ -467,6 +469,7 @@ WebInspector.SnippetScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.DebuggerModel.Location} rawLocation
      * @return {?WebInspector.UILocation}
      */
@@ -481,6 +484,7 @@ WebInspector.SnippetScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @param {number} columnNumber
@@ -541,6 +545,7 @@ WebInspector.SnippetScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isIdentity: function()
@@ -549,6 +554,7 @@ WebInspector.SnippetScriptMapping.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @return {boolean}
@@ -571,6 +577,7 @@ WebInspector.SnippetContentProvider = function(snippet)
 
 WebInspector.SnippetContentProvider.prototype = {
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -579,6 +586,7 @@ WebInspector.SnippetContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -587,6 +595,7 @@ WebInspector.SnippetContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -595,6 +604,7 @@ WebInspector.SnippetContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex
@@ -640,6 +650,7 @@ WebInspector.SnippetsProjectDelegate.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     canSetFileContent: function()
@@ -648,6 +659,7 @@ WebInspector.SnippetsProjectDelegate.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {string} newContent
      * @param {function(?string)} callback
@@ -659,6 +671,7 @@ WebInspector.SnippetsProjectDelegate.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     canRename: function()
@@ -667,6 +680,7 @@ WebInspector.SnippetsProjectDelegate.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {string} newName
      * @param {function(boolean, string=)} callback
@@ -677,6 +691,7 @@ WebInspector.SnippetsProjectDelegate.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {?string} name
      * @param {string} content
@@ -689,6 +704,7 @@ WebInspector.SnippetsProjectDelegate.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      */
     deleteFile: function(path)

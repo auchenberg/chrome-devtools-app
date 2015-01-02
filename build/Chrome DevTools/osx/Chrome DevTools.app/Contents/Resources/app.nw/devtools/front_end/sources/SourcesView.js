@@ -38,7 +38,7 @@ WebInspector.SourcesView = function(workspace, sourcesPanel)
     this._historyManager = new WebInspector.EditingLocationHistoryManager(this, this.currentSourceFrame.bind(this));
 
     this._statusBarContainerElement = this.element.createChild("div", "sources-status-bar");
-    this._statusBarEditorActionsElement = this._statusBarContainerElement.createChild("div");
+    this._statusBarEditorActions = new WebInspector.StatusBar(this._statusBarContainerElement);
 
     self.runtime.instancesPromise(WebInspector.SourcesView.EditorAction).then(appendButtonsForExtensions.bind(this));
     /**
@@ -48,11 +48,9 @@ WebInspector.SourcesView = function(workspace, sourcesPanel)
     function appendButtonsForExtensions(actions)
     {
         for (var i = 0; i < actions.length; ++i)
-            this._statusBarEditorActionsElement.appendChild(actions[i].button(this));
+            this._statusBarEditorActions.appendStatusBarItem(actions[i].button(this));
     }
-
-    this._scriptViewStatusBarItemsContainer = this._statusBarContainerElement.createChild("div", "inline-block");
-    this._scriptViewStatusBarTextContainer = this._statusBarContainerElement.createChild("div", "hbox");
+    this._scriptViewStatusBarText = new WebInspector.StatusBar(this._statusBarContainerElement);
 
     WebInspector.startBatchUpdate();
     this._workspace.uiSourceCodes().forEach(this._addUISourceCode.bind(this));
@@ -164,6 +162,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -255,7 +254,11 @@ WebInspector.SourcesView.prototype = {
         this._editorContainer.addUISourceCode(uiSourceCode);
         // Replace debugger script-based uiSourceCode with a network-based one.
         var currentUISourceCode = this._currentUISourceCode;
-        if (currentUISourceCode && currentUISourceCode.project().isServiceProject() && currentUISourceCode !== uiSourceCode && currentUISourceCode.url === uiSourceCode.url && uiSourceCode.url) {
+        if (!currentUISourceCode)
+            return;
+        var networkURL = WebInspector.networkMapping.networkURL(uiSourceCode);
+        var currentNetworkURL = WebInspector.networkMapping.networkURL(currentUISourceCode);
+        if (currentUISourceCode.project().isServiceProject() && currentUISourceCode !== uiSourceCode && currentNetworkURL === networkURL && networkURL) {
             this._showFile(uiSourceCode);
             this._editorContainer.removeUISourceCode(currentUISourceCode);
         }
@@ -290,18 +293,13 @@ WebInspector.SourcesView.prototype = {
 
     _updateScriptViewStatusBarItems: function()
     {
-        this._scriptViewStatusBarItemsContainer.removeChildren();
-        this._scriptViewStatusBarTextContainer.removeChildren();
+        this._scriptViewStatusBarText.removeStatusBarItems();
         var sourceFrame = this.currentSourceFrame();
         if (!sourceFrame)
             return;
 
-        var statusBarItems = sourceFrame.statusBarItems() || [];
-        for (var i = 0; i < statusBarItems.length; ++i)
-            this._scriptViewStatusBarItemsContainer.appendChild(statusBarItems[i]);
         var statusBarText = sourceFrame.statusBarText();
-        if (statusBarText)
-            this._scriptViewStatusBarTextContainer.appendChild(statusBarText);
+        this._scriptViewStatusBarText.appendStatusBarItem(statusBarText);
     },
 
     /**
@@ -414,6 +412,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @return {!WebInspector.UISourceCodeFrame}
      */
@@ -493,6 +492,9 @@ WebInspector.SourcesView.prototype = {
         this._recreateSourceFrameIfNeeded(uiSourceCode);
     },
 
+    /**
+     * @override
+     */
     searchCanceled: function()
     {
         if (this._searchView)
@@ -503,6 +505,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {boolean} shouldJump
      * @param {boolean=} jumpBackwards
@@ -551,6 +554,9 @@ WebInspector.SourcesView.prototype = {
         this._searchView.performSearch(this._searchConfig, shouldJump, !!jumpBackwards, finishedCallback.bind(this), currentMatchChanged.bind(this), searchResultsChanged.bind(this));
     },
 
+    /**
+     * @override
+     */
     jumpToNextSearchResult: function()
     {
         if (!this._searchView)
@@ -564,6 +570,9 @@ WebInspector.SourcesView.prototype = {
         this._searchView.jumpToNextSearchResult();
     },
 
+    /**
+     * @override
+     */
     jumpToPreviousSearchResult: function()
     {
         if (!this._searchView)
@@ -580,6 +589,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsCaseSensitiveSearch: function()
@@ -588,6 +598,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     supportsRegexSearch: function()
@@ -596,6 +607,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {string} replacement
      */
@@ -610,6 +622,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
      * @param {string} replacement
      */
@@ -740,7 +753,7 @@ WebInspector.SourcesView.EditorAction = function()
 WebInspector.SourcesView.EditorAction.prototype = {
     /**
      * @param {!WebInspector.SourcesView} sourcesView
-     * @return {!Element}
+     * @return {!WebInspector.StatusBarButton}
      */
     button: function(sourcesView) { }
 }
@@ -787,11 +800,12 @@ WebInspector.SourcesView.SwitchFileActionDelegate._nextFile = function(currentUI
     var fullPath = (path ? path + "/" : "") + candidates[index];
     var nextUISourceCode = currentUISourceCode.project().uiSourceCode(fullPath);
     return nextUISourceCode !== currentUISourceCode ? nextUISourceCode : null;
-},
+}
 
 
 WebInspector.SourcesView.SwitchFileActionDelegate.prototype = {
     /**
+     * @override
      * @return {boolean}
      */
     handleAction: function()

@@ -22,7 +22,6 @@
     { "name": "source_frame" },
     { "name": "settings" },
     { "name": "devices" },
-    { "name": "documentation" },
     { "name": "layers" },
     { "name": "promises" },
 

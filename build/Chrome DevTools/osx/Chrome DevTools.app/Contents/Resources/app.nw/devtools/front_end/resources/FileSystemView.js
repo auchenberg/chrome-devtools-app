@@ -36,24 +36,24 @@
 WebInspector.FileSystemView = function(fileSystem)
 {
     WebInspector.SplitView.call(this, true, false, "fileSystemViewSplitViewState");
-    this.element.classList.add("file-system-view");
-    this.element.classList.add("storage-view");
+    this.element.classList.add("file-system-view", "storage-view");
 
-    var directoryTreeElement = this.element.createChild("ol", "filesystem-directory-tree");
+    var vbox = new WebInspector.VBox();
+    vbox.element.classList.add("outline-disclosure", "sidebar");
+    var directoryTreeElement = vbox.element.createChild("ol", "filesystem-directory-tree");
     this._directoryTree = new TreeOutline(directoryTreeElement);
-    this.sidebarElement().appendChild(directoryTreeElement);
-    this.sidebarElement().classList.add("outline-disclosure", "sidebar");
+    this.setSidebarView(vbox);
 
     var rootItem = new WebInspector.FileSystemView.EntryTreeElement(this, fileSystem.root);
     rootItem.expanded = true;
     this._directoryTree.appendChild(rootItem);
     this._visibleView = null;
 
-    this._refreshButton = new WebInspector.StatusBarButton(WebInspector.UIString("Refresh"), "refresh-storage-status-bar-item");
+    this._refreshButton = new WebInspector.StatusBarButton(WebInspector.UIString("Refresh"), "refresh-status-bar-item");
     this._refreshButton.setVisible(true);
     this._refreshButton.addEventListener("click", this._refresh, this);
 
-    this._deleteButton = new WebInspector.StatusBarButton(WebInspector.UIString("Delete"), "delete-storage-status-bar-item");
+    this._deleteButton = new WebInspector.StatusBarButton(WebInspector.UIString("Delete"), "delete-status-bar-item");
     this._deleteButton.setVisible(true);
     this._deleteButton.addEventListener("click", this._confirmDelete, this);
 }
@@ -85,7 +85,7 @@ WebInspector.FileSystemView.prototype = {
         if (this._visibleView)
             this._visibleView.detach();
         this._visibleView = view;
-        view.show(this.mainElement());
+        this.setMainView(view);
     },
 
     _refresh: function()

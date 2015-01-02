@@ -55,7 +55,7 @@ WebInspector.TabbedEditorContainer = function(delegate, settingName, placeholder
     this._tabbedPane.setPlaceholderText(placeholderText);
     this._tabbedPane.setTabDelegate(new WebInspector.EditorContainerTabDelegate(this));
 
-    this._tabbedPane.closeableTabs = true;
+    this._tabbedPane.setCloseableTabs(true);
     this._tabbedPane.element.id = "sources-editor-container-tabbed-pane";
 
     this._tabbedPane.addEventListener(WebInspector.TabbedPane.EventTypes.TabClosed, this._tabClosed, this);
@@ -278,11 +278,12 @@ WebInspector.TabbedEditorContainer.prototype = {
         if (this._userSelectedFiles)
             return;
 
-        var index = this._history.index(uri)
+        var index = this._history.index(uri);
         if (index === -1)
             return;
 
-        var tabId = this._tabIds.get(uiSourceCode) || this._appendFileTab(uiSourceCode, false);
+        if (!this._tabIds.has(uiSourceCode))
+            this._appendFileTab(uiSourceCode, false);
 
         // Select tab if this file was the last to be shown.
         if (!index) {
@@ -728,6 +729,7 @@ WebInspector.EditorContainerTabDelegate = function(editorContainer)
 
 WebInspector.EditorContainerTabDelegate.prototype = {
     /**
+     * @override
      * @param {!WebInspector.TabbedPane} tabbedPane
      * @param {!Array.<string>} ids
      */

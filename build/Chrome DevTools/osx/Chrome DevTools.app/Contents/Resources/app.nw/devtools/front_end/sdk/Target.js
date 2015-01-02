@@ -29,7 +29,6 @@ WebInspector.Target = function(name, connection, callback)
     if (Runtime.experiments.isEnabled("timelinePowerProfiler"))
         this.powerAgent().canProfilePower(this._initializeCapability.bind(this, WebInspector.Target.Capabilities.CanProfilePower, null));
     this.workerAgent().canInspectWorkers(this._initializeCapability.bind(this, WebInspector.Target.Capabilities.CanInspectWorkers, this._loadedWithCapabilities.bind(this, callback)));
-    this.consoleAgent().setTracingBasedTimeline(true);
 }
 
 /**
@@ -48,10 +47,6 @@ WebInspector.Target._nextId = 1;
 WebInspector.Target.prototype = {
     suspend: function()
     {
-        if (!Runtime.experiments.isEnabled("disableAgentsWhenProfile")) {
-            this.debuggerModel.asyncStackTracesStateChanged();
-            return;
-        }
         this.debuggerModel.suspendModel();
         this.cssModel.suspendModel();
         this.domModel.suspendModel();
@@ -59,13 +54,9 @@ WebInspector.Target.prototype = {
 
     resume: function()
     {
-        if (Runtime.experiments.isEnabled("disableAgentsWhenProfile")) {
-            this.domModel.resumeModel();
-            this.cssModel.resumeModel();
-            this.debuggerModel.resumeModel();
-        } else {
-            this.debuggerModel.asyncStackTracesStateChanged();
-        }
+        this.domModel.resumeModel();
+        this.cssModel.resumeModel();
+        this.debuggerModel.resumeModel();
     },
 
     /**
@@ -186,6 +177,11 @@ WebInspector.Target.prototype = {
         /** @type {!WebInspector.AnimationModel} */
         this.animationModel = new WebInspector.AnimationModel(this);
 
+        if (WebInspector.isWorkerFrontend() && this.isWorkerTarget()) {
+            /** @type {!WebInspector.ServiceWorkerCacheModel} */
+            this.serviceWorkerCacheModel = new WebInspector.ServiceWorkerCacheModel(this);
+        }
+
         if (callback)
             callback(this);
     },
@@ -227,6 +223,8 @@ WebInspector.Target.prototype = {
         this.debuggerModel.dispose();
         this.networkManager.dispose();
         this.cpuProfilerModel.dispose();
+        if (this.serviceWorkerCacheModel)
+            this.serviceWorkerCacheModel.dispose();
     },
 
     /**
@@ -388,7 +386,8 @@ WebInspector.TargetManager.prototype = {
     {
         for (var i = 0; i < this._targets.length; ++i) {
             var model = this._targets[i]._modelByConstructor.get(modelClass);
-            model.addEventListener(eventType, listener, thisObject);
+            if (model)
+                model.addEventListener(eventType, listener, thisObject);
         }
         if (!this._modelListeners[eventType])
             this._modelListeners[eventType] = [];
@@ -408,7 +407,8 @@ WebInspector.TargetManager.prototype = {
 
         for (var i = 0; i < this._targets.length; ++i) {
             var model = this._targets[i]._modelByConstructor.get(modelClass);
-            model.removeEventListener(eventType, listener, thisObject);
+            if (model)
+                model.removeEventListener(eventType, listener, thisObject);
         }
 
         var listeners = this._modelListeners[eventType];
@@ -444,7 +444,7 @@ WebInspector.TargetManager.prototype = {
      */
     createTarget: function(name, connection, callback)
     {
-        var target = new WebInspector.Target(name, connection, callbackWrapper.bind(this));
+        new WebInspector.Target(name, connection, callbackWrapper.bind(this));
 
         /**
          * @this {WebInspector.TargetManager}
@@ -479,7 +479,8 @@ WebInspector.TargetManager.prototype = {
             var listeners = this._modelListeners[eventType];
             for (var i = 0; i < listeners.length; ++i) {
                 var model = target._modelByConstructor.get(listeners[i].modelClass);
-                model.addEventListener(eventType, listeners[i].listener, listeners[i].thisObject);
+                if (model)
+                    model.addEventListener(eventType, listeners[i].listener, listeners[i].thisObject);
             }
         }
     },
@@ -504,7 +505,8 @@ WebInspector.TargetManager.prototype = {
             var listeners = this._modelListeners[eventType];
             for (var i = 0; i < listeners.length; ++i) {
                 var model = target._modelByConstructor.get(listeners[i].modelClass);
-                model.removeEventListener(eventType, listeners[i].listener, listeners[i].thisObject);
+                if (model)
+                    model.removeEventListener(eventType, listeners[i].listener, listeners[i].thisObject);
             }
         }
     },

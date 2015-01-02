@@ -185,7 +185,7 @@ FormatterWorker.JavaScriptFormatter.prototype = {
         this._expect(FormatterWorker.JavaScriptTokens.FUNCTION);
         this._builder.addSpace();
         this._expect(FormatterWorker.JavaScriptTokens.IDENTIFIER);
-        this._parseFunctionLiteral()
+        this._parseFunctionLiteral();
     },
 
     _parseBlock: function()
@@ -212,7 +212,7 @@ FormatterWorker.JavaScriptFormatter.prototype = {
         if (this._peek() === FormatterWorker.JavaScriptTokens.VAR)
             this._consume(FormatterWorker.JavaScriptTokens.VAR);
         else
-            this._consume(FormatterWorker.JavaScriptTokens.CONST)
+            this._consume(FormatterWorker.JavaScriptTokens.CONST);
         this._builder.addSpace();
 
         var isFirstVariable = true;
@@ -415,9 +415,9 @@ FormatterWorker.JavaScriptFormatter.prototype = {
         if (this._peek() !== FormatterWorker.JavaScriptTokens.SEMICOLON) {
             if (this._peek() === FormatterWorker.JavaScriptTokens.VAR || this._peek() === FormatterWorker.JavaScriptTokens.CONST) {
                 this._parseVariableDeclarations();
-                if (this._peek() === FormatterWorker.JavaScriptTokens.IN) {
+                if (this._peek() === FormatterWorker.JavaScriptTokens.IN || (this._peek() === FormatterWorker.JavaScriptTokens.IDENTIFIER && this._nextToken.value === "of")) {
                     this._builder.addSpace();
-                    this._consume(FormatterWorker.JavaScriptTokens.IN);
+                    this._next();
                     this._builder.addSpace();
                     this._parseExpression();
                 }
@@ -866,7 +866,7 @@ FormatterWorker.JavaScriptFormattedContentBuilder.prototype = {
 
         if (comment.type !== "comment1") {
             this._addText("*/");
-            var position;
+            var position = -1;
             while ((position = comment.value.indexOf("\n", position + 1)) !== -1)
                 this._lineNumber += 1;
         }

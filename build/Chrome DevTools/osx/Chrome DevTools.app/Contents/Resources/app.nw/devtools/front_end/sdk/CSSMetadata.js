@@ -80,16 +80,6 @@ WebInspector.CSSMetadata.isColorAwareProperty = function(propertyName)
 }
 
 /**
- * @return {!Object.<string, boolean>}
- */
-WebInspector.CSSMetadata.colors = function()
-{
-    if (!WebInspector.CSSMetadata._colorsKeySet)
-        WebInspector.CSSMetadata._colorsKeySet = WebInspector.CSSMetadata._colors.keySet();
-    return WebInspector.CSSMetadata._colorsKeySet;
-}
-
-/**
  * @param {string} propertyName
  * @return {boolean}
  */
@@ -142,27 +132,6 @@ WebInspector.CSSMetadata.isPropertyInherited = function(propertyName)
     return !!(WebInspector.CSSMetadata.InheritedProperties[WebInspector.CSSMetadata.canonicalPropertyName(propertyName)]
             || WebInspector.CSSMetadata.NonStandardInheritedProperties[propertyName.toLowerCase()]);
 }
-
-WebInspector.CSSMetadata._colors = [
-    "aqua", "black", "blue", "fuchsia", "gray", "green", "lime", "maroon", "navy", "olive", "orange", "purple", "red",
-    "silver", "teal", "white", "yellow", "transparent", "currentcolor", "grey", "aliceblue", "antiquewhite",
-    "aquamarine", "azure", "beige", "bisque", "blanchedalmond", "blueviolet", "brown", "burlywood", "cadetblue",
-    "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue", "darkcyan",
-    "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange",
-    "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey",
-    "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick",
-    "floralwhite", "forestgreen", "gainsboro", "ghostwhite", "gold", "goldenrod", "greenyellow", "honeydew", "hotpink",
-    "indianred", "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue",
-    "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink",
-    "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow",
-    "limegreen", "linen", "magenta", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen",
-    "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream",
-    "mistyrose", "moccasin", "navajowhite", "oldlace", "olivedrab", "orangered", "orchid", "palegoldenrod", "palegreen",
-    "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "rosybrown",
-    "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "skyblue", "slateblue",
-    "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "thistle", "tomato", "turquoise", "violet",
-    "wheat", "whitesmoke", "yellowgreen"
-];
 
 WebInspector.CSSMetadata._distanceProperties = [
     'background-position', 'border-spacing', 'bottom', 'font-size', 'height', 'left', 'letter-spacing', 'max-height', 'max-width', 'min-height',
@@ -378,7 +347,7 @@ WebInspector.CSSMetadata._propertyDataMap = {
         "over", "under"
     ] },
     "image-rendering": { values: [
-        "auto", "optimizeSpeed", "optimizeQuality"
+        "auto", "optimizeSpeed", "optimizeQuality", "pixelated"
     ] },
     "alignment-baseline": { values: [
         "baseline", "middle", "auto", "before-edge", "after-edge", "central", "text-before-edge", "text-after-edge",
@@ -689,8 +658,11 @@ WebInspector.CSSMetadata.keywordsForProperty = function(propertyName)
     var descriptor = WebInspector.CSSMetadata.descriptor(propertyName);
     if (descriptor && descriptor.values)
         acceptedKeywords.push.apply(acceptedKeywords, descriptor.values);
-    if (WebInspector.CSSMetadata.isColorAwareProperty(propertyName))
-        acceptedKeywords.push.apply(acceptedKeywords, WebInspector.CSSMetadata._colors);
+    if (WebInspector.CSSMetadata.isColorAwareProperty(propertyName)) {
+        acceptedKeywords.push("currentColor");
+        for (var color in WebInspector.Color.Nicknames)
+            acceptedKeywords.push(color);
+    }
     return new WebInspector.CSSMetadata(acceptedKeywords);
 }
 

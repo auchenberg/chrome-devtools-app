@@ -86,6 +86,7 @@ WebInspector.ResourceType.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     toString: function()

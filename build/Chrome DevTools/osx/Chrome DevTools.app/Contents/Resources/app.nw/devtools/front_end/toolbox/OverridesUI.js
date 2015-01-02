@@ -5,7 +5,7 @@
 WebInspector.OverridesUI = {}
 
 /**
- * @param {!function(!function(string))=} titleProvider
+ * @param {function(function(string))=} titleProvider
  * @return {!Element}
  */
 WebInspector.OverridesUI.createDeviceSelect = function(titleProvider)
@@ -15,13 +15,10 @@ WebInspector.OverridesUI.createDeviceSelect = function(titleProvider)
     var deviceSelectElement = p.createChild("select");
     deviceSelectElement.addEventListener("change", deviceSelected, false);
 
-    var saveButton = p.createChild("button");
-    saveButton.textContent = WebInspector.UIString("Save as");
-    saveButton.addEventListener("click", saveClicked, false);
-
-    var removeButton = p.createChild("button");
-    removeButton.textContent = WebInspector.UIString("Remove");
-    removeButton.addEventListener("click", removeClicked, false);
+    var saveButton = createTextButton(WebInspector.UIString("Save as"), saveClicked);
+    p.appendChild(saveButton);
+    var removeButton = createTextButton(WebInspector.UIString("Remove"), removeClicked);
+    p.appendChild(removeButton);
 
     // This has to be object, not boolean, otherwise its value doesn't update properly.
     var emulatedSettingChangedMuted = { muted: false };
@@ -366,8 +363,11 @@ WebInspector.OverridesUI._notebooks = [
 WebInspector.OverridesUI._networkConditionsPresets = [
     {id: "offline", title: "Offline", throughput: 0, latency: 0},
     {id: "gprs", title: "GPRS", throughput: 50, latency: 500},
-    {id: "edge", title: "EDGE", throughput: 250, latency: 300},
-    {id: "3g", title: "3G", throughput: 750, latency: 100},
+    {id: "edge", title: "Regular 2G", throughput: 250, latency: 300},
+    {id: "2g+", title: "Good 2G", throughput: 450, latency: 150},
+    {id: "3g", title: "Regular 3G", throughput: 750, latency: 100},
+    {id: "3g+", title: "Good 3G", throughput: 1.5 * 1024, latency: 40},
+    {id: "4g", title: "Regular 4G", throughput: 4 * 1024, latency: 20},
     {id: "dsl", title: "DSL", throughput: 2 * 1024, latency: 5},
     {id: "wifi", title: "WiFi", throughput: 30 * 1024, latency: 2},
     {id: "online", title: "No throttling", throughput: WebInspector.OverridesSupport.NetworkThroughputUnlimitedValue, latency: 0}

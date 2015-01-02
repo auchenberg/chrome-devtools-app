@@ -32,11 +32,14 @@
  * @constructor
  * @param {!WebInspector.IsolatedFileSystemManager} isolatedFileSystemManager
  * @param {!WebInspector.Workspace} workspace
+ * @param {!WebInspector.NetworkMapping} networkMapping
  */
-WebInspector.FileSystemWorkspaceBinding = function(isolatedFileSystemManager, workspace)
+WebInspector.FileSystemWorkspaceBinding = function(isolatedFileSystemManager, workspace, networkMapping)
 {
     this._isolatedFileSystemManager = isolatedFileSystemManager;
     this._workspace = workspace;
+    // FIXME: This dependency should be removed from here once we do not need URL to create a UISourceCode.
+    this._networkMapping = networkMapping;
     this._isolatedFileSystemManager.addEventListener(WebInspector.IsolatedFileSystemManager.Events.FileSystemAdded, this._fileSystemAdded, this);
     this._isolatedFileSystemManager.addEventListener(WebInspector.IsolatedFileSystemManager.Events.FileSystemRemoved, this._fileSystemRemoved, this);
     /** @type {!Map.<string, !WebInspector.FileSystemWorkspaceBinding.FileSystem>} */
@@ -75,7 +78,7 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
     _fileSystemAdded: function(event)
     {
         var fileSystem = /** @type {!WebInspector.IsolatedFileSystem} */ (event.data);
-        var boundFileSystem = new WebInspector.FileSystemWorkspaceBinding.FileSystem(this, fileSystem, this._workspace);
+        var boundFileSystem = new WebInspector.FileSystemWorkspaceBinding.FileSystem(this, fileSystem, this._workspace, this._networkMapping);
         this._boundFileSystems.set(fileSystem.normalizedPath(), boundFileSystem);
     },
 
@@ -98,7 +101,6 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
     {
         var fileSystemPath = projectId.substr("filesystem:".length);
         var normalizedPath = WebInspector.IsolatedFileSystem.normalizePath(fileSystemPath);
-        var boundFileSystem = this._boundFileSystems.get(normalizedPath);
         return projectId.substr("filesystem:".length);
     },
 
@@ -138,7 +140,6 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
     _onIndexingTotalWorkCalculated: function(event)
     {
         var requestId = /** @type {number} */ (event.data["requestId"]);
-        var fileSystemPath = /** @type {string} */ (event.data["fileSystemPath"]);
         var totalWork = /** @type {number} */ (event.data["totalWork"]);
 
         var progress = this._progresses[requestId];
@@ -153,7 +154,6 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
     _onIndexingWorked: function(event)
     {
         var requestId = /** @type {number} */ (event.data["requestId"]);
-        var fileSystemPath = /** @type {string} */ (event.data["fileSystemPath"]);
         var worked = /** @type {number} */ (event.data["worked"]);
 
         var progress = this._progresses[requestId];
@@ -168,7 +168,6 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
     _onIndexingDone: function(event)
     {
         var requestId = /** @type {number} */ (event.data["requestId"]);
-        var fileSystemPath = /** @type {string} */ (event.data["fileSystemPath"]);
 
         var progress = this._progresses[requestId];
         if (!progress)
@@ -183,7 +182,6 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
     _onSearchCompleted: function(event)
     {
         var requestId = /** @type {number} */ (event.data["requestId"]);
-        var fileSystemPath = /** @type {string} */ (event.data["fileSystemPath"]);
         var files = /** @type {!Array.<string>} */ (event.data["files"]);
 
         var callback = this._callbacks[requestId];
@@ -196,26 +194,32 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
 
 /**
  * @constructor
+ * @extends {WebInspector.Object}
  * @implements {WebInspector.ProjectDelegate}
+ * @param {!WebInspector.FileSystemWorkspaceBinding} fileSystemWorkspaceBinding
  * @param {!WebInspector.IsolatedFileSystem} isolatedFileSystem
  * @param {!WebInspector.Workspace} workspace
- * @param {!WebInspector.FileSystemWorkspaceBinding} fileSystemWorkspaceBinding
+ * @param {!WebInspector.NetworkMapping} networkMapping
  */
-WebInspector.FileSystemWorkspaceBinding.FileSystem = function(fileSystemWorkspaceBinding, isolatedFileSystem, workspace)
+WebInspector.FileSystemWorkspaceBinding.FileSystem = function(fileSystemWorkspaceBinding, isolatedFileSystem, workspace, networkMapping)
 {
+    WebInspector.Object.call(this);
     this._fileSystemWorkspaceBinding = fileSystemWorkspaceBinding;
     this._fileSystem = isolatedFileSystem;
     this._fileSystemURL = "file://" + this._fileSystem.normalizedPath() + "/";
     this._workspace = workspace;
+    // FIXME: This dependency should be removed from here once we do not need URL to create a UISourceCode.
+    this._networkMapping = networkMapping;
 
     this._projectId = WebInspector.FileSystemWorkspaceBinding.projectId(this._fileSystem.path());
     console.assert(!this._workspace.project(this._projectId));
-    this._projectStore = this._workspace.addProject(this._projectId, this);
+    this._workspace.addProject(this._projectId, this);
     this.populate();
 }
 
 WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     /**
+     * @override
      * @return {string}
      */
     type: function()
@@ -232,6 +236,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     displayName: function()
@@ -241,6 +246,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     url: function()
@@ -259,6 +265,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {function(?string)} callback
      */
@@ -269,6 +276,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {function(?Date, ?number)} callback
      */
@@ -279,6 +287,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     canSetFileContent: function()
@@ -287,6 +296,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {string} newContent
      * @param {function(?string)} callback
@@ -298,6 +308,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     canRename: function()
@@ -306,6 +317,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {string} newName
      * @param {function(boolean, string=, string=, string=, !WebInspector.ResourceType=)} callback
@@ -332,15 +344,16 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
             var parentPath = filePath.substring(0, slash);
             filePath = parentPath + "/" + validNewName;
             filePath = filePath.substr(1);
-            var newURL = this._workspace.urlForPath(this._fileSystem.path(), filePath);
+            var newURL = this._networkMapping.urlForPath(this._fileSystem.path(), filePath);
             var extension = this._extensionForPath(validNewName);
-            var newOriginURL = this._fileSystemURL + filePath
+            var newOriginURL = this._fileSystemURL + filePath;
             var newContentType = this._contentTypeForExtension(extension);
             callback(true, validNewName, newURL, newOriginURL, newContentType);
         }
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {string} query
      * @param {boolean} caseSensitive
@@ -365,6 +378,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.ProjectSearchConfig} searchConfig
      * @param {!Array.<string>} filesMathingFileQuery
      * @param {!WebInspector.Progress} progress
@@ -441,6 +455,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Progress} progress
      */
     indexContent: function(progress)
@@ -492,6 +507,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {function()=} callback
      */
@@ -501,14 +517,16 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      */
     excludeFolder: function(path)
     {
-        this._fileSystemWorkspaceBinding._isolatedFileSystemManager.mapping().addExcludedFolder(this._fileSystem.path(), path);
+        this._fileSystemWorkspaceBinding._isolatedFileSystemManager.excludedFolderManager().addExcludedFolder(this._fileSystem.path(), path);
     },
 
     /**
+     * @override
      * @param {string} path
      * @param {?string} name
      * @param {string} content
@@ -548,6 +566,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     },
 
     /**
+     * @override
      * @param {string} path
      */
     deleteFile: function(path)
@@ -556,6 +575,9 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
         this._removeFile(path);
     },
 
+    /**
+     * @override
+     */
     remove: function()
     {
         this._fileSystemWorkspaceBinding._isolatedFileSystemManager.removeFileSystem(this._fileSystem.path());
@@ -573,12 +595,12 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
         var parentPath = filePath.substring(0, slash);
         var name = filePath.substring(slash + 1);
 
-        var url = this._workspace.urlForPath(this._fileSystem.path(), filePath);
+        var url = this._networkMapping.urlForPath(this._fileSystem.path(), filePath);
         var extension = this._extensionForPath(name);
         var contentType = this._contentTypeForExtension(extension);
 
         var fileDescriptor = new WebInspector.FileDescriptor(parentPath, name, this._fileSystemURL + filePath, url, contentType);
-        this._projectStore.addFile(fileDescriptor);
+        this.dispatchEventToListeners(WebInspector.ProjectDelegate.Events.FileAdded, fileDescriptor);
     },
 
     /**
@@ -586,13 +608,15 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
      */
     _removeFile: function(path)
     {
-        this._projectStore.removeFile(path);
+        this.dispatchEventToListeners(WebInspector.ProjectDelegate.Events.FileRemoved, path);
     },
 
     dispose: function()
     {
         this._workspace.removeProject(this._projectId);
-    }
+    },
+
+    __proto__: WebInspector.Object.prototype
 }
 
 /**

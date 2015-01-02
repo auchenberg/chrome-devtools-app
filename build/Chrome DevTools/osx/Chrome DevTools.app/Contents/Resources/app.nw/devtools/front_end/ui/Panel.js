@@ -55,6 +55,7 @@ WebInspector.Panel.prototype = {
     },
 
     /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -71,6 +72,7 @@ WebInspector.Panel.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!Element>}
      */
     elementsToRestoreScrollPositionsFor: function()
@@ -136,13 +138,15 @@ WebInspector.PanelWithSidebarTree = function(name, defaultWidth)
     this._panelSplitView = new WebInspector.SplitView(true, false, this._panelName + "PanelSplitViewState", defaultWidth || 200);
     this._panelSplitView.show(this.element);
 
-    var sidebarView = new WebInspector.VBox();
-    sidebarView.setMinimumSize(100, 25);
-    sidebarView.show(this._panelSplitView.sidebarElement());
+    this._mainView = new WebInspector.VBox();
+    this._panelSplitView.setMainView(this._mainView);
 
-    this._sidebarElement = sidebarView.element;
-    this._sidebarElement.classList.add("sidebar");
-    var sidebarTreeElement = this._sidebarElement.createChild("ol", "sidebar-tree");
+    this._sidebarView = new WebInspector.VBox();
+    this._sidebarView.setMinimumSize(100, 25);
+    this._panelSplitView.setSidebarView(this._sidebarView);
+
+    this._sidebarView.element.classList.add("sidebar");
+    var sidebarTreeElement = this._sidebarView.element.createChild("ol", "sidebar-tree");
     this.sidebarTree = new TreeOutline(sidebarTreeElement);
 }
 
@@ -150,20 +154,29 @@ WebInspector.PanelWithSidebarTree.prototype = {
     /**
      * @return {!Element}
      */
-    sidebarElement: function()
+    panelSidebarElement: function()
     {
-        return this._sidebarElement;
+        return this._sidebarView.element;
     },
 
     /**
-     * @return {!Element} element
+     * @return {!Element}
      */
     mainElement: function()
     {
-        return this._panelSplitView.mainElement();
+        return this._mainView.element;
     },
 
     /**
+     * @return {!WebInspector.SplitView}
+     */
+    splitView: function()
+    {
+        return this._panelSplitView;
+    },
+
+    /**
+     * @override
      * @return {!Element}
      */
     defaultFocusedElement: function()
@@ -226,6 +239,7 @@ WebInspector.RuntimeExtensionPanelDescriptor = function(extension)
 
 WebInspector.RuntimeExtensionPanelDescriptor.prototype = {
     /**
+     * @override
      * @return {string}
      */
     name: function()
@@ -234,6 +248,7 @@ WebInspector.RuntimeExtensionPanelDescriptor.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     title: function()
@@ -242,6 +257,7 @@ WebInspector.RuntimeExtensionPanelDescriptor.prototype = {
     },
 
     /**
+     * @override
      * @return {!Promise.<!WebInspector.Panel>}
      */
     panel: function()

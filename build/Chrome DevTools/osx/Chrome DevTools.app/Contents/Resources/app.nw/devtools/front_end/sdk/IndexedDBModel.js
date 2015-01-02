@@ -36,16 +36,11 @@ WebInspector.IndexedDBModel = function(target)
 {
     WebInspector.SDKModel.call(this, WebInspector.IndexedDBModel, target);
     this._agent = target.indexedDBAgent();
-    this._agent.enable();
-
-    target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginAdded, this._securityOriginAdded, this);
-    target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginRemoved, this._securityOriginRemoved, this);
 
     /** @type {!Map.<!WebInspector.IndexedDBModel.DatabaseId, !WebInspector.IndexedDBModel.Database>} */
     this._databases = new Map();
     /** @type {!Object.<string, !Array.<string>>} */
     this._databaseNamesBySecurityOrigin = {};
-    this._reset();
 }
 
 WebInspector.IndexedDBModel.KeyTypes = {
@@ -84,7 +79,7 @@ WebInspector.IndexedDBModel.keyFromIDBKey = function(idbKey)
         if (idbKey instanceof Date) {
             key.date = idbKey.getTime();
             key.type = WebInspector.IndexedDBModel.KeyTypes.DateType;
-        } else if (idbKey instanceof Array) {
+        } else if (Array.isArray(idbKey)) {
             key.array = [];
             for (var i = 0; i < idbKey.length; ++i)
                 key.array.push(WebInspector.IndexedDBModel.keyFromIDBKey(idbKey[i]));
@@ -155,13 +150,21 @@ WebInspector.IndexedDBModel.EventTypes = {
 }
 
 WebInspector.IndexedDBModel.prototype = {
-    _reset: function()
+    enable: function()
     {
-        for (var securityOrigin in this._databaseNamesBySecurityOrigin)
-            this._removeOrigin(securityOrigin);
+        if (this._enabled)
+            return;
+
+        this._agent.enable();
+
+        this.target().resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginAdded, this._securityOriginAdded, this);
+        this.target().resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginRemoved, this._securityOriginRemoved, this);
+
         var securityOrigins = this.target().resourceTreeModel.securityOrigins();
         for (var i = 0; i < securityOrigins.length; ++i)
             this._addOrigin(securityOrigins[i]);
+
+        this._enabled = true;
     },
 
     refreshDatabaseNames: function()

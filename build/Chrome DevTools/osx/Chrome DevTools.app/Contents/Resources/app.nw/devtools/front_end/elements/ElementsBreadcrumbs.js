@@ -9,7 +9,7 @@
 WebInspector.ElementsBreadcrumbs = function()
 {
     WebInspector.HBox.call(this, true);
-    this.contentElement.appendChild(WebInspector.View.createStyleElement("elements/breadcrumbs.css"));
+    this.registerRequiredCSS("elements/breadcrumbs.css");
 
     this.crumbsElement = this.contentElement.createChild("div", "crumbs");
     this.crumbsElement.addEventListener("mousemove", this._mouseMovedInCrumbs.bind(this), false);
@@ -356,8 +356,9 @@ WebInspector.ElementsBreadcrumbs.prototype = {
                         newEndNeeded = false;
                         crumb.classList.add("end");
                     }
-                } else
+                } else {
                     collapsedRun = true;
+                }
                 crumb = crumb.nextSibling;
             }
 

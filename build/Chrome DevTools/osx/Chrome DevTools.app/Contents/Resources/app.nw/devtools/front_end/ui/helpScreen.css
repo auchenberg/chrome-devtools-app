@@ -127,7 +127,7 @@ body.dock-to-bottom .help-content {
 
 .settings-tab .field-error-message {
     color: DarkRed;
-    height: 0px; /* Avoid changing element height when content is set. */
+    height: 0; /* Avoid changing element height when content is set. */
 }
 
 .help-line {
@@ -161,7 +161,7 @@ body.dock-to-bottom .help-content {
     font-size: 11px;
     background-color: #f7f7f7;
     color: #333;
-    box-shadow: 0 1px 0px rgba(0, 0, 0, 0.2), 0 0 0 2px #ffffff inset;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px #ffffff inset;
     border-radius: 3px;
     display: inline-block;
     margin: 0 0.1em;
@@ -206,11 +206,6 @@ body.dock-to-bottom .help-content {
     padding-left: 30px;
 }
 
-#enable-devtools-on-startup {
-    margin: 0 0 0 80px;
-    display: inline-block;
-}
-
 .help-content p.help-section {
     margin: 0 0 15px 0;
 }
@@ -223,12 +218,8 @@ body.dock-to-bottom .help-content {
     color: inherit;
 }
 
-#resolution-override-section {
-    margin-left: 13px;
-}
-
 .help-content input[type=checkbox] {
-    margin-right: 7px;
+    margin: 1px 7px 1px 2px;
 }
 
 .help-content option {
@@ -249,72 +240,23 @@ body.dock-to-bottom .help-content {
     bottom: 10px;
     left: 10px;
     height: initial;
-    padding: 21px 0 0 21px;
+    padding: 21px 0 0 0;
     box-shadow: 1px 1px 5px 2px rgba(128, 128, 128, 0.7);
 }
 
 #settings-screen .help-window-label {
     font-size: 18px;
     color: inherit;
-    padding-top: 1px;
+    padding: 1px 0 15px 17px;
 }
 
 .help-container-wrapper {
     position: absolute;
-    top: 54px;
+    top: 40px;
     left: 15px;
     right: 0;
     bottom: 0;
     overflow: auto;
-}
-
-#settings-screen .tabbed-pane-header {
-    border: none transparent;
-    height: auto;
-    width: 110px;
-    margin-top: 14px;
-    flex: auto;
-}
-
-#settings-screen .tabbed-pane-header-contents {
-    margin: 0;
-}
-
-#settings-screen .tabbed-pane-header-tabs {
-    display: flex;
-    flex-direction: column;
-    padding-top: 5px;
-    width: 100px;
-}
-
-#settings-screen .tabbed-pane-header-tab {
-    background-color: transparent;
-    border: none transparent;
-    font-weight: normal;
-    text-shadow: none;
-    color: #999999;
-    height: 22px;
-    padding-left: 0;
-}
-
-#settings-screen .tabbed-pane-header-tab:not(.selected) {
-    cursor: pointer;
-}
-
-#settings-screen .tabbed-pane-header-tab.selected {
-    color: inherit;
-}
-
-#settings-screen .tabbed-pane-content {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    margin: 8px;
-}
-
-#settings-screen .tabbed-pane-content {
-    left: 120px;
 }
 
 .settings-tab.help-content {
@@ -340,7 +282,7 @@ body.dock-to-bottom .help-content {
 }
 
 .settings-tab-container header {
-    padding: 14px 0 6px;
+    padding: 0 0 6px;
     border-bottom: 1px solid #EEEEEE;
 }
 
@@ -507,7 +449,7 @@ input.list-column-editor {
 }
 select.list-column-editor {
     padding: 2px;
-    margin-left: 0px;
+    margin-left: 0;
 }
 
 .settings-tab .settings-list .settings-list-item .file-system-path {

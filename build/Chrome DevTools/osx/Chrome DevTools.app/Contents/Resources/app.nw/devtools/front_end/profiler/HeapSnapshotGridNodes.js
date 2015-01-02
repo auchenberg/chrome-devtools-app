@@ -103,6 +103,14 @@ WebInspector.HeapSnapshotGridNode.ChildrenProvider.prototype = {
 
 WebInspector.HeapSnapshotGridNode.prototype = {
     /**
+     * @return {!WebInspector.HeapSnapshotSortableDataGrid}
+     */
+    heapSnapshotDataGrid: function()
+    {
+        return this._dataGrid;
+    },
+
+    /**
      * @return {!WebInspector.HeapSnapshotGridNode.ChildrenProvider}
      */
     createProvider: function()
@@ -129,6 +137,7 @@ WebInspector.HeapSnapshotGridNode.prototype = {
     },
 
     /**
+     * @override
      * @param {string} columnIdentifier
      * @return {!Element}
      */
@@ -158,9 +167,6 @@ WebInspector.HeapSnapshotGridNode.prototype = {
         this._dataGrid.updateVisibleNodes(true);
     },
 
-    /**
-     * @override
-     */
     dispose: function()
     {
         if (this._providerObject)
@@ -532,6 +538,7 @@ WebInspector.HeapSnapshotGenericObjectNode = function(dataGrid, node)
 
 WebInspector.HeapSnapshotGenericObjectNode.prototype = {
     /**
+     * @override
      * @return {?{snapshot:!WebInspector.HeapSnapshotProxy, snapshotNodeIndex:number}}
      */
     retainersDataSource: function()
@@ -540,6 +547,7 @@ WebInspector.HeapSnapshotGenericObjectNode.prototype = {
     },
 
     /**
+     * @override
      * @param {string} columnIdentifier
      * @return {!Element}
      */
@@ -628,7 +636,7 @@ WebInspector.HeapSnapshotGenericObjectNode.prototype = {
 
     /**
      * @param {!WebInspector.Target} target
-     * @param {!function(!WebInspector.RemoteObject)} callback
+     * @param {function(!WebInspector.RemoteObject)} callback
      * @param {string} objectGroupName
      */
     queryObjectContent: function(target, callback, objectGroupName)
@@ -718,6 +726,7 @@ WebInspector.HeapSnapshotObjectNode = function(dataGrid, snapshot, edge, parentO
 
 WebInspector.HeapSnapshotObjectNode.prototype = {
     /**
+     * @override
      * @return {?{snapshot:!WebInspector.HeapSnapshotProxy, snapshotNodeIndex:number}}
      */
     retainersDataSource: function()
@@ -726,6 +735,7 @@ WebInspector.HeapSnapshotObjectNode.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.HeapSnapshotProviderProxy}
      */
     createProvider: function()
@@ -847,6 +857,7 @@ WebInspector.HeapSnapshotRetainingObjectNode = function(dataGrid, snapshot, edge
 
 WebInspector.HeapSnapshotRetainingObjectNode.prototype = {
     /**
+     * @override
      * @return {!WebInspector.HeapSnapshotProviderProxy}
      */
     createProvider: function()
@@ -855,6 +866,7 @@ WebInspector.HeapSnapshotRetainingObjectNode.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.HeapSnapshotCommon.Edge} item
      * @return {!WebInspector.HeapSnapshotRetainingObjectNode}
      */
@@ -864,6 +876,7 @@ WebInspector.HeapSnapshotRetainingObjectNode.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     _edgeNodeSeparator: function()
@@ -943,6 +956,7 @@ WebInspector.HeapSnapshotInstanceNode = function(dataGrid, snapshot, node, isDel
 
 WebInspector.HeapSnapshotInstanceNode.prototype = {
     /**
+     * @override
      * @return {?{snapshot:!WebInspector.HeapSnapshotProxy, snapshotNodeIndex:number}}
      */
     retainersDataSource: function()
@@ -951,6 +965,7 @@ WebInspector.HeapSnapshotInstanceNode.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.HeapSnapshotProviderProxy}
      */
     createProvider: function()
@@ -1054,9 +1069,9 @@ WebInspector.HeapSnapshotConstructorNode.prototype = {
 
     /**
      * @param {number} snapshotObjectId
-     * @param {function(boolean)} callback
+     * @param {function(?WebInspector.HeapSnapshotGridNode, ?WebInspector.HeapSnapshotGridNode)} callback
      */
-    revealNodeBySnapshotObjectId: function(snapshotObjectId, callback)
+    populateNodeBySnapshotObjectId: function(snapshotObjectId, callback)
     {
         /**
          * @this {WebInspector.HeapSnapshotConstructorNode}
@@ -1074,7 +1089,7 @@ WebInspector.HeapSnapshotConstructorNode.prototype = {
         {
             if (nodePosition === -1) {
                 this.collapse();
-                callback(false);
+                callback(null, null);
             } else {
                 this._populateChildren(nodePosition, null, didPopulateChildren.bind(this, nodePosition));
             }
@@ -1086,12 +1101,7 @@ WebInspector.HeapSnapshotConstructorNode.prototype = {
          */
         function didPopulateChildren(nodePosition)
         {
-            var child = this.childForPosition(nodePosition);
-            if (child) {
-                this._dataGrid.revealTreeNode([this, child]);
-                this._dataGrid.highlightNode(/** @type {!WebInspector.HeapSnapshotGridNode} */ (child));
-            }
-            callback(!!child);
+            callback(this, /** @type {?WebInspector.HeapSnapshotGridNode} */(this.childForPosition(nodePosition)));
         }
 
         this._dataGrid.resetNameFilter();
@@ -1108,6 +1118,7 @@ WebInspector.HeapSnapshotConstructorNode.prototype = {
     },
 
     /**
+     * @override
      * @param {string} columnIdentifier
      * @return {!Element}
      */
@@ -1184,6 +1195,9 @@ WebInspector.HeapSnapshotDiffNodesProvider = function(addedNodesProvider, delete
 }
 
 WebInspector.HeapSnapshotDiffNodesProvider.prototype = {
+    /**
+     * @override
+     */
     dispose: function()
     {
         this._addedNodesProvider.dispose();
@@ -1201,6 +1215,7 @@ WebInspector.HeapSnapshotDiffNodesProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {function(boolean)} callback
      */
     isEmpty: function(callback)
@@ -1209,9 +1224,10 @@ WebInspector.HeapSnapshotDiffNodesProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {number} beginPosition
      * @param {number} endPosition
-     * @param {!function(!WebInspector.HeapSnapshotCommon.ItemsRange)} callback
+     * @param {function(!WebInspector.HeapSnapshotCommon.ItemsRange)} callback
      */
     serializeItemsRange: function(beginPosition, endPosition, callback)
     {
@@ -1268,6 +1284,7 @@ WebInspector.HeapSnapshotDiffNodesProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.HeapSnapshotCommon.ComparatorConfig} comparator
      * @param {function()} callback
      */
@@ -1329,6 +1346,7 @@ WebInspector.HeapSnapshotDiffNode.prototype = {
     },
 
     /**
+     * @override
      * @param {string} columnIdentifier
      * @return {!Element}
      */

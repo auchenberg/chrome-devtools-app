@@ -106,6 +106,7 @@ WebInspector.FileContentView.FileContentProvider = function(file, metadata)
 
 WebInspector.FileContentView.FileContentProvider.prototype = {
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -114,6 +115,7 @@ WebInspector.FileContentView.FileContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -122,6 +124,7 @@ WebInspector.FileContentView.FileContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -149,6 +152,7 @@ WebInspector.FileContentView.FileContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex

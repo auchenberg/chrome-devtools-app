@@ -117,11 +117,7 @@ WebInspector.DOMStorageModel = function(target)
 
     /** @type {!Object.<string, !WebInspector.DOMStorage>} */
     this._storages = {};
-    target.registerDOMStorageDispatcher(new WebInspector.DOMStorageDispatcher(this));
     this._agent = target.domstorageAgent();
-    this._agent.enable();
-    target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginAdded, this._securityOriginAdded, this);
-    target.resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginRemoved, this._securityOriginRemoved, this);
 }
 
 WebInspector.DOMStorageModel.Events = {
@@ -130,13 +126,37 @@ WebInspector.DOMStorageModel.Events = {
 }
 
 WebInspector.DOMStorageModel.prototype = {
+    enable: function()
+    {
+        if (this._enabled)
+            return;
+
+        this.target().registerDOMStorageDispatcher(new WebInspector.DOMStorageDispatcher(this));
+        this.target().resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginAdded, this._securityOriginAdded, this);
+        this.target().resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginRemoved, this._securityOriginRemoved, this);
+        this._agent.enable();
+
+        var securityOrigins = this.target().resourceTreeModel.securityOrigins();
+        for (var i = 0; i < securityOrigins.length; ++i)
+            this._addOrigin(securityOrigins[i]);
+
+        this._enabled = true;
+    },
 
     /**
      * @param {!WebInspector.Event} event
      */
     _securityOriginAdded: function(event)
     {
-        var securityOrigin = /** @type {string} */ (event.data);
+        this._addOrigin(/** @type {string} */ (event.data));
+    },
+
+
+    /**
+     * @param {string} securityOrigin
+     */
+    _addOrigin: function(securityOrigin)
+    {
         var localStorageKey = this._storageKey(securityOrigin, true);
         console.assert(!this._storages[localStorageKey]);
         var localStorage = new WebInspector.DOMStorage(this, securityOrigin, true);
@@ -273,6 +293,7 @@ WebInspector.DOMStorageDispatcher = function(model)
 WebInspector.DOMStorageDispatcher.prototype = {
 
     /**
+     * @override
      * @param {!DOMStorageAgent.StorageId} storageId
      */
     domStorageItemsCleared: function(storageId)
@@ -281,6 +302,7 @@ WebInspector.DOMStorageDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!DOMStorageAgent.StorageId} storageId
      * @param {string} key
      */
@@ -290,6 +312,7 @@ WebInspector.DOMStorageDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!DOMStorageAgent.StorageId} storageId
      * @param {string} key
      * @param {string} value
@@ -300,6 +323,7 @@ WebInspector.DOMStorageDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!DOMStorageAgent.StorageId} storageId
      * @param {string} key
      * @param {string} oldValue

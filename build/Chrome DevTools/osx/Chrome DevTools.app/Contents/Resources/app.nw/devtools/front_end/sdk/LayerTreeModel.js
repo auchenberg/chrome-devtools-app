@@ -43,6 +43,15 @@
 */
 WebInspector.TracingLayerPayload;
 
+/** @typedef {!{
+        id: string,
+        layer_id: number,
+        gpu_memory_usage: number,
+        content_rect: !Array.<number>
+    }}
+*/
+WebInspector.TracingLayerTile;
+
 /**
   * @constructor
   * @extends {WebInspector.SDKModel}
@@ -288,12 +297,14 @@ WebInspector.LayerTreeBase.prototype = {
 WebInspector.TracingLayerTree = function(target)
 {
     WebInspector.LayerTreeBase.call(this, target);
+    /** @type {!Map.<string, !WebInspector.TracingLayerTile>} */
+    this._tileById = new Map();
 }
 
 WebInspector.TracingLayerTree.prototype = {
     /**
      * @param {!WebInspector.TracingLayerPayload} root
-     * @param {!function()} callback
+     * @param {function()} callback
      */
     setLayers: function(root, callback)
     {
@@ -312,6 +323,25 @@ WebInspector.TracingLayerTree.prototype = {
             this._root = this._innerSetLayers(oldLayersById, root);
             callback();
         }
+    },
+
+    /**
+     * @param {!Array.<!WebInspector.TracingLayerTile>} tiles
+     */
+    setTiles: function(tiles)
+    {
+        this._tileById = new Map();
+        for (var tile of tiles)
+            this._tileById.set(tile.id, tile);
+    },
+
+    /**
+     * @param {string} id
+     * @return {?WebInspector.TracingLayerTile}
+     */
+    tileById: function(id)
+    {
+        return this._tileById.get(id);
     },
 
     /**
@@ -575,6 +605,7 @@ WebInspector.AgentLayer = function(target, layerPayload)
 
 WebInspector.AgentLayer.prototype = {
     /**
+     * @override
      * @return {string}
      */
     id: function()
@@ -583,6 +614,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?string}
      */
     parentId: function()
@@ -591,6 +623,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.Layer}
      */
     parent: function()
@@ -599,6 +632,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isRoot: function()
@@ -607,6 +641,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!WebInspector.Layer>}
      */
     children: function()
@@ -615,6 +650,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Layer} child
      */
     addChild: function(child)
@@ -634,6 +670,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.DOMNode}
      */
     node: function()
@@ -642,6 +679,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.DOMNode}
      */
     nodeForSelfOrAncestor: function()
@@ -654,6 +692,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     offsetX: function()
@@ -662,6 +701,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     offsetY: function()
@@ -670,6 +710,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     width: function()
@@ -678,6 +719,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     height: function()
@@ -686,6 +728,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?Array.<number>}
      */
     transform: function()
@@ -694,6 +737,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<number>}
      */
     quad: function()
@@ -702,6 +746,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<number>}
      */
     anchorPoint: function()
@@ -714,6 +759,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     invisible: function()
@@ -722,6 +768,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     paintCount: function()
@@ -730,6 +777,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?DOMAgent.Rect}
      */
     lastPaintRect: function()
@@ -738,6 +786,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!LayerTreeAgent.ScrollRect>}
      */
     scrollRects: function()
@@ -746,6 +795,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @param {function(!Array.<string>)} callback
      */
     requestCompositingReasons: function(callback)
@@ -760,6 +810,7 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
+     * @override
      * @param {function(!WebInspector.PaintProfilerSnapshot=)} callback
      */
     requestSnapshot: function(callback)
@@ -893,6 +944,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     id: function()
@@ -901,6 +953,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?string}
      */
     parentId: function()
@@ -909,6 +962,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.Layer}
      */
     parent: function()
@@ -917,6 +971,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     isRoot: function()
@@ -925,6 +980,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!WebInspector.Layer>}
      */
     children: function()
@@ -933,6 +989,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Layer} child
      */
     addChild: function(child)
@@ -954,6 +1011,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.DOMNode}
      */
     node: function()
@@ -962,6 +1020,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?WebInspector.DOMNode}
      */
     nodeForSelfOrAncestor: function()
@@ -974,6 +1033,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     offsetX: function()
@@ -982,6 +1042,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     offsetY: function()
@@ -990,6 +1051,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     width: function()
@@ -998,6 +1060,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     height: function()
@@ -1006,6 +1069,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?Array.<number>}
      */
     transform: function()
@@ -1014,6 +1078,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<number>}
      */
     quad: function()
@@ -1022,6 +1087,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<number>}
      */
     anchorPoint: function()
@@ -1030,6 +1096,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {boolean}
      */
     invisible: function()
@@ -1038,6 +1105,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {number}
      */
     paintCount: function()
@@ -1046,6 +1114,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {?DOMAgent.Rect}
      */
     lastPaintRect: function()
@@ -1054,6 +1123,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @return {!Array.<!LayerTreeAgent.ScrollRect>}
      */
     scrollRects: function()
@@ -1088,6 +1158,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @param {function(!Array.<string>)} callback
      */
     requestCompositingReasons: function(callback)
@@ -1096,6 +1167,7 @@ WebInspector.TracingLayer.prototype = {
     },
 
     /**
+     * @override
      * @param {function(!WebInspector.PaintProfilerSnapshot=)} callback
      */
     requestSnapshot: function(callback)
@@ -1131,31 +1203,6 @@ WebInspector.DeferredLayerTree.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.DeferredLayerTree}
- * @param {?WebInspector.Target} target
- * @param {!Array.<!LayerTreeAgent.Layer>} layers
- */
-WebInspector.DeferredAgentLayerTree = function(target, layers)
-{
-    WebInspector.DeferredLayerTree.call(this, target);
-    this._layers = layers;
-}
-
-WebInspector.DeferredAgentLayerTree.prototype = {
-    /**
-     * @param {function(!WebInspector.LayerTreeBase)} callback
-     */
-    resolve: function(callback)
-    {
-        var result = new WebInspector.AgentLayerTree(this._target);
-        result.setLayers(this._layers, callback.bind(null, result));
-    },
-
-    __proto__: WebInspector.DeferredLayerTree.prototype
-};
-
-/**
- * @constructor
  * @implements {LayerTreeAgent.Dispatcher}
  * @param {!WebInspector.LayerTreeModel} layerTreeModel
  */
@@ -1166,6 +1213,7 @@ WebInspector.LayerTreeDispatcher = function(layerTreeModel)
 
 WebInspector.LayerTreeDispatcher.prototype = {
     /**
+     * @override
      * @param {!Array.<!LayerTreeAgent.Layer>=} layers
      */
     layerTreeDidChange: function(layers)
@@ -1174,6 +1222,7 @@ WebInspector.LayerTreeDispatcher.prototype = {
     },
 
     /**
+     * @override
      * @param {!LayerTreeAgent.LayerId} layerId
      * @param {!DOMAgent.Rect} clipRect
      */

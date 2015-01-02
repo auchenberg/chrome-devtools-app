@@ -37,6 +37,7 @@ WebInspector.MetricsSidebarPane = function()
 
 WebInspector.MetricsSidebarPane.prototype = {
     /**
+     * @override
      * @param {?WebInspector.DOMNode} node
      */
     setNode: function(node)
@@ -73,6 +74,7 @@ WebInspector.MetricsSidebarPane.prototype = {
     },
 
     /**
+     * @override
      * @param {!WebInspector.Throttler.FinishCallback} finishedCallback
      * @protected
      */
@@ -279,7 +281,7 @@ WebInspector.MetricsSidebarPane.prototype = {
 
             var boxElement = createElement("div");
             boxElement.className = name;
-            boxElement._backgroundColor = boxColors[i].toString(WebInspector.Color.Format.RGBA);
+            boxElement._backgroundColor = boxColors[i].asString(WebInspector.Color.Format.RGBA);
             boxElement._name = name;
             boxElement.style.backgroundColor = boxElement._backgroundColor;
             boxElement.addEventListener("mouseover", this._highlightDOMNode.bind(this, true, name === "position" ? "all" : name), false);
@@ -341,7 +343,7 @@ WebInspector.MetricsSidebarPane.prototype = {
         var config = new WebInspector.InplaceEditor.Config(this.editingCommitted.bind(this), this.editingCancelled.bind(this), context);
         WebInspector.InplaceEditor.startEditing(targetElement, config);
 
-        window.getSelection().setBaseAndExtent(targetElement, 0, targetElement, 1);
+        targetElement.window().getSelection().setBaseAndExtent(targetElement, 0, targetElement, 1);
     },
 
     _handleKeyDown: function(context, styleProperty, event)

@@ -41,9 +41,9 @@ WebInspector.CanvasReplayStateView = function(traceLogPlayer)
     this._traceLogPlayer = traceLogPlayer;
 
     var controlsToolbar = new WebInspector.StatusBar(this.element);
-    this._prevButton = this._createControlButton(controlsToolbar, "canvas-replay-state-prev", WebInspector.UIString("Previous resource."), this._onResourceNavigationClick.bind(this, false));
-    this._nextButton = this._createControlButton(controlsToolbar, "canvas-replay-state-next", WebInspector.UIString("Next resource."), this._onResourceNavigationClick.bind(this, true));
-    this._createControlButton(controlsToolbar, "canvas-replay-state-refresh", WebInspector.UIString("Refresh."), this._onStateRefreshClick.bind(this));
+    this._prevButton = this._createControlButton(controlsToolbar, "play-backwards-status-bar-item", WebInspector.UIString("Previous resource."), this._onResourceNavigationClick.bind(this, false));
+    this._nextButton = this._createControlButton(controlsToolbar, "play-status-bar-item", WebInspector.UIString("Next resource."), this._onResourceNavigationClick.bind(this, true));
+    this._createControlButton(controlsToolbar, "refresh-status-bar-item", WebInspector.UIString("Refresh."), this._onStateRefreshClick.bind(this));
 
     this._resourceSelector = new WebInspector.StatusBarComboBox(this._onReplayResourceChanged.bind(this));
     this._currentOption = this._resourceSelector.createOption(WebInspector.UIString("<auto>"), WebInspector.UIString("Show state of the last replayed resource."), "");
@@ -110,7 +110,7 @@ WebInspector.CanvasReplayStateView.prototype = {
      */
     _createControlButton: function(toolbar, className, title, clickCallback)
     {
-        var button = new WebInspector.StatusBarButton(title, className + " canvas-replay-button");
+        var button = new WebInspector.StatusBarButton(title, className);
         toolbar.appendStatusBarItem(button);
 
         button.makeLongClickEnabled();

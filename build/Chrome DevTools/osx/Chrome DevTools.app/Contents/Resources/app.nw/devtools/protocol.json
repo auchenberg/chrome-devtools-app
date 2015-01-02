@@ -209,17 +209,23 @@
                 "type": "object",
                 "description": "Screencast frame metadata",
                 "properties": [
-                    { "name": "deviceScaleFactor", "type": "number", "hidden": true, "description": "Device scale factor." },
-                    { "name": "viewport", "$ref": "DOM.Rect", "hidden": true, "description": "Viewport in CSS pixels." },
-                    { "name": "offsetTop", "type": "number", "hidden": true, "optional": true, "description": "Top offset in DIP." },
-                    { "name": "offsetBottom", "type": "number", "hidden": true, "optional": true, "description": "Bottom offset in DIP." },
+                    { "name": "offsetTop", "type": "number", "hidden": true, "description": "Top offset in DIP." },
                     { "name": "pageScaleFactor", "type": "number", "hidden": true, "description": "Page scale factor." },
-                    { "name": "pageScaleFactorMin", "type": "number", "hidden": true, "description": "Page scale factor min." },
-                    { "name": "pageScaleFactorMax", "type": "number", "hidden": true, "description": "Page scale factor max." },
                     { "name": "deviceWidth", "type": "number", "hidden": true, "description": "Device screen width in DIP." },
                     { "name": "deviceHeight", "type": "number", "hidden": true, "description": "Device screen height in DIP." },
                     { "name": "scrollOffsetX", "type": "number", "hidden": true, "description": "Position of horizontal scroll in CSS pixels." },
-                    { "name": "scrollOffsetY", "type": "number", "hidden": true, "description": "Position of vertical scroll in CSS pixels." }
+                    { "name": "scrollOffsetY", "type": "number", "hidden": true, "description": "Position of vertical scroll in CSS pixels." },
+                    { "name": "timestamp", "type": "number", "optional": true, "hidden": true, "description": "Frame swap timestamp." }
+                ],
+                "hidden": true
+            },
+            {
+                "id": "RecordedFrame",
+                "type": "object",
+                "description": "Compressed frame data.",
+                "properties": [
+                    { "name": "data", "type": "string", "description": "Base64-encoded compressed image." },
+                    { "name": "timestamp", "type": "number", "description": "Frame swap timestamp." }
                 ],
                 "hidden": true
             }
@@ -543,6 +549,36 @@
                 "handlers": ["browser", "renderer"]
             },
             {
+                "name": "screencastFrameAck",
+                "description": "Acknowledges that a screencast frame has been received by the frontend.",
+                "parameters": [
+                    { "name": "frameNumber", "type": "integer", "description": "Frame number." }
+                ],
+                "hidden": true,
+                "handlers": ["browser"]
+            },
+            {
+                "name": "startRecordingFrames",
+                "description": "Starts recording each frame to the buffer.",
+                "parameters": [
+                    { "name": "maxFrameCount", "type": "integer", "description": "Maximal number of frames to record from range. Actual maximum depends on implementation." }
+                ],
+                "hidden": true,
+                "handlers": ["browser"]
+            },
+            {
+                "name": "stopRecordingFrames",
+                "async": true,
+                "description": "Stops recording, encodes and returns images.",
+                "parameters": [
+                ],
+                "returns": [
+                    { "name": "frames", "type": "array", "items": { "$ref": "RecordedFrame" }, "description": "Encoded recorded frames." }
+                ],
+                "hidden": true,
+                "handlers": ["browser"]
+            },
+            {
                 "name": "handleJavaScriptDialog",
                 "description": "Accepts or dismisses a JavaScript initiated dialog (alert, confirm, prompt, or onbeforeunload).",
                 "parameters": [
@@ -583,6 +619,22 @@
                 "description": "Shows / hides color picker",
                 "hidden": true,
                 "handlers": ["browser"]
+            },
+            {
+                "name": "setOverlayMessage",
+                "parameters": [
+                    { "name": "message", "type": "string", "optional": true, "description": "Overlay message to display when paused in debugger." }
+                ],
+                "hidden": true,
+                "description": "Sets overlay message."
+            },
+            {
+                "name": "animationsPlaybackRate",
+                "returns": [
+                    { "name": "playbackRate", "type": "number", "description": "Playback rate for animations on page."}
+                ],
+                "description": "Gets the playback rate of the document timeline.",
+                "hidden": true
             },
             {
                 "name": "setAnimationsPlaybackRate",
@@ -691,7 +743,8 @@
                 "description": "Compressed image data requested by the <code>startScreencast</code>.",
                 "parameters": [
                     { "name": "data", "type": "string", "description": "Base64-encoded compressed image." },
-                    { "name": "metadata", "$ref": "ScreencastFrameMetadata", "description": "Screencast frame metadata"}
+                    { "name": "metadata", "$ref": "ScreencastFrameMetadata", "description": "Screencast frame metadata."},
+                    { "name": "frameNumber", "type": "integer", "optional": true, "description": "Frame number."}
                 ],
                 "hidden": true,
                 "handlers": ["browser"]
@@ -751,12 +804,21 @@
                 "description": "Mirror object referencing original JavaScript object.",
                 "properties": [
                     { "name": "type", "type": "string", "enum": ["object", "function", "undefined", "string", "number", "boolean", "symbol"], "description": "Object type." },
-                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." },
+                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator", "generator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." },
                     { "name": "className", "type": "string", "optional": true, "description": "Object class (constructor) name. Specified for <code>object</code> type values only." },
                     { "name": "value", "type": "any", "optional": true, "description": "Remote object value in case of primitive values or JSON values (if it was requested), or description string if the value can not be JSON-stringified (like NaN, Infinity, -Infinity, -0)." },
                     { "name": "description", "type": "string", "optional": true, "description": "String representation of the object." },
                     { "name": "objectId", "$ref": "RemoteObjectId", "optional": true, "description": "Unique object identifier (for non-primitive values)." },
-                    { "name": "preview", "$ref": "ObjectPreview", "optional": true, "description": "Preview containing abbreviated property values. Specified for <code>object</code> type values only.", "hidden": true }
+                    { "name": "preview", "$ref": "ObjectPreview", "optional": true, "description": "Preview containing abbreviated property values. Specified for <code>object</code> type values only.", "hidden": true },
+                    { "name": "customPreview", "$ref": "CustomPreview", "optional": true, "hidden": true}
+                ]
+            },
+            {   "id": "CustomPreview",
+                "type": "object",
+                "hidden": true,
+                "properties": [
+                    { "name": "header", "type": "string"},
+                    { "name": "hasBody", "type": "boolean"}
                 ]
             },
             {
@@ -766,7 +828,7 @@
                 "description": "Object containing abbreviated remote object value.",
                 "properties": [
                     { "name": "type", "type": "string", "enum": ["object", "function", "undefined", "string", "number", "boolean", "symbol"], "description": "Object type." },
-                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." },
+                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator", "generator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." },
                     { "name": "description", "type": "string", "optional": true, "description": "String representation of the object." },
                     { "name": "lossless", "type": "boolean", "description": "Determines whether preview is lossless (contains all information of the original object)." },
                     { "name": "overflow", "type": "boolean", "description": "True iff some of the properties or entries of the original object did not fit." },
@@ -783,7 +845,7 @@
                     { "name": "type", "type": "string", "enum": ["object", "function", "undefined", "string", "number", "boolean", "symbol", "accessor"], "description": "Object type. Accessor means that the property itself is an accessor property." },
                     { "name": "value", "type": "string", "optional": true, "description": "User-friendly property value string." },
                     { "name": "valuePreview", "$ref": "ObjectPreview", "optional": true, "description": "Nested value preview." },
-                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." }
+                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator", "generator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." }
                 ]
             },
             {
@@ -849,7 +911,6 @@
                     { "name": "frameId", "$ref": "Page.FrameId", "description": "Id of the owning frame." }
                 ]
             }
-
         ],
         "commands": [
             {
@@ -931,6 +992,16 @@
                 "name": "isRunRequired",
                 "returns": [
                     { "name": "result", "type": "boolean", "description": "True if the Runtime is in paused on start state." }
+                ],
+                "hidden": true
+            },
+            {
+                "name": "setCustomObjectFormatterEnabled",
+                "parameters": [
+                    {
+                        "name": "enabled",
+                        "type": "boolean"
+                    }
                 ],
                 "hidden": true
             }
@@ -1055,13 +1126,6 @@
                 "hidden": true
             },
             {
-                "name": "setTracingBasedTimeline",
-                "parameters": [
-                    { "name": "enabled", "type": "boolean", "description": "Switch console.timeline to tracing based." }
-                ],
-                "hidden": true
-            },
-            {
                 "name": "setLastEvaluationResult",
                 "parameters": [
                     { "name": "objectId", "$ref": "Runtime.RemoteObjectId", "description": "Identifier of the object to set as last evaluation result." }
@@ -1170,7 +1234,8 @@
                     { "name": "fromDiskCache", "type": "boolean", "optional": true, "description": "Specifies that the request was served from the disk cache." },
                     { "name": "fromServiceWorker", "type": "boolean", "optional": true, "description": "Specifies that the request was served from the ServiceWorker." },
                     { "name": "encodedDataLength", "type": "number", "optional": false, "description": "Total number of bytes received for this request so far." },
-                    { "name": "timing", "$ref": "ResourceTiming", "optional": true, "description": "Timing information for the given request." }
+                    { "name": "timing", "$ref": "ResourceTiming", "optional": true, "description": "Timing information for the given request." },
+                    { "name": "protocol", "type": "string", "optional": true, "description": "Protocol used to fetch this resquest." }
                 ]
             },
             {
@@ -1256,6 +1321,7 @@
             },
             {
                 "name": "getResponseBody",
+                "async": true,
                 "description": "Returns content served for the given request.",
                 "parameters": [
                     { "name": "requestId", "$ref": "RequestId", "description": "Identifier of the network request to get content for." }
@@ -1696,6 +1762,53 @@
         ]
     },
     {
+        "domain": "ServiceWorkerCache",
+        "hidden": true,
+        "types": [
+            {
+                "id": "DataEntry",
+                "type": "object",
+                "description": "Data entry.",
+                "properties": [
+                    { "name": "request", "type": "string", "description": "JSON-stringified request object." },
+                    { "name": "response", "type": "string", "description": "JSON-stringified response object." }
+                ]
+            }
+        ],
+        "commands": [
+            {
+                "name": "requestCacheNames",
+                "async": true,
+                "returns": [
+                    { "name": "cacheNames", "type": "array", "items": { "type": "string" }, "description": "Cache names for origin." }
+                ],
+                "description": "Requests cache names."
+            },
+            {
+                "name": "requestEntries",
+                "async": true,
+                "parameters": [
+                    { "name": "cacheName", "type": "string", "description": "Cache name." },
+                    { "name": "skipCount", "type": "integer", "description": "Number of records to skip." },
+                    { "name": "pageSize", "type": "integer", "description": "Number of records to fetch." }
+                ],
+                "returns": [
+                    { "name": "cacheDataEntries", "type": "array", "items": { "$ref": "DataEntry" }, "description": "Array of object store data entries." },
+                    { "name": "hasMore", "type": "boolean", "description": "If true, there are more entries to fetch in the given range." }
+                ],
+                "description": "Requests data from cache."
+            },
+            {
+                "name": "deleteCache",
+                "async": true,
+                "parameters": [
+                    { "name": "cacheName", "type": "string", "description": "Cache name." }
+                ],
+                "description": "Deletes a cache."
+            }
+        ]
+    },
+    {
         "domain": "DOMStorage",
         "hidden": true,
         "description": "Query and modify DOM storage.",
@@ -2123,6 +2236,26 @@
                     { "name": "shapeMarginColor", "$ref": "RGBA", "optional": true, "hidden": true, "description": "The shape margin fill color (default: transparent)." }
                 ],
                 "description": "Configuration data for the highlighting of page elements."
+            },
+            {
+                "id": "DistributedNode",
+                "type": "object",
+                "hidden": true,
+                "properties": [
+                    { "name": "nodeId", "$ref": "NodeId", "description": "Distributed node id." },
+                    { "name": "destinationInsertionPointIds", "type": "array", "optional": true, "items": { "$ref": "NodeId" }, "description": "Identifiers of nodes this node was distributed into." }
+                ],
+                "description": "Distributed node detailed information."
+            },
+            {
+                "id": "InsertionPointDistribution",
+                "type": "object",
+                "hidden": true,
+                "properties": [
+                    { "name": "nodeId", "$ref": "NodeId", "description": "Insertion point node id." },
+                    { "name": "distributedNodes", "type": "array", "items": { "$ref": "DistributedNode" }, "description": "A list of distributed node details for this insertion point." }
+                ],
+                "description": "Distribution data for insertion point."
             }
         ],
         "commands": [
@@ -2148,6 +2281,16 @@
                     { "name": "depth", "type": "integer", "optional": true, "description": "The maximum depth at which children should be retrieved, defaults to 1. Use -1 for the entire subtree or provide an integer larger than 0.", "hidden": true }
                 ],
                 "description": "Requests that children of the node with given id are returned to the caller in form of <code>setChildNodes</code> events where not only immediate children are retrieved, but all children down to the specified depth."
+            },
+            {
+                "name": "requestShadowHostDistributedNodes",
+                "parameters": [
+                    { "name": "nodeId", "$ref": "NodeId", "description": "Id of the node to get distributed nodes for." }
+                ],
+                "returns": [
+                    { "name": "insertionPointDistributions", "type": "array", "items": { "$ref": "InsertionPointDistribution" }, "description": "A list of distribution data for each insertion point in shadow host." }
+                ],
+                "description": "Returns distribution data for all insertion points in shadow tree of the given node."
             },
             {
                 "name": "querySelector",
@@ -2535,6 +2678,14 @@
                 "hidden": true
             },
             {
+                "name": "shadowHostDistributionInvalidated",
+                "parameters": [
+                    { "name": "nodeIds", "type": "array", "items": { "$ref": "NodeId" }, "description": "Ids of the shadow host nodes for which content distribution has been invalidated." }
+                ],
+                "description": "Fired when shadow host node content distribution is recalculated.",
+                "hidden": true
+            },
+            {
                 "name": "characterDataModified",
                 "parameters": [
                     { "name": "nodeId", "$ref": "NodeId", "description": "Id of the node that has changed." },
@@ -2617,8 +2768,8 @@
             {
                 "id": "StyleSheetOrigin",
                 "type": "string",
-                "enum": ["user", "user-agent", "inspector", "regular"],
-                "description": "Stylesheet type: \"user\" for user stylesheets, \"user-agent\" for user-agent stylesheets, \"inspector\" for stylesheets created by the inspector (i.e. those holding the \"via inspector\" rules), \"regular\" for regular stylesheets."
+                "enum": ["injected", "user-agent", "inspector", "regular"],
+                "description": "Stylesheet type: \"injected\" for stylesheets injected via extension, \"user-agent\" for user-agent stylesheets, \"inspector\" for stylesheets created by the inspector (i.e. those holding the \"via inspector\" rules), \"regular\" for regular stylesheets."
             },
             {
                 "id": "PseudoIdMatches",
@@ -2675,6 +2826,7 @@
                     { "name": "sourceMapURL", "type": "string", "optional": true, "description": "URL of source map associated with the stylesheet (if any)." },
                     { "name": "origin", "$ref": "StyleSheetOrigin", "description": "Stylesheet origin."},
                     { "name": "title", "type": "string", "description": "Stylesheet title."},
+                    { "name": "ownerNode", "$ref": "DOM.BackendNodeId", "optional": true, "description": "The backend id for the owner node of the stylesheet." },
                     { "name": "disabled", "type": "boolean", "description": "Denotes whether the stylesheet is disabled."},
                     { "name": "hasSourceURL", "type": "boolean", "optional": true, "description": "Whether the sourceURL field value comes from the sourceURL comment." },
                     { "name": "isInline", "type": "boolean", "description": "Whether this stylesheet is created for STYLE tag by parser. This flag is not set for document.written STYLE tags." },
@@ -2896,6 +3048,18 @@
                 "description": "Modifies the rule selector."
             },
             {
+                "name": "setMediaText",
+                "parameters": [
+                    { "name": "styleSheetId", "$ref": "StyleSheetId" },
+                    { "name": "range", "$ref": "SourceRange" },
+                    { "name": "text", "type": "string" }
+                ],
+                "returns": [
+                    { "name": "media", "$ref": "CSSMedia", "description": "The resulting CSS media rule after modification." }
+                ],
+                "description": "Modifies the rule selector."
+            },
+            {
                 "name": "createStyleSheet",
                 "parameters": [
                     { "name": "frameId", "$ref": "Page.FrameId", "description": "Identifier of the frame where \"via-inspector\" stylesheet should be created."}
@@ -3091,9 +3255,22 @@
                 "properties": [
                     { "name": "location", "$ref": "Location", "description": "Location of the function." },
                     { "name": "functionName", "type": "string", "description": "Name of the function." },
+                    { "name": "isGenerator", "type": "boolean", "description": "Whether this is a generator function." },
                     { "name": "scopeChain", "type": "array", "optional": true, "items": { "$ref": "Scope" }, "description": "Scope chain for this closure." }
                 ],
                 "description": "Information about the function."
+            },
+            {
+                "id": "GeneratorObjectDetails",
+                "hidden": true,
+                "type": "object",
+                "properties": [
+                    { "name": "function", "$ref": "Runtime.RemoteObject", "description": "Generator function." },
+                    { "name": "functionName", "type": "string", "description": "Name of the generator function." },
+                    { "name": "status", "type": "string", "enum": ["running", "suspended", "closed"], "description": "Current generator object status." },
+                    { "name": "location", "$ref": "Location", "optional": true, "description": "If suspended, location where generator function was suspended (e.g. location of the last 'yield'). Otherwise, location of the generator function." }
+                ],
+                "description": "Information about the generator object."
             },
             {
                 "id": "CollectionEntry",
@@ -3133,7 +3310,7 @@
                 "id": "Scope",
                 "type": "object",
                 "properties": [
-                    { "name": "type", "type": "string", "enum": ["global", "local", "with", "closure", "catch"], "description": "Scope type." },
+                    { "name": "type", "type": "string", "enum": ["global", "local", "with", "closure", "catch", "block", "script"], "description": "Scope type." },
                     { "name": "object", "$ref": "Runtime.RemoteObject", "description": "Object representing the scope. For <code>global</code> and <code>with</code> scopes it represents the actual object; for the rest of the scopes, it is artificial transient object enumerating scope variables as its properties." }
                 ],
                 "description": "Scope description."
@@ -3176,7 +3353,11 @@
                     { "name": "parentId", "type": "integer", "optional": true, "description": "Id of the parent promise." },
                     { "name": "callFrame", "$ref": "Console.CallFrame", "optional": true, "description": "Top call frame on promise creation."},
                     { "name": "creationTime", "type": "number", "optional": true, "description": "Creation time of the promise." },
-                    { "name": "settlementTime", "type": "number", "optional": true, "description": "Settlement time of the promise." }
+                    { "name": "settlementTime", "type": "number", "optional": true, "description": "Settlement time of the promise." },
+                    { "name": "creationStack", "$ref": "Console.StackTrace", "optional": true, "description": "JavaScript stack trace on promise creation." },
+                    { "name": "asyncCreationStack", "$ref": "Console.AsyncStackTrace", "optional": true, "description": "JavaScript asynchronous stack trace on promise creation, if available." },
+                    { "name": "settlementStack", "$ref": "Console.StackTrace", "optional": true, "description": "JavaScript stack trace on promise settlement." },
+                    { "name": "asyncSettlementStack", "$ref": "Console.AsyncStackTrace", "optional": true, "description": "JavaScript asynchronous stack trace on promise settlement, if available." }
                 ],
                 "hidden": true
             }
@@ -3213,8 +3394,7 @@
                     { "name": "url", "type": "string", "optional": true, "description": "URL of the resources to set breakpoint on." },
                     { "name": "urlRegex", "type": "string", "optional": true, "description": "Regex pattern for the URLs of the resources to set breakpoints on. Either <code>url</code> or <code>urlRegex</code> must be specified." },
                     { "name": "columnNumber", "type": "integer", "optional": true, "description": "Offset in the line to set breakpoint at." },
-                    { "name": "condition", "type": "string", "optional": true, "description": "Expression to use as a breakpoint condition. When specified, debugger will only stop on the breakpoint if this expression evaluates to true." },
-                    { "name": "isAntibreakpoint", "type": "boolean", "optional": true, "hidden": true, "description": "Creates pseudo-breakpoint that prevents debugger from pausing on exception at this location." }
+                    { "name": "condition", "type": "string", "optional": true, "description": "Expression to use as a breakpoint condition. When specified, debugger will only stop on the breakpoint if this expression evaluates to true." }
                 ],
                 "returns": [
                     { "name": "breakpointId", "$ref": "BreakpointId", "description": "Id of the created breakpoint for further reference." },
@@ -3268,6 +3448,11 @@
             {
                 "name": "resume",
                 "description": "Resumes JavaScript execution."
+            },
+            {
+                "name": "stepIntoAsync",
+                "description": "Steps into the first async operation handler that was scheduled by or after the current statement.",
+                "hidden": true
             },
             {
                 "name": "searchInContent",
@@ -3333,12 +3518,23 @@
                 "name": "getFunctionDetails",
                 "hidden": true,
                 "parameters": [
-                    { "name": "functionId", "$ref": "Runtime.RemoteObjectId", "description": "Id of the function to get location for." }
+                    { "name": "functionId", "$ref": "Runtime.RemoteObjectId", "description": "Id of the function to get details for." }
                 ],
                 "returns": [
                     { "name": "details", "$ref": "FunctionDetails", "description": "Information about the function." }
                 ],
                 "description": "Returns detailed information on given function."
+            },
+            {
+                "name": "getGeneratorObjectDetails",
+                "hidden": true,
+                "parameters": [
+                    { "name": "objectId", "$ref": "Runtime.RemoteObjectId", "description": "Id of the generator object to get details for." }
+                ],
+                "returns": [
+                    { "name": "details", "$ref": "GeneratorObjectDetails", "description": "Information about the generator object." }
+                ],
+                "description": "Returns detailed information on given generator object."
             },
             {
                 "name": "getCollectionEntries",
@@ -3406,14 +3602,6 @@
                 "description": "Runs script with given id in a given context."
             },
             {
-                "name": "setOverlayMessage",
-                "parameters": [
-                    { "name": "message", "type": "string", "optional": true, "description": "Overlay message to display when paused in debugger." }
-                ],
-                "hidden": true,
-                "description": "Sets overlay message."
-            },
-            {
                 "name": "setVariableValue",
                 "parameters": [
                     { "name": "scopeNumber", "type": "integer", "description": "0-based number of scope as was listed in scope chain. Only 'local', 'closure' and 'catch' scope types are allowed. Other scopes could be manipulated manually." },
@@ -3464,6 +3652,9 @@
             },
             {
                 "name": "enablePromiseTracker",
+                "parameters": [
+                    { "name": "captureStacks", "type": "boolean", "optional": true, "description": "Whether to capture stack traces for promise creation and settlement events (default: false)." }
+                ],
                 "hidden": true,
                 "description": "Enables promise tracking, information about <code>Promise</code>s created or updated will now be stored on the backend."
             },
@@ -3647,7 +3838,8 @@
                     { "name": "callUID", "type": "number", "description": "Call UID." },
                     { "name": "children", "type": "array", "items": { "$ref": "CPUProfileNode" }, "description": "Child nodes." },
                     { "name": "deoptReason", "type": "string", "description": "The reason of being not optimized. The function may be deoptimized or marked as don't optimize."},
-                    { "name": "id", "type": "integer", "description": "Unique id of the node." }
+                    { "name": "id", "type": "integer", "description": "Unique id of the node." },
+                    { "name": "positionTicks", "type": "array", "items": { "$ref": "PositionTickInfo" }, "description": "An array of source position ticks." }
                 ]
             },
             {
@@ -3660,6 +3852,15 @@
                     { "name": "endTime", "type": "number", "description": "Profiling end time in seconds." },
                     { "name": "samples", "optional": true, "type": "array", "items": { "type": "integer" }, "description": "Ids of samples top nodes." },
                     { "name": "timestamps", "optional": true, "type": "array", "items": { "type": "number" }, "description": "Timestamps of the samples in microseconds." }
+                ]
+            },
+            {
+                "id": "PositionTickInfo",
+                "type": "object",
+                "description": "Specifies a number of samples attributed to a certain source position.",
+                "properties": [
+                    { "name": "line", "type": "integer", "description": "Source line number (1-based)." },
+                    { "name": "ticks", "type": "integer", "description": "Number of samples attributed to the source line." }
                 ]
             }
         ],
@@ -3916,7 +4117,7 @@
                     { "name": "enumName", "type": "string", "optional": true, "description": "Enum name, if any, that stands for the value (for example, a WebGL enum name)." },
                     { "name": "resourceId", "$ref": "ResourceId", "optional": true, "description": "Resource identifier. Specified for <code>Resource</code> objects only." },
                     { "name": "type", "type": "string", "optional": true, "enum": ["object", "function", "undefined", "string", "number", "boolean"], "description": "Object type. Specified for non <code>Resource</code> objects only." },
-                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." },
+                    { "name": "subtype", "type": "string", "optional": true, "enum": ["array", "null", "node", "regexp", "date", "map", "set", "iterator", "generator"], "description": "Object subtype hint. Specified for <code>object</code> type values only." },
                     { "name": "remoteObject", "$ref": "Runtime.RemoteObject", "optional": true, "description": "The <code>RemoteObject</code>, if requested." }
                 ]
             },
@@ -4174,6 +4375,16 @@
                 ]
             },
             {
+                "id": "PictureTile",
+                "type": "object",
+                "description": "Serialized fragment of layer picture along with its offset within the layer.",
+                "properties": [
+                    { "name": "x", "type": "number", "description": "Offset from owning layer left boundary" },
+                    { "name": "y", "type": "number", "description": "Offset from owning layer top boundary" },
+                    { "name": "picture", "type": "string", "description": "Base64-encoded snapshot data." }
+                ]
+            },
+            {
                 "id": "Layer",
                 "type": "object",
                 "description": "Information about a compositing layer.",
@@ -4236,7 +4447,7 @@
             {
                 "name": "loadSnapshot",
                 "parameters": [
-                    { "name": "data", "type": "string", "description": "Base64-encoded snapshot data." }
+                    { "name": "tiles", "type": "array", "items": { "$ref": "PictureTile" }, "minItems": 1, "description": "An array of tiles composing the snapshot." }
                 ],
                 "description": "Returns the snapshot identifier.",
                 "returns": [
@@ -4255,7 +4466,8 @@
                 "parameters": [
                     { "name": "snapshotId", "$ref": "SnapshotId", "description": "The id of the layer snapshot." },
                     { "name": "minRepeatCount", "type": "integer", "optional": true, "description": "The maximum number of times to replay the snapshot (1, if not specified)." },
-                    { "name": "minDuration", "type": "number", "optional": true, "description": "The minimum duration (in seconds) to replay the snapshot." }
+                    { "name": "minDuration", "type": "number", "optional": true, "description": "The minimum duration (in seconds) to replay the snapshot." },
+                    { "name": "clipRect", "$ref": "DOM.Rect", "optional": true, "description": "The clip rectangle to apply when replaying the snapshot." }
                 ],
                 "returns": [
                     { "name": "timings", "type": "array", "items": { "$ref": "PaintProfile" }, "description": "The array of paint profiles, one per run." }
@@ -4368,7 +4580,9 @@
             {
                 "name": "bufferUsage",
                 "parameters": [
-                    { "name": "value", "type": "number", "description": "A number in range [0..1] that indicates the used size of event buffer as a fraction of its total size." }
+                    { "name": "percentFull", "type": "number", "optional": true, "description": "A number in range [0..1] that indicates the used size of event buffer as a fraction of its total size." },
+                    { "name": "eventCount", "type": "number", "optional": true, "description": "An approximate number of events in the trace log." },
+                    { "name": "value", "type": "number", "optional": true, "description": "A number in range [0..1] that indicates the used size of event buffer as a fraction of its total size." }
                 ],
                 "handlers": ["browser"]
             }
@@ -4489,6 +4703,10 @@
         ],
         "commands": [
             {
+                "name": "enable",
+                "description": "Enables animation domain notifications."
+            },
+            {
                 "name": "getAnimationPlayersForNode",
                 "parameters": [
                     { "name": "nodeId", "$ref": "DOM.NodeId", "description": "Id of the node to get animation players for." },
@@ -4545,9 +4763,30 @@
                 ],
                 "description": "Gets the state of an AnimationPlayer.",
                 "hidden": true
+            },
+            {
+                "name": "startListening",
+                "parameters": [
+                    { "name": "nodeId", "$ref": "DOM.NodeId", "description": "Id of the node to record on." },
+                    { "name": "includeSubtreeAnimations", "type": "boolean", "description": "Include animations from elements subtree." }
+                ],
+                "description": "Sets the parameters of recording for new animations events.",
+                "hidden": true
+            },
+            {
+                "name": "stopListening",
+                "description": "Stops recording for new animation player events.",
+                "hidden": true
             }
         ],
         "events": [
+            {
+                "name": "animationPlayerCreated",
+                "parameters": [
+                    { "name": "player", "$ref": "AnimationPlayer", "description": "AnimationPlayer that was created." }
+                ],
+                "hidden": true
+            }
         ]
     }]
 }

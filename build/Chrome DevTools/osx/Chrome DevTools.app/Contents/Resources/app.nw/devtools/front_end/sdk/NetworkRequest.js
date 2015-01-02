@@ -51,6 +51,7 @@ WebInspector.NetworkRequest = function(target, requestId, url, documentURL, fram
     this._loaderId = loaderId;
     /** @type {?NetworkAgent.Initiator} */
     this._initiator = initiator;
+    this._issueTime = -1;
     this._startTime = -1;
     this._endTime = -1;
 
@@ -58,6 +59,7 @@ WebInspector.NetworkRequest = function(target, requestId, url, documentURL, fram
     this.statusText = "";
     this.requestMethod = "";
     this.requestTime = 0;
+    this.protocol = "";
 
     /** @type {!WebInspector.ResourceType} */
     this._resourceType = WebInspector.resourceTypes.Other;
@@ -208,9 +210,21 @@ WebInspector.NetworkRequest.prototype = {
         return this._startTime || -1;
     },
 
-    set startTime(x)
+    /**
+     * @param {number} x
+     */
+    setIssueTime: function(x)
     {
+        this._issueTime = x;
         this._startTime = x;
+    },
+
+    /**
+     * @return {number}
+     */
+    issueTime: function()
+    {
+        return this._issueTime;
     },
 
     /**
@@ -814,6 +828,7 @@ WebInspector.NetworkRequest.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -822,6 +837,7 @@ WebInspector.NetworkRequest.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -830,6 +846,7 @@ WebInspector.NetworkRequest.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -851,6 +868,7 @@ WebInspector.NetworkRequest.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex

@@ -16,7 +16,7 @@
         },
         {
             "type": "@WebInspector.ContextMenu.Provider",
-            "contextTypes": ["WebInspector.UISourceCode", "WebInspector.RemoteObject"],
+            "contextTypes": ["WebInspector.UISourceCode", "WebInspector.RemoteObject", "WebInspector.NetworkRequest"],
             "className": "WebInspector.SourcesPanel.ContextMenuProvider"
         },
         {
@@ -226,6 +226,7 @@
         "navigatorView.css",
         "revisionHistory.css",
         "sourcesPanel.css",
+        "sourcesSearch.css",
         "sourcesView.css"
     ]
 }

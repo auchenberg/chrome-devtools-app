@@ -74,7 +74,7 @@ WebInspector.SimpleHistoryManager.prototype = {
     },
 
     /**
-     * @param {!function(!WebInspector.HistoryEntry):boolean} filterOutCallback
+     * @param {function(!WebInspector.HistoryEntry):boolean} filterOutCallback
      */
     filterOut: function(filterOutCallback)
     {

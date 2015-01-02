@@ -18,6 +18,9 @@ WebInspector.TimelinePowerGraph = function(delegate, model)
 }
 
 WebInspector.TimelinePowerGraph.prototype = {
+    /**
+     * @override
+     */
     dispose: function()
     {
         WebInspector.CountersGraph.prototype.dispose.call(this);

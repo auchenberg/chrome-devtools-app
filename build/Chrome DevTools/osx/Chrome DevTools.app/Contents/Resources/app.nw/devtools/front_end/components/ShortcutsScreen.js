@@ -134,7 +134,7 @@ WebInspector.ShortcutsSection.prototype = {
      */
     _addLine: function(keyElement, description)
     {
-        this._lines.push({ key: keyElement, text: description })
+        this._lines.push({ key: keyElement, text: description });
     },
 
     /**
@@ -249,6 +249,8 @@ WebInspector.ShortcutsScreen.registerShortcuts = function()
     section.addAlternateKeys(WebInspector.ShortcutsScreen.SourcesPanelShortcuts.StepOver, WebInspector.UIString("Step over"));
     section.addAlternateKeys(WebInspector.ShortcutsScreen.SourcesPanelShortcuts.StepInto, WebInspector.UIString("Step into"));
     section.addAlternateKeys(WebInspector.ShortcutsScreen.SourcesPanelShortcuts.StepOut, WebInspector.UIString("Step out"));
+    if (Runtime.experiments.isEnabled("stepIntoAsync"))
+        section.addAlternateKeys(WebInspector.ShortcutsScreen.SourcesPanelShortcuts.StepIntoAsync, WebInspector.UIString("Step into async"));
 
     var nextAndPrevFrameKeys = WebInspector.ShortcutsScreen.SourcesPanelShortcuts.NextCallFrame.concat(WebInspector.ShortcutsScreen.SourcesPanelShortcuts.PrevCallFrame);
     section.addRelatedKeys(nextAndPrevFrameKeys, WebInspector.UIString("Next/previous call frame"));
@@ -422,6 +424,11 @@ WebInspector.ShortcutsScreen.SourcesPanelShortcuts = {
     StepOut: [
         WebInspector.KeyboardShortcut.makeDescriptor(WebInspector.KeyboardShortcut.Keys.F11, WebInspector.KeyboardShortcut.Modifiers.Shift),
         WebInspector.KeyboardShortcut.makeDescriptor(WebInspector.KeyboardShortcut.Keys.Semicolon, WebInspector.KeyboardShortcut.Modifiers.Shift | WebInspector.KeyboardShortcut.Modifiers.CtrlOrMeta)
+    ],
+
+    StepIntoAsync: [
+        WebInspector.KeyboardShortcut.makeDescriptor(WebInspector.KeyboardShortcut.Keys.F11, WebInspector.KeyboardShortcut.Modifiers.Alt),
+        WebInspector.KeyboardShortcut.makeDescriptor(WebInspector.KeyboardShortcut.Keys.Semicolon, WebInspector.KeyboardShortcut.Modifiers.Alt | WebInspector.KeyboardShortcut.Modifiers.CtrlOrMeta)
     ],
 
     EvaluateSelectionInConsole: [

@@ -54,6 +54,18 @@ self.addEventListener();
 self.removeEventListener();
      ^
 
+/tests/document.js:59: ERROR - Access to "requestAnimationFrame" property of global object is disallowed
+self.requestAnimationFrame();
+     ^
+
+/tests/document.js:60: ERROR - Access to "cancelAnimationFrame" property of global object is disallowed
+window.cancelAnimationFrame();
+       ^
+
+/tests/document.js:61: ERROR - Access to "getSelection" property of global object is disallowed
+getSelection();
+^
+
 /tests/function.js:1: ERROR - @return annotation is required for API functions that return value
 function badFuncNoAnnotation() {
          ^
@@ -394,4 +406,4 @@ NS.BadSubClass = function() {}
         function callbackNotReferencingThisAnnotated()
                  ^
 
-Total errors: 99
+Total errors: 102

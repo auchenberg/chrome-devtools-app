@@ -4,6 +4,7 @@
     box-shadow: rgb(140, 140, 140) 0 3px 14px;
     display: flex;
     -webkit-flex-direction: column;
+    background: white;
 }
 
 .dialog-contents {

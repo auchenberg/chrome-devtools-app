@@ -91,8 +91,8 @@ WebInspector.CookiesTable.prototype = {
         var cookie = node.cookie;
         var domain = cookie.domain();
         if (domain)
-            contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Clear all from \"%s\"" : "Clear All from \"%s\"", domain), this._clearAndRefresh.bind(this, domain));
-        contextMenu.appendItem(WebInspector.UIString(WebInspector.useLowerCaseMenuTitles() ? "Clear all" : "Clear All"), this._clearAndRefresh.bind(this, null));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Clear ^all from \"%s\"", domain), this._clearAndRefresh.bind(this, domain));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Clear ^all"), this._clearAndRefresh.bind(this, null));
     },
 
     /**
@@ -193,7 +193,7 @@ WebInspector.CookiesTable.prototype = {
 
         function compareTo(getter, cookie1, cookie2)
         {
-            return sortDirection * (getter.apply(cookie1) + "").compareTo(getter.apply(cookie2) + "")
+            return sortDirection * (getter.apply(cookie1) + "").compareTo(getter.apply(cookie2) + "");
         }
 
         function numberCompare(getter, cookie1, cookie2)

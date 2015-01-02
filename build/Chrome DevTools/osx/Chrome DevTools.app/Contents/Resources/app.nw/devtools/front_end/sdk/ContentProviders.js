@@ -72,6 +72,7 @@ WebInspector.ConcatenatedScriptsContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -80,6 +81,7 @@ WebInspector.ConcatenatedScriptsContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -88,6 +90,7 @@ WebInspector.ConcatenatedScriptsContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -110,6 +113,7 @@ WebInspector.ConcatenatedScriptsContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex
@@ -198,6 +202,7 @@ WebInspector.CompilerSourceMappingContentProvider = function(sourceURL, contentT
 
 WebInspector.CompilerSourceMappingContentProvider.prototype = {
     /**
+     * @override
      * @return {string}
      */
     contentURL: function()
@@ -206,6 +211,7 @@ WebInspector.CompilerSourceMappingContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @return {!WebInspector.ResourceType}
      */
     contentType: function()
@@ -214,6 +220,7 @@ WebInspector.CompilerSourceMappingContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {function(?string)} callback
      */
     requestContent: function(callback)
@@ -240,6 +247,7 @@ WebInspector.CompilerSourceMappingContentProvider.prototype = {
     },
 
     /**
+     * @override
      * @param {string} query
      * @param {boolean} caseSensitive
      * @param {boolean} isRegex

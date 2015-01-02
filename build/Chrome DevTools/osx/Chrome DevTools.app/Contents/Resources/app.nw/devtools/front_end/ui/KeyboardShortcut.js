@@ -173,7 +173,7 @@ WebInspector.KeyboardShortcut.makeKeyFromEventIgnoringModifiers = function(keybo
 }
 
 /**
- * @param {?KeyboardEvent} event
+ * @param {(?KeyboardEvent|?MouseEvent)} event
  * @return {boolean}
  */
 WebInspector.KeyboardShortcut.eventHasCtrlOrMeta = function(event)

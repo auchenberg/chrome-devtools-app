@@ -1,6 +1,7 @@
 package org.chromium.devtools.compiler;
 
 import com.google.common.collect.Lists;
+import com.google.javascript.jscomp.CheckLevel;
 import com.google.javascript.jscomp.CommandLineRunner;
 import com.google.javascript.jscomp.CompilerOptions;
 
@@ -171,10 +172,6 @@ public class Runner {
     }
 
     private static class LocalCommandLineRunner extends CommandLineRunner {
-        private static final List<String> EXTRA_ANNOTATION_NAMES = Arrays.asList(
-            "suppressReceiverCheck",
-            "suppressGlobalPropertiesCheck"
-        );
 
         protected LocalCommandLineRunner(String[] args, PrintStream out, PrintStream err) {
             super(args, out, err);
@@ -184,7 +181,7 @@ public class Runner {
         protected CompilerOptions createOptions() {
             CompilerOptions options = super.createOptions();
             options.setIdeMode(true);
-            options.setExtraAnnotationNames(EXTRA_ANNOTATION_NAMES);
+            options.setReportMissingOverride(CheckLevel.ERROR);
             return options;
         }
 

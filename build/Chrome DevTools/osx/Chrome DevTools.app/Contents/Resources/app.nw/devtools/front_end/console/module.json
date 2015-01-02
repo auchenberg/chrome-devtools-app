@@ -65,5 +65,8 @@
         "ConsoleViewMessage.js",
         "ConsoleView.js",
         "ConsolePanel.js"
+    ],
+    "stylesheets": [
+        "consoleView.css"
     ]
 }

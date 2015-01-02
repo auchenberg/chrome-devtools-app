@@ -57,6 +57,7 @@ WebInspector.StyleSheetOutlineDialog.show = function(view, uiSourceCode, selectI
 
 WebInspector.StyleSheetOutlineDialog.prototype = {
     /**
+     * @override
      * @return {number}
      */
     itemCount: function()
@@ -65,6 +66,7 @@ WebInspector.StyleSheetOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @return {string}
      */
@@ -75,6 +77,7 @@ WebInspector.StyleSheetOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} query
      * @return {number}
@@ -86,6 +89,7 @@ WebInspector.StyleSheetOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} query
      * @param {!Element} titleElement
@@ -100,6 +104,7 @@ WebInspector.StyleSheetOutlineDialog.prototype = {
     },
 
     /**
+     * @override
      * @param {number} itemIndex
      * @param {string} promptValue
      */
