@@ -75,10 +75,11 @@ WebInspector.NetworkDataGridNode.prototype = {
      */
     createCells: function()
     {
-        this._showTiming = Runtime.experiments.isEnabled("requestTimingInNetworkTimeline") && WebInspector.settings.networkShowRequestTimingInTimeline.get();
+        this._showTiming = Runtime.experiments.isEnabled("requestTimingInNetworkTimeline") && WebInspector.settings.networkShowRequestTimingInTimeline.get() && !this._parentView.calculator().startAtZero;
         this._nameCell = null;
         this._timelineCell = null;
         this._initiatorCell = null;
+        this._expandTimelineButton = null;
 
         this._element.classList.toggle("network-error-row", this._isFailed());
         this._element.classList.toggle("network-navigation-row", this._isNavigationRequest);
@@ -395,10 +396,33 @@ WebInspector.NetworkDataGridNode.prototype = {
             this.dataGrid.scheduleUpdate();
     },
 
+    /**
+     * @param {boolean} show
+     */
+    _showExpandTimelineButton: function(show)
+    {
+        if (show && !this._expandTimelineButton) {
+            this._expandTimelineButton = this._timelineCell.createChild("div", "network-expand-timeline-button");
+            this._expandTimelineButton.createChild("div", "network-expand-timeline-glyph");
+            this._expandTimelineButton.title = WebInspector.UIString("Show full timeline");
+            this._expandTimelineButton.addEventListener("click", this._onExpandTimeline.bind(this));
+        } else if (!show && this._expandTimelineButton) {
+            this._expandTimelineButton.remove();
+            this._expandTimelineButton = null;
+        }
+    },
+
+    _onExpandTimeline: function(event)
+    {
+        this._parentView.expandTimeline();
+    },
+
     _updateTimingGraph: function()
     {
         var calculator = this._parentView.calculator();
         var timeRanges = WebInspector.RequestTimingView.calculateRequestTimeRanges(this._request);
+        var right = timeRanges[0].end;
+        this._showExpandTimelineButton(right !== Number.MAX_VALUE && calculator.computePercentageFromEventTime(right) > 100);
 
         var container = this._barAreaElement;
         var nextBar = container.firstChild;
@@ -434,6 +458,7 @@ WebInspector.NetworkDataGridNode.prototype = {
         var calculator = this._parentView.calculator();
         var percentages = calculator.computeBarGraphPercentages(this._request);
         this._percentages = percentages;
+        this._showExpandTimelineButton(percentages.end > 100);
 
         this._barAreaElement.classList.remove("hidden");
 

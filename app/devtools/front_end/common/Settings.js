@@ -77,6 +77,7 @@ WebInspector.Settings = function()
     this.networkLogHideColumns = this.createSetting("networkLogHideColumns", false);
     this.networkHideDataURL = this.createSetting("networkHideDataURL", false);
     this.networkResourceTypeFilters = this.createSetting("networkResourceTypeFilters", {});
+    this.networkShowPrimaryLoadWaterfall = this.createSetting("networkShowPrimaryLoadWaterfall", false);
     this.networkShowRequestTimingInTimeline = this.createSetting("networkShowRequestTimingInTimeline", false);
     this.messageLevelFilters = this.createSetting("messageLevelFilters", {});
     this.splitVerticallyWhenDockedToRight = this.createSetting("splitVerticallyWhenDockedToRight", true);

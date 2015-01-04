@@ -59,6 +59,8 @@ WebInspector.NetworkTimeCalculator = function(startAtZero)
 {
     this.startAtZero = startAtZero;
     this._boundryChangedEventThrottler = new WebInspector.Throttler(0);
+    /** @type {?WebInspector.NetworkTimeBoundary} */
+    this._window = null;
 }
 
 /** @enum {string} */
@@ -83,6 +85,15 @@ WebInspector.NetworkTimeCalculator._fromCacheFormat = new WebInspector.UIStringF
 
 WebInspector.NetworkTimeCalculator.prototype = {
     /**
+     * @param {?WebInspector.NetworkTimeBoundary} window
+     */
+    setWindow: function(window)
+    {
+        this._window = window;
+        this._boundaryChanged();
+    },
+
+    /**
      * @override
      * @return {number}
      */
@@ -98,7 +109,7 @@ WebInspector.NetworkTimeCalculator.prototype = {
      */
     computePosition: function(time)
     {
-        return (time - this._minimumBoundary) / this.boundarySpan() * this._workingArea;
+        return (time - this.minimumBoundary()) / this.boundarySpan() * this._workingArea;
     },
 
     /**
@@ -118,7 +129,7 @@ WebInspector.NetworkTimeCalculator.prototype = {
      */
     minimumBoundary: function()
     {
-        return this._minimumBoundary;
+        return this._window ? this._window.minimum : this._minimumBoundary;
     },
 
     /**
@@ -136,7 +147,7 @@ WebInspector.NetworkTimeCalculator.prototype = {
      */
     maximumBoundary: function()
     {
-        return this._maximumBoundary;
+        return this._window ? this._window.maximum : this._maximumBoundary;
     },
 
     /**
@@ -153,7 +164,7 @@ WebInspector.NetworkTimeCalculator.prototype = {
      */
     boundarySpan: function()
     {
-        return this._maximumBoundary - this._minimumBoundary;
+        return this.maximumBoundary() - this.minimumBoundary();
     },
 
     reset: function()
@@ -186,17 +197,17 @@ WebInspector.NetworkTimeCalculator.prototype = {
     computeBarGraphPercentages: function(request)
     {
         if (request.startTime !== -1)
-            var start = ((request.startTime - this._minimumBoundary) / this.boundarySpan()) * 100;
+            var start = ((request.startTime - this.minimumBoundary()) / this.boundarySpan()) * 100;
         else
             var start = 0;
 
         if (request.responseReceivedTime !== -1)
-            var middle = ((request.responseReceivedTime - this._minimumBoundary) / this.boundarySpan()) * 100;
+            var middle = ((request.responseReceivedTime - this.minimumBoundary()) / this.boundarySpan()) * 100;
         else
             var middle = (this.startAtZero ? start : 100);
 
         if (request.endTime !== -1)
-            var end = ((request.endTime - this._minimumBoundary) / this.boundarySpan()) * 100;
+            var end = ((request.endTime - this.minimumBoundary()) / this.boundarySpan()) * 100;
         else
             var end = (this.startAtZero ? middle : 100);
 
@@ -219,7 +230,7 @@ WebInspector.NetworkTimeCalculator.prototype = {
         // of a specific event. If startAtZero is set, then this is useless, and we
         // want to return 0.
         if (eventTime !== -1 && !this.startAtZero)
-            return ((eventTime - this._minimumBoundary) / this.boundarySpan()) * 100;
+            return ((eventTime - this.minimumBoundary()) / this.boundarySpan()) * 100;
 
         return 0;
     },

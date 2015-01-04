@@ -328,12 +328,10 @@ WebInspector.NetworkPanel.prototype = {
             this._networkItemView = new WebInspector.NetworkItemView(request, this._networkLogView.timeCalculator());
             this._networkItemView.insertBeforeTabStrip(this._closeButtonElement);
             this._networkItemView.show(this._detailsView.element);
-        }
-
-        if (!!request)
             this._splitView.showBoth();
-        else
+        } else {
             this._splitView.hideMain();
+        }
         this._updateUI();
     },
 

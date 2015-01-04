@@ -49,6 +49,7 @@
         "TimelineGrid.js",
         "UIUtils.js",
         "ViewportControl.js",
+        "XMLView.js",
         "ZoomManager.js"
     ],
     "stylesheets": [
@@ -68,6 +69,7 @@
         "statusBar.css",
         "suggestBox.css",
         "tabbedPane.css",
-        "textButton.css"
+        "textButton.css",
+        "xmlView.css"
     ]
 }

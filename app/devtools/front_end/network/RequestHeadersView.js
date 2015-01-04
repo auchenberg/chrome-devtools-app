@@ -61,9 +61,52 @@ WebInspector.RequestHeadersView = function(request)
     this._queryStringCategory = new WebInspector.RequestHeadersView.Category(root, "queryString", "");
     this._formDataCategory = new WebInspector.RequestHeadersView.Category(root, "formData", "");
     this._requestPayloadCategory = new WebInspector.RequestHeadersView.Category(root, "requestPayload", WebInspector.UIString("Request Payload"));
+
+
+    /** @type {?RegExp} */
+    this._filterRegex = null;
+    if (Runtime.experiments.isEnabled("networkRequestHeadersFilterInDetailsView")) {
+        this._filterInput = this.element.createChild("input", "filter-input");
+        this._filterInput.type = "text";
+        this._filterInput.placeholder = WebInspector.UIString("Filter headers");
+        this._filterInput.addEventListener("input", this._updateFilter.bind(this), false);
+        this._filterInput.addEventListener("keydown", this._onFilterKeyDown.bind(this), false);
+        this._filterInput.value = WebInspector.RequestHeadersView._requestHeaderFilterSetting.get() || "";
+        this._updateFilter();
+    }
 }
 
+WebInspector.RequestHeadersView._requestHeaderFilterSetting = new WebInspector.Setting("requestHeaderFilterSetting", "", new WebInspector.Object(), null);
+
 WebInspector.RequestHeadersView.prototype = {
+    _updateFilter: function()
+    {
+        var text = this._filterInput.value;
+        WebInspector.RequestHeadersView._requestHeaderFilterSetting.set(text);
+        this._filterRegex = text ? new RegExp(text.escapeForRegExp(), "i") : null;
+        this._updateHeaders();
+    },
+
+    /**
+     * @param {!Event} event
+     */
+    _onFilterKeyDown: function(event)
+    {
+        var text = this._filterInput.value;
+        if (!text)
+            return;
+        if (event.keyCode === WebInspector.KeyboardShortcut.Keys.Esc.code || event.keyIdentifier === "U+001B") {
+            event.consume(true);
+            this._filterInput.value = "";
+            this._updateFilter();
+        }
+    },
+
+    _updateHeaders: function()
+    {
+        this._refreshRequestHeaders();
+        this._refreshResponseHeaders();
+    },
 
     wasShown: function()
     {
@@ -74,8 +117,7 @@ WebInspector.RequestHeadersView.prototype = {
 
         this._refreshURL();
         this._refreshQueryString();
-        this._refreshRequestHeaders();
-        this._refreshResponseHeaders();
+        this._updateHeaders();
         this._refreshHTTPInformation();
         this._refreshRemoteAddress();
     },
@@ -300,8 +342,10 @@ WebInspector.RequestHeadersView.prototype = {
     {
         var treeElement = this._requestHeadersCategory;
 
-        var headers = this._request.requestHeaders();
-        headers = headers.slice();
+        var headers = this._request.requestHeaders().slice();
+        var filterRegex = this._filterRegex;
+        if (filterRegex)
+            headers = headers.filter(function(header) { return filterRegex.test(header.name) || filterRegex.test(header.value);});
         headers.sort(function(a, b) { return a.name.toLowerCase().compareTo(b.name.toLowerCase()); });
         var headersText = this._request.requestHeadersText();
 
@@ -322,7 +366,10 @@ WebInspector.RequestHeadersView.prototype = {
     _refreshResponseHeaders: function()
     {
         var treeElement = this._responseHeadersCategory;
-        var headers = this._request.sortedResponseHeaders;
+        var headers = this._request.sortedResponseHeaders.slice();
+        var filterRegex = this._filterRegex;
+        if (filterRegex)
+            headers = headers.filter(function(header) { return filterRegex.test(header.name) || filterRegex.test(header.value);});
         var headersText = this._request.responseHeadersText;
 
         if (this._showResponseHeadersText)

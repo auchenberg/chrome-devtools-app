@@ -11,6 +11,8 @@
 
 .request-headers-view .outline-disclosure {
     -webkit-padding-start: 4px;
+    flex-grow: 1;
+    overflow-y: auto;
 }
 
 .request-headers-view .outline-disclosure > .parent {
@@ -102,4 +104,12 @@
 
 .request-headers-view .section.expanded .properties {
     -webkit-padding-start: 0;
+}
+
+.request-headers-view .filter-input {
+    outline: none !important;
+    border: none;
+    border-top: solid 1px #ccc;
+    flex: 0 0 19px;
+    padding: 0 4px;
 }

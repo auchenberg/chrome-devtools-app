@@ -77,15 +77,32 @@ WebInspector.RequestPreviewView.prototype = {
     },
 
     /**
+     * @return {string}
+     */
+    _requestContent: function()
+    {
+        var content = this.request.content;
+        return this.request.contentEncoded ? window.atob(content || "") : (content || "");
+    },
+
+    /**
      * @return {?WebInspector.RequestJSONView}
      */
     _jsonView: function()
     {
-        var request = this.request;
-        var content = request.content;
-        content = request.contentEncoded ? window.atob(content || "") : (content || "");
+        var content = this._requestContent();
         var parsedJSON = WebInspector.RequestJSONView.parseJSON(content);
         return parsedJSON ? new WebInspector.RequestJSONView(this.request, parsedJSON) : null;
+    },
+
+    /**
+     * @return {?WebInspector.XMLView}
+     */
+    _xmlView: function()
+    {
+        var content = this._requestContent();
+        var parsedXML = WebInspector.XMLView.parseXML(content, this.request.mimeType);
+        return parsedXML ? new WebInspector.XMLView(parsedXML) : null;
     },
 
     /**
@@ -121,6 +138,10 @@ WebInspector.RequestPreviewView.prototype = {
             if (htmlErrorPreview)
                 return htmlErrorPreview;
         }
+
+        var xmlView = this._xmlView();
+        if (xmlView)
+            return xmlView;
 
         if (this.request.resourceType() === WebInspector.resourceTypes.XHR) {
             var jsonView = this._jsonView();
