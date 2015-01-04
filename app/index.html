@@ -27,7 +27,7 @@
         </md-tabs>
 
         <md-list class="target-list">
-          <md-item ng-repeat="target in targets | regex:'type': filter | orderBy:'type':true">
+          <md-item ng-repeat="target in targets.toArray() | regex:'type': filter | orderBy:'type':true">
             <md-item-content ng-click="connect(target)">
               <div class="md-tile-left icon">
                   <img ng-src="{{target.faviconUrl}}" class="face" alt="{{item.who}}">

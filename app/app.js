@@ -1,3 +1,4 @@
+var TargetsCollection = require('./TargetsCollection');
 
 var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
 
@@ -38,9 +39,9 @@ app.controller('home', function ($scope, $http, $location) {
 
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
-    $scope.targets = [];
     $scope.devtoolsUrl = '';
 
+    $scope.targets = new TargetsCollection();
 
     setupMenubars();
 
@@ -79,7 +80,11 @@ app.controller('home', function ($scope, $http, $location) {
         // var req = $http.get('/json.json');
 
         req.success(function(data, status, headers, config) {
-            $scope.targets = data;
+
+            data.forEach(function(item) {
+                $scope.targets.add(item.id, item);
+            });
+
         });
 
         req.catch(function() {
