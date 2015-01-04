@@ -41,20 +41,28 @@ app.controller('home', function ($scope, $http, $location) {
     $scope.targets = [];
     $scope.devtoolsUrl = '';
 
-    // make it possible to run the app in a browser environment
-    if(typeof require === 'function') { 
-        $scope.gui = require('nw.gui');
-        $scope.win = $scope.gui.Window.get();
+    var gui = require('nw.gui');
+    var win = gui.Window.get();
 
-        var nativeMenuBar = new $scope.gui.Menu({ type: "menubar" });
-        nativeMenuBar.createMacBuiltin('Chrome DevTools');
+    // Menu bars
+    var nativeMenuBar = new gui.Menu({ 
+        type: "menubar" 
+    });
+    nativeMenuBar.createMacBuiltin('Chrome DevTools');
+    win.menu = nativeMenuBar;
 
-        $scope.win.menu = nativeMenuBar;
-    }
+    var debugMenuBar = new gui.Menu();
+    debugMenuBar.append(new gui.MenuItem({
+        label: 'Toggle DevTools',
+        click: function() {
+            win.showDevTools();
+        }
+    }));
 
-    $scope.debug = function() {
-        $scope.win.showDevTools();
-    }
+    nativeMenuBar.append(new gui.MenuItem({ 
+        label: 'Debug', 
+        submenu: debugMenuBar
+    }));
 
     $scope.connect = function(target) {
 
