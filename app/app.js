@@ -41,28 +41,8 @@ app.controller('home', function ($scope, $http, $location) {
     $scope.targets = [];
     $scope.devtoolsUrl = '';
 
-    var gui = require('nw.gui');
-    var win = gui.Window.get();
 
-    // Menu bars
-    var nativeMenuBar = new gui.Menu({ 
-        type: "menubar" 
-    });
-    nativeMenuBar.createMacBuiltin('Chrome DevTools');
-    win.menu = nativeMenuBar;
-
-    var debugMenuBar = new gui.Menu();
-    debugMenuBar.append(new gui.MenuItem({
-        label: 'Toggle DevTools',
-        click: function() {
-            win.showDevTools();
-        }
-    }));
-
-    nativeMenuBar.append(new gui.MenuItem({ 
-        label: 'Debug', 
-        submenu: debugMenuBar
-    }));
+    setupMenubars();
 
     $scope.connect = function(target) {
 
@@ -114,3 +94,30 @@ app.controller('home', function ($scope, $http, $location) {
     $scope.discover();
 
 });
+// Privates
+
+function setupMenubars() {
+
+    var gui = require('nw.gui');
+    var win = gui.Window.get();
+
+    // Menu bars
+    var nativeMenuBar = new gui.Menu({
+        type: "menubar"
+    });
+    nativeMenuBar.createMacBuiltin('Chrome DevTools');
+    win.menu = nativeMenuBar;
+
+    var debugMenuBar = new gui.Menu();
+    debugMenuBar.append(new gui.MenuItem({
+        label: 'Toggle DevTools',
+        click: function() {
+            win.showDevTools();
+        }
+    }));
+
+    nativeMenuBar.append(new gui.MenuItem({
+        label: 'Debug',
+        submenu: debugMenuBar
+    }));
+}
