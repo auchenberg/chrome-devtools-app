@@ -23,7 +23,7 @@ I've written an article about this project, where I go in detail, and provide a 
 ### How to get started from source?
 1. Run ``npm install``
 2. Run ``bower install``
-3. Run ``grunt server``
+3. Run ``grunt run``
 
 ---
 
