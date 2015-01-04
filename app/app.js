@@ -71,7 +71,7 @@ app.controller('home', function ($scope, $http, $location) {
 
         switch(filter) {
             case 'apps':
-                $scope.filter = '^apps$';
+                $scope.filter = '^app$';
                 $scope.targetsFilterSelectedIndex = 0;
                 break;
             case 'pages':
