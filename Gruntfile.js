@@ -13,6 +13,9 @@ module.exports = function(grunt) {
 
         shell: {
             runApp: {
+                command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app'
+            },
+            runAppDebug: {
                 command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app --remote-debugging-port=9222'
             }
         }        
@@ -22,7 +25,7 @@ module.exports = function(grunt) {
     require('load-grunt-tasks')(grunt);
 
     grunt.registerTask('build', ['nodewebkit']);
-    grunt.registerTask('server', ['browserSync']);
     grunt.registerTask('run', ['shell:runApp']);
+    grunt.registerTask('runDebug', ['shell:runAppDebug']);
 
 }
