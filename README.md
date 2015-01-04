@@ -31,8 +31,8 @@ I've written an article about this project, where I go in detail, and provide a 
 1. Run ``npm install nodewebkit`` if you haven't already
 2. Run ``grunt run``
 
-### How to start a debug version of this app in the browser?
-Run ``grunt server``
+### How to start a debug version of this app?
+Run ``grunt runDebug``
 
 ---
 
