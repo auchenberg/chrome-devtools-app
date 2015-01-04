@@ -11,17 +11,6 @@ module.exports = function(grunt) {
             src: ['./app/**/*']
         },
 
-        browserSync: {
-            bsFiles: {
-                src : 'app/css/*.css'
-            },
-            options: {
-                server: {
-                    baseDir: "./app"
-                }
-            }
-        },
-
         shell: {
             runApp: {
                 command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app --remote-debugging-port=9222'
