@@ -1,4 +1,5 @@
 var TargetsCollection = require('./TargetsCollection');
+var BonjourBrowser = require('./BonjourBrowser');
 
 var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
 
@@ -42,6 +43,7 @@ app.controller('home', function ($scope, $http, $location) {
     $scope.devtoolsUrl = '';
 
     $scope.targets = new TargetsCollection();
+    $scope.bonjourBrowser = new BonjourBrowser($scope.targets);
 
     setupMenubars();
 
@@ -99,6 +101,7 @@ app.controller('home', function ($scope, $http, $location) {
     $scope.discover();
 
 });
+
 // Privates
 
 function setupMenubars() {
