@@ -9,4 +9,7 @@ echo "Checking out blink devtools"
 svn checkout "$REPO_URL/Source/devtools" app/devtools
 find app/devtools -name '.svn' -type d -exec rm -rf {} \; > /dev/null
 
+echo "Building generated scripts needed for DevTools"
+node --harmony ./scripts/build_generated_scripts.js
+
 echo "Done."
