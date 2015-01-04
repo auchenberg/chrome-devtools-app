@@ -62,9 +62,9 @@ app.controller('home', function ($scope, $http, $location) {
             return;
         }
 
-        var frontendUrl = target.devtoolsFrontendUrl.replace('/devtools/', '');
+        var webSocketUrl = target.webSocketDebuggerUrl.replace(/(ws|wss)\:\/\//, '');
 
-        $scope.devtoolsUrl = 'devtools/front_end/' + frontendUrl
+        $scope.devtoolsUrl = 'devtools/front_end/inspector.html?ws=' + webSocketUrl;
     }
 
     $scope.setTargetFilter = function(filter) {
