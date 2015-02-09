@@ -1,11 +1,11 @@
-module.exports = function(grunt) { 
+module.exports = function(grunt) {
 
     grunt.initConfig({
 
         nodewebkit: {
             options: {
                 platforms: ['osx'],
-                buildDir: './build', 
+                buildDir: './build',
                 macIcns: './app/icon/logo.icns'
             },
             src: ['./app/**/*']
@@ -13,12 +13,12 @@ module.exports = function(grunt) {
 
         shell: {
             runApp: {
-                command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app'
+                command: '/Applications/nwjs.app/Contents/MacOS/nwjs ./app'
             },
             runAppDebug: {
-                command: '/Applications/node-webkit.app/Contents/MacOS/node-webkit ./app --remote-debugging-port=9222'
+                command: '/Applications/nwjs.app/Contents/MacOS/nwjs ./app --remote-debugging-port=9222'
             }
-        }        
+        }
 
     });
 
