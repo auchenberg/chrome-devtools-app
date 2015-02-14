@@ -35,8 +35,8 @@ app.directive('devtools', function() {
 
 });
 
-app.controller('home', function ($scope, $http, $location) {
-
+app.controller('home', function ($scope, $http, $location, $timeout) {
+    $scope.REDISCOVERY_DELAY = 500; // Half a second
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
     $scope.devtoolsUrl = '';
@@ -96,7 +96,15 @@ app.controller('home', function ($scope, $http, $location) {
         $scope.devtoolsUrl = '';
     }
 
+    $scope.startDiscoveryChecks = function rediscover(){
+      $timeout(function(){
+        $scope.discover()
+        rediscover()
+      }, $scope.REDISCOVERY_DELAY)
+    }
+
     $scope.discover();
+    $scope.startDiscoveryChecks()
 
 });
 // Privates
