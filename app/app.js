@@ -1,6 +1,11 @@
 var TargetsCollection = require('./TargetsCollection');
 
-var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
+var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule']);
+
+app.config(function (localStorageServiceProvider) {
+  localStorageServiceProvider
+    .setPrefix('app');
+});
 
 app.filter('regex', function() {
     return function(input, field, regex) {
@@ -35,7 +40,7 @@ app.directive('devtools', function() {
 
 });
 
-app.controller('home', function ($scope, $http, $location) {
+app.controller('home', function ($scope, $http, $location, localStorageService) {
 
     $scope.devtoolsUrl = '';
 
@@ -71,6 +76,8 @@ app.controller('home', function ($scope, $http, $location) {
                 break;
         }
 
+        localStorageService.set('currentFilter', filter)
+
     }
 
     $scope.discover = function() {
@@ -96,7 +103,7 @@ app.controller('home', function ($scope, $http, $location) {
 
     $scope.discover();
 
-    $scope.setTargetFilter('pages')
+    $scope.setTargetFilter(localStorageService.get('currentFilter') || 'pages')
 
 });
 // Privates
