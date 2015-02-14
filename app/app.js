@@ -80,6 +80,7 @@ app.controller('home', function ($scope, $http, $location) {
         // var req = $http.get('/json.json');
 
         req.success(function(data, status, headers, config) {
+            $scope.targets.clear();
 
             data.forEach(function(item) {
                 $scope.targets.add(item.id, item);
