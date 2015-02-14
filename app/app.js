@@ -8,6 +8,7 @@ app.config(function (localStorageServiceProvider) {
 });
 
 app.filter('regex', function() {
+
     return function(input, field, regex) {
         var patt = new RegExp(regex);
         var out = [];
@@ -22,6 +23,7 @@ app.filter('regex', function() {
 
         return out;
     };
+    
 });
 
 app.directive('devtools', function() {
@@ -40,8 +42,11 @@ app.directive('devtools', function() {
 
 });
 
-app.controller('home', function ($scope, $http, $location, localStorageService) {
+app.controller('home', function ($scope, $http, $location, localStorageService, $timeout) {
 
+    $scope.REDISCOVERY_DELAY = 500; // Half a second
+    $scope.filter = '^page$';
+    $scope.targetsFilterSelectedIndex = 1;
     $scope.devtoolsUrl = '';
 
     $scope.targets = new TargetsCollection();
@@ -102,7 +107,15 @@ app.controller('home', function ($scope, $http, $location, localStorageService) 
         $scope.devtoolsUrl = '';
     }
 
+    $scope.startDiscoveryChecks = function rediscover(){
+      $timeout(function(){
+        $scope.discover()
+        rediscover()
+      }, $scope.REDISCOVERY_DELAY)
+    }
+
     $scope.discover();
+    $scope.startDiscoveryChecks()
 
     $scope.setTargetFilter(localStorageService.get('currentFilter') || 'pages')
 
@@ -133,4 +146,5 @@ function setupMenubars() {
         label: 'Debug',
         submenu: debugMenuBar
     }));
+
 }
