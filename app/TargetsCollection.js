@@ -18,6 +18,10 @@ TargetsCollection.prototype.has = function(key) {
     return this.collection.has(key);
 }
 
+TargetsCollection.prototype.clear = function(){
+    return this.collection.clear();
+}
+
 TargetsCollection.prototype.toArray = function() {
 
     var targets = [];
