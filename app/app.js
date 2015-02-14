@@ -97,16 +97,17 @@ app.controller('home', function ($scope, $http, $location, $timeout) {
     }
 
     $scope.startDiscoveryChecks = function rediscover(){
-      $timeout(function(){
-        $scope.discover()
-        rediscover()
-      }, $scope.REDISCOVERY_DELAY)
+        $timeout(function(){
+            $scope.discover()
+            rediscover()
+        }, $scope.REDISCOVERY_DELAY)
     }
 
     $scope.discover();
     $scope.startDiscoveryChecks()
 
 });
+
 // Privates
 
 function setupMenubars() {
