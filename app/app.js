@@ -51,7 +51,7 @@ app.controller('home', function ($scope, $http, $location, localStorageService) 
     $scope.connect = function(target) {
 
         if(!target.devtoolsFrontendUrl) {
-            return;
+            throw new Error("devtoolsFrontendUrl is missing");
         }
 
         var webSocketUrl = target.webSocketDebuggerUrl.replace(/(ws|wss)\:\/\//, '');
