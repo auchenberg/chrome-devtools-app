@@ -1,8 +1,14 @@
 var TargetsCollection = require('./TargetsCollection');
 
-var app = angular.module('app', ['ngAnimate', 'ngMaterial']);
+var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule']);
+
+app.config(function (localStorageServiceProvider) {
+  localStorageServiceProvider
+    .setPrefix('app');
+});
 
 app.filter('regex', function() {
+
     return function(input, field, regex) {
         var patt = new RegExp(regex);
         var out = [];
@@ -17,6 +23,7 @@ app.filter('regex', function() {
 
         return out;
     };
+    
 });
 
 app.directive('devtools', function() {
@@ -35,7 +42,8 @@ app.directive('devtools', function() {
 
 });
 
-app.controller('home', function ($scope, $http, $location, $timeout) {
+app.controller('home', function ($scope, $http, $location, localStorageService, $timeout) {
+
     $scope.REDISCOVERY_DELAY = 500; // Half a second
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
@@ -73,6 +81,8 @@ app.controller('home', function ($scope, $http, $location, $timeout) {
                 break;
         }
 
+        localStorageService.set('currentFilter', filter)
+
     }
 
     $scope.discover = function() {
@@ -80,6 +90,7 @@ app.controller('home', function ($scope, $http, $location, $timeout) {
         // var req = $http.get('/json.json');
 
         req.success(function(data, status, headers, config) {
+            $scope.targets.clear();
 
             data.forEach(function(item) {
                 $scope.targets.add(item.id, item);
@@ -105,6 +116,8 @@ app.controller('home', function ($scope, $http, $location, $timeout) {
 
     $scope.discover();
     $scope.startDiscoveryChecks()
+
+    $scope.setTargetFilter(localStorageService.get('currentFilter') || 'pages')
 
 });
 
@@ -134,4 +147,5 @@ function setupMenubars() {
         label: 'Debug',
         submenu: debugMenuBar
     }));
+
 }
