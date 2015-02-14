@@ -6,7 +6,6 @@ Chrome DevTools App.
 [![Join the chat at https://gitter.im/auchenberg/chrome-devtools-app](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/auchenberg/chrome-devtools-app?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Chrome DevTools packaged as an app via [nw.js](https://github.com/nwjs/nw.js). 
->>>>>>> Replace node-webkit with nw in readme
 
 This project is an exploration of how much work it would take to separate Chrome DevTools from Chrome itself and to explore what separation from the browser itself would bring to the table in terms of new functionality, etc.
 
