@@ -28,23 +28,32 @@ fs.writeFileSync(__dirname + '/../app/devtools/front_end/SupportedCSSProperties.
 
 // Devtools Overrides
 var appBasePath = path.resolve(__dirname, '..', 'app')
-var customFrontEndHostFileName = "NwjsInspectorFrontendHost.js"
-var frontEndModuleConfigFilePath = appBasePath + '/devtools/front_end/host/module.json'
-var frontEndModuleConfig = require(frontEndModuleConfigFilePath)
 
-if(frontEndModuleConfig.scripts.indexOf(customFrontEndHostFileName) === -1){
-  frontEndModuleConfig.scripts.unshift(customFrontEndHostFileName)
+function patchHostModuleDeclaration(){
+  var customFrontEndHostFileName = "NwjsInspectorFrontendHost.js"
+  var frontEndModuleConfigFilePath = appBasePath + '/devtools/front_end/host/module.json'
+  var frontEndModuleConfig = require(frontEndModuleConfigFilePath)
+
+  if(frontEndModuleConfig.scripts.indexOf(customFrontEndHostFileName) === -1){
+    frontEndModuleConfig.scripts.unshift(customFrontEndHostFileName)
+  }
+
+  fs.writeFileSync(
+    frontEndModuleConfigFilePath,
+    JSON.stringify(frontEndModuleConfig, null, 4) + "\n"
+  )
+
 }
 
-fs.writeFileSync(
-  frontEndModuleConfigFilePath,
-  JSON.stringify(frontEndModuleConfig, null, 4) + "\n"
-)
+function addCustomFrontendHostSymlink(){
+  var overrideFilePath = '../../../devtools_overrides/NwjsInspectorFrontendHost.js'
+  var linkPath = appBasePath + '/devtools/front_end/host/NwjsInspectorFrontendHost.js'
+  var symlinkCommand = "ln -s " +  overrideFilePath + ' ' + linkPath
 
-var overrideFilePath = '../../../devtools_overrides/NwjsInspectorFrontendHost.js'
-var linkPath = appBasePath + '/devtools/front_end/host/NwjsInspectorFrontendHost.js'
-var symlinkCommand = "ln -s " +  overrideFilePath + ' ' + linkPath
-
-if(!fs.existsSync(linkPath)){
-  execSync(symlinkCommand)
+  if(!fs.existsSync(linkPath)){
+    execSync(symlinkCommand)
+  }
 }
+
+patchHostModuleDeclaration()
+addCustomFrontendHostSymlink()
