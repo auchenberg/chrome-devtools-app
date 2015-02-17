@@ -1,0 +1,1 @@
+../../../devtools_overrides/NwjsInspectorFrontendHost.js
