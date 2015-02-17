@@ -46,16 +46,29 @@ WebInspector.TimelineJSProfileProcessor.generateTracingEventsFromCpuProfile = fu
  */
 WebInspector.TimelineJSProfileProcessor.generateJSFrameEvents = function(events)
 {
+    /**
+     * @param {!ConsoleAgent.CallFrame} frame1
+     * @param {!ConsoleAgent.CallFrame} frame2
+     * @return {boolean}
+     */
     function equalFrames(frame1, frame2)
     {
         return frame1.scriptId === frame2.scriptId && frame1.functionName === frame2.functionName;
     }
 
+    /**
+     * @param {!WebInspector.TracingModel.Event} e
+     * @return {number}
+     */
     function eventEndTime(e)
     {
         return e.endTime || e.startTime;
     }
 
+    /**
+     * @param {!WebInspector.TracingModel.Event} e
+     * @return {boolean}
+     */
     function isJSInvocationEvent(e)
     {
         switch (e.name) {
@@ -70,11 +83,18 @@ WebInspector.TimelineJSProfileProcessor.generateJSFrameEvents = function(events)
     var jsFramesStack = [];
     var coalesceThresholdMs = WebInspector.TimelineFlameChartDataProvider.JSFrameCoalesceThresholdMs;
 
+    /**
+     * @param {!WebInspector.TracingModel.Event} e
+     */
     function onStartEvent(e)
     {
         extractStackTrace(e);
     }
 
+    /**
+     * @param {!WebInspector.TracingModel.Event} e
+     * @param {?WebInspector.TracingModel.Event} top
+     */
     function onInstantEvent(e, top)
     {
         if (e.name === WebInspector.TimelineModel.RecordType.JSSample && top && !isJSInvocationEvent(top))
@@ -82,12 +102,25 @@ WebInspector.TimelineJSProfileProcessor.generateJSFrameEvents = function(events)
         extractStackTrace(e);
     }
 
+    /**
+     * @param {!WebInspector.TracingModel.Event} e
+     */
     function onEndEvent(e)
     {
-        if (isJSInvocationEvent(e))
-            jsFramesStack.length = 0;
+        if (!isJSInvocationEvent(e))
+            return;
+        var eventData = e.args["data"] || e.args["beginData"];
+        var stackTrace = eventData && eventData["stackTrace"];
+        var stackLength = stackTrace ? stackTrace.length : 0;
+        // FIXME: there shouldn't be such a case.
+        // The current stack should never go beyond the parent event's stack.
+        if (stackLength < jsFramesStack.length)
+            jsFramesStack.length = stackLength;
     }
 
+    /**
+     * @param {!WebInspector.TracingModel.Event} e
+     */
     function extractStackTrace(e)
     {
         while (jsFramesStack.length && eventEndTime(jsFramesStack.peekLast()) + coalesceThresholdMs <= e.startTime)
@@ -122,21 +155,6 @@ WebInspector.TimelineJSProfileProcessor.generateJSFrameEvents = function(events)
         }
     }
 
-    var stack = [];
-    for (var i = 0; i < events.length; ++i) {
-        var e = events[i];
-        var top = stack.peekLast();
-        if (top && top.endTime <= e.startTime)
-            onEndEvent(stack.pop());
-        if (e.duration) {
-            onStartEvent(e);
-            stack.push(e);
-        } else {
-            onInstantEvent(e, stack.peekLast());
-        }
-    }
-    while (stack.length)
-        onEndEvent(stack.pop());
-
+    WebInspector.TimelineModel.forEachEvent(events, onStartEvent, onEndEvent, onInstantEvent);
     return jsFrameEvents;
 }

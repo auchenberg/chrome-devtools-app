@@ -492,10 +492,18 @@ WebInspector.CanvasProfileView.prototype = {
             // FIXME(62725): stack trace line/column numbers are one-based.
             var lineNumber = Math.max(0, call.lineNumber - 1) || 0;
             var columnNumber = Math.max(0, call.columnNumber - 1) || 0;
-            data[2] = this._linkifier.linkifyScriptLocation(this.profile.target(), null, call.sourceURL, lineNumber, columnNumber);
+            data[2] = this._linkifier.linkifyScriptLocation(this._profile.target(), null, call.sourceURL, lineNumber, columnNumber);
         }
 
+        var node = new WebInspector.DataGridNode(data);
+        node.index = index;
+        node.selectable = true;
+        node.call = call;
+
         callViewElement.createChild("span", "canvas-function-name").textContent = call.functionName || "context." + call.property;
+        var target = this._profile.target();
+        if (!target)
+            return node;
 
         if (call.arguments) {
             callViewElement.createTextChild("(");
@@ -503,25 +511,21 @@ WebInspector.CanvasProfileView.prototype = {
                 var argument = /** @type {!CanvasAgent.CallArgument} */ (call.arguments[i]);
                 if (i)
                     callViewElement.createTextChild(", ");
-                var element = WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(argument);
+                var element = WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(target, argument);
                 element.__argumentIndex = i;
                 callViewElement.appendChild(element);
             }
             callViewElement.createTextChild(")");
         } else if (call.value) {
             callViewElement.createTextChild(" = ");
-            callViewElement.appendChild(WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(call.value));
+            callViewElement.appendChild(WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(target, call.value));
         }
 
         if (call.result) {
             callViewElement.createTextChild(" => ");
-            callViewElement.appendChild(WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(call.result));
+            callViewElement.appendChild(WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(target, call.result));
         }
 
-        var node = new WebInspector.DataGridNode(data);
-        node.index = index;
-        node.selectable = true;
-        node.call = call;
         return node;
     },
 
@@ -563,7 +567,7 @@ WebInspector.CanvasProfileView.prototype = {
             var diffLeft = this._popoverAnchorElement.boxInWindow().x - argumentElement.boxInWindow().x;
             this._popoverAnchorElement.style.left = this._popoverAnchorElement.offsetLeft - diffLeft + "px";
 
-            showCallback(WebInspector.runtimeModel.createRemoteObject(result), false, this._popoverAnchorElement);
+            showCallback(this._profile.target().runtimeModel.createRemoteObject(result), false, this._popoverAnchorElement);
         }
 
         var evalResult = argumentElement.__evalResult;
@@ -579,7 +583,7 @@ WebInspector.CanvasProfileView.prototype = {
             var argumentIndex = argumentElement.__argumentIndex;
             if (typeof argumentIndex !== "number")
                 argumentIndex = -1;
-            CanvasAgent.evaluateTraceLogCallArgument(this._traceLogId, callIndex, argumentIndex, objectGroupName, showObjectPopover.bind(this));
+            this._profile.target().canvasAgent().evaluateTraceLogCallArgument(this._traceLogId, callIndex, argumentIndex, objectGroupName, showObjectPopover.bind(this));
         }
     },
 
@@ -682,9 +686,9 @@ WebInspector.CanvasProfileType.prototype = {
     {
         if (this._target !== target)
             return;
-        this._target = null;
         this._target.resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.FrameAdded, this._frameAdded, this);
         this._target.resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.FrameDetached, this._frameRemoved, this);
+        this._target = null;
     },
 
     /**
@@ -729,7 +733,8 @@ WebInspector.CanvasProfileType.prototype = {
     {
         var frameId = this._selectedFrameId();
         WebInspector.targetManager.suspendAllTargets();
-        CanvasAgent.captureFrame(frameId, this._didStartCapturingFrame.bind(this, frameId));
+        if (this._target)
+            this._target.canvasAgent().captureFrame(frameId, this._didStartCapturingFrame.bind(this, frameId));
         WebInspector.targetManager.resumeAllTargets();
     },
 
@@ -737,7 +742,7 @@ WebInspector.CanvasProfileType.prototype = {
     {
         var frameId = this._selectedFrameId();
         WebInspector.targetManager.suspendAllTargets();
-        CanvasAgent.startCapturing(frameId, this._didStartCapturingFrame.bind(this, frameId));
+        this._target.canvasAgent().startCapturing(frameId, this._didStartCapturingFrame.bind(this, frameId));
     },
 
     _stopFrameCapturing: function()
@@ -753,7 +758,8 @@ WebInspector.CanvasProfileType.prototype = {
         {
             profileHeader._updateCapturingStatus();
         }
-        CanvasAgent.stopCapturing(traceLogId, didStopCapturing);
+        if (this._target)
+            this._target.canvasAgent().stopCapturing(traceLogId, didStopCapturing);
         WebInspector.targetManager.resumeAllTargets();
     },
 
@@ -764,7 +770,7 @@ WebInspector.CanvasProfileType.prototype = {
      */
     _didStartCapturingFrame: function(frameId, error, traceLogId)
     {
-        if (error || this._lastProfileHeader && this._lastProfileHeader.traceLogId() === traceLogId)
+        if (error || this._lastProfileHeader && this._lastProfileHeader.traceLogId() === traceLogId || !this._target)
             return;
         var profileHeader = new WebInspector.CanvasProfileHeader(this._target, this, traceLogId, frameId);
         this._lastProfileHeader = profileHeader;
@@ -846,7 +852,7 @@ WebInspector.CanvasProfileType.prototype = {
      */
     _onProfilerEnableButtonClick: function(enable)
     {
-        if (this._canvasAgentEnabled === enable)
+        if (this._canvasAgentEnabled === enable || !this._target)
             return;
 
         /**
@@ -862,9 +868,9 @@ WebInspector.CanvasProfileType.prototype = {
             this._dispatchViewUpdatedEvent();
         }
         if (enable)
-            CanvasAgent.enable(callback.bind(this));
+            this._target.canvasAgent().enable(callback.bind(this));
         else
-            CanvasAgent.disable(callback.bind(this));
+            this._target.canvasAgent().disable(callback.bind(this));
     },
 
     /**
@@ -1028,7 +1034,7 @@ WebInspector.CanvasDispatcher.prototype = {
 /**
  * @constructor
  * @extends {WebInspector.ProfileHeader}
- * @param {?WebInspector.Target} target
+ * @param {!WebInspector.Target} target
  * @param {!WebInspector.CanvasProfileType} type
  * @param {!CanvasAgent.TraceLogId=} traceLogId
  * @param {!PageAgent.FrameId=} frameId
@@ -1041,7 +1047,7 @@ WebInspector.CanvasProfileHeader = function(target, type, traceLogId, frameId)
     this._frameId = frameId;
     this._alive = true;
     this._traceLogSize = 0;
-    this._traceLogPlayer = traceLogId ? new WebInspector.CanvasTraceLogPlayerProxy(traceLogId) : null;
+    this._traceLogPlayer = traceLogId ? new WebInspector.CanvasTraceLogPlayerProxy(target, traceLogId) : null;
 }
 
 WebInspector.CanvasProfileHeader.prototype = {
@@ -1143,13 +1149,14 @@ WebInspector.CanvasProfileHeader.prototype = {
 
 WebInspector.CanvasProfileDataGridHelper = {
     /**
+     * @param {!WebInspector.Target} target
      * @param {!CanvasAgent.CallArgument} callArgument
      * @return {!Element}
      */
-    createCallArgumentElement: function(callArgument)
+    createCallArgumentElement: function(target, callArgument)
     {
         if (callArgument.enumName)
-            return WebInspector.CanvasProfileDataGridHelper.createEnumValueElement(callArgument.enumName, +callArgument.description);
+            return WebInspector.CanvasProfileDataGridHelper.createEnumValueElement(target, callArgument.enumName, +callArgument.description);
         var element = createElement("span");
         element.className = "canvas-call-argument";
         var description = callArgument.description;
@@ -1160,7 +1167,7 @@ WebInspector.CanvasProfileDataGridHelper = {
             element.createTextChild("\"");
             element.__suppressPopover = (description.length <= maxStringLength && !/[\r\n]/.test(description));
             if (!element.__suppressPopover)
-                element.__evalResult = WebInspector.runtimeModel.createRemoteObjectFromPrimitiveValue(description);
+                element.__evalResult = target.runtimeModel.createRemoteObjectFromPrimitiveValue(description);
         } else {
             var type = callArgument.subtype || callArgument.type;
             if (type) {
@@ -1170,7 +1177,7 @@ WebInspector.CanvasProfileDataGridHelper = {
             }
             element.textContent = description;
             if (callArgument.remoteObject)
-                element.__evalResult = WebInspector.runtimeModel.createRemoteObject(callArgument.remoteObject);
+                element.__evalResult = target.runtimeModel.createRemoteObject(callArgument.remoteObject);
         }
         if (callArgument.resourceId) {
             element.classList.add("canvas-formatted-resource");
@@ -1180,27 +1187,30 @@ WebInspector.CanvasProfileDataGridHelper = {
     },
 
     /**
+     * @param {!WebInspector.Target} target
      * @param {string} enumName
      * @param {number} enumValue
      * @return {!Element}
      */
-    createEnumValueElement: function(enumName, enumValue)
+    createEnumValueElement: function(target, enumName, enumValue)
     {
         var element = createElement("span");
         element.className = "canvas-call-argument canvas-formatted-number";
         element.textContent = enumName;
-        element.__evalResult = WebInspector.runtimeModel.createRemoteObjectFromPrimitiveValue(enumValue);
+        element.__evalResult = target.runtimeModel.createRemoteObjectFromPrimitiveValue(enumValue);
         return element;
     }
 }
 
 /**
- * @extends {WebInspector.Object}
+ * @extends {WebInspector.SDKObject}
  * @constructor
+ * @param {!WebInspector.Target} target
  * @param {!CanvasAgent.TraceLogId} traceLogId
  */
-WebInspector.CanvasTraceLogPlayerProxy = function(traceLogId)
+WebInspector.CanvasTraceLogPlayerProxy = function(target, traceLogId)
 {
+    WebInspector.SDKObject.call(this, target);
     this._traceLogId = traceLogId;
     /** @type {!Object.<string, !CanvasAgent.ResourceState>} */
     this._currentResourceStates = {};
@@ -1237,7 +1247,7 @@ WebInspector.CanvasTraceLogPlayerProxy.prototype = {
             userCallback(traceLog);
             this.dispatchEventToListeners(WebInspector.CanvasTraceLogPlayerProxy.Events.CanvasTraceLogReceived, traceLog);
         }
-        CanvasAgent.getTraceLog(this._traceLogId, startOffset, maxLength, callback.bind(this));
+        this.target().canvasAgent().getTraceLog(this._traceLogId, startOffset, maxLength, callback.bind(this));
     },
 
     dispose: function()
@@ -1279,7 +1289,7 @@ WebInspector.CanvasTraceLogPlayerProxy.prototype = {
             userCallback(resourceState);
             this.dispatchEventToListeners(WebInspector.CanvasTraceLogPlayerProxy.Events.CanvasResourceStateReceived, resourceState);
         }
-        CanvasAgent.getResourceState(this._traceLogId, effectiveResourceId, callback.bind(this));
+        this.target().canvasAgent().getResourceState(this._traceLogId, effectiveResourceId, callback.bind(this));
     },
 
     /**
@@ -1308,7 +1318,7 @@ WebInspector.CanvasTraceLogPlayerProxy.prototype = {
             if (!error)
                 this.dispatchEventToListeners(WebInspector.CanvasTraceLogPlayerProxy.Events.CanvasResourceStateReceived, resourceState);
         }
-        CanvasAgent.replayTraceLog(this._traceLogId, index, callback.bind(this));
+        this.target().canvasAgent().replayTraceLog(this._traceLogId, index, callback.bind(this));
     },
 
     clearResourceStates: function()
@@ -1317,5 +1327,5 @@ WebInspector.CanvasTraceLogPlayerProxy.prototype = {
         this.dispatchEventToListeners(WebInspector.CanvasTraceLogPlayerProxy.Events.CanvasReplayStateChanged);
     },
 
-    __proto__: WebInspector.Object.prototype
+    __proto__: WebInspector.SDKObject.prototype
 }

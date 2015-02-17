@@ -74,6 +74,14 @@ WebInspector.CountersGraph = function(title, delegate, model)
 }
 
 WebInspector.CountersGraph.prototype = {
+    /**
+     * @return {?WebInspector.Target}
+     */
+    target: function()
+    {
+        return this._model.target();
+    },
+
     _createCurrentValuesBar: function()
     {
         this._currentValuesBar = this._graphsContainer.element.createChild("div");

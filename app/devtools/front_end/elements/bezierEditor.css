@@ -1,0 +1,162 @@
+/*
+ * Copyright (c) 2015 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+:host {
+    width: 235px;
+    height: 320px;
+    -webkit-user-select: none;
+}
+
+.bezier-presets {
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.bezier-preset-selected > svg{
+    background-color: rgb(56, 121, 217);
+}
+
+.bezier-preset-label {
+    font-size: 10px;
+}
+
+.bezier-preset {
+    width: 50px;
+    height: 50px;
+    padding: 5px;
+    margin: auto;
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+.bezier-preset line.bezier-control-line {
+    stroke: #666;
+    stroke-width: 1;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.bezier-preset circle.bezier-control-circle {
+    fill: #666;
+}
+
+.bezier-preset path.bezier-path {
+    stroke: black;
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.bezier-preset-selected path.bezier-path, .bezier-preset-selected line.bezier-control-line {
+    stroke: white;
+}
+
+.bezier-preset-selected circle.bezier-control-circle {
+    fill: white;
+}
+
+.bezier-curve line.linear-line {
+    stroke: #eee;
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.bezier-curve line.bezier-control-line {
+    stroke: rgba(56, 121, 217, 0.6);
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.bezier-curve circle.bezier-control-circle {
+    fill: rgb(56, 121, 217);
+}
+
+.bezier-curve path.bezier-path {
+    stroke: black;
+    stroke-width: 3;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.bezier-preview-container {
+    position: relative;
+    background-color: white;
+    overflow: hidden;
+    border-radius: 20px;
+    width: 100%;
+    height: 20px;
+    margin-left: 10px;
+    z-index: 2;
+}
+
+.bezier-preview-animation {
+    background-color: rgb(56, 121, 217);
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    position: absolute;
+}
+
+.bezier-preview-onion {
+    margin-top: -20px;
+    position: relative;
+    z-index: 1;
+    margin-left: 10px;
+}
+
+.bezier-preview-onion > .bezier-preview-animation {
+    opacity: 0.1;
+}
+
+svg.bezier-preset-modify {
+    background-color: #ccc;
+    border-radius: 10px;
+    display: inline-block;
+    opacity: 0;
+    transition: opacity 250ms;
+    margin: 2px;
+}
+
+svg.bezier-preset-modify:hover, .bezier-preset:hover {
+    background-color: #999;
+}
+
+.bezier-preset-selected .bezier-preset:hover {
+    background-color: rgb(56, 121, 217);
+}
+
+.bezier-preset-modify path {
+    stroke-width: 2;
+    stroke: white;
+    fill: none;
+}
+
+.bezier-preset-selected .bezier-preset-modify {
+    opacity: 1;
+}
+
+.bezier-preset-category {
+    width: 50px;
+}
+
+.bezier-display-value {
+    width: 100%;
+    -webkit-user-select: text;
+    display: block;
+    text-align: center;
+    padding-top: 5px;
+    padding-bottom: 10px;
+}
+
+.bezier-container {
+    display: flex;
+}
+
+svg.bezier-curve {
+    margin-left: 10px;
+}

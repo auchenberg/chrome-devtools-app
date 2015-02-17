@@ -209,7 +209,7 @@ WebInspector.OverridesView.DeviceTab.prototype = {
         var deviceModelElement = fieldsetElement.createChild("p", "overrides-device-model-section");
         deviceModelElement.createChild("span").textContent = WebInspector.UIString("Model:");
 
-        deviceModelElement.appendChild(WebInspector.OverridesUI.createDeviceSelect(this._showTitleDialog.bind(this)));
+        deviceModelElement.appendChild(WebInspector.OverridesUI.createDeviceSelect());
 
         var emulateResolutionCheckbox = WebInspector.SettingsUI.createSettingCheckbox(WebInspector.UIString("Emulate screen resolution"), WebInspector.overridesSupport.settings.emulateResolution, true);
         fieldsetElement.appendChild(emulateResolutionCheckbox);
@@ -250,80 +250,9 @@ WebInspector.OverridesView.DeviceTab.prototype = {
         return fieldsetElement;
     },
 
-    /**
-     * @param {function(string)} callback
-     */
-    _showTitleDialog: function(callback)
-    {
-        WebInspector.Dialog.show(this.element, new WebInspector.OverridesView.DeviceTab.CustomDeviceTitleDialog(callback));
-    },
-
     __proto__: WebInspector.OverridesView.Tab.prototype
 }
 
-/**
- * @constructor
- * @extends {WebInspector.DialogDelegate}
- * @param {function(string)} callback
- */
-WebInspector.OverridesView.DeviceTab.CustomDeviceTitleDialog = function(callback)
-{
-    WebInspector.DialogDelegate.call(this);
-
-    this.element = createElementWithClass("div", "custom-device-title-dialog");
-    this.element.createChild("label").textContent = WebInspector.UIString("Save as: ");
-
-    this._input = this.element.createChild("input");
-    this._input.setAttribute("type", "text");
-    this._input.placeholder = WebInspector.UIString("device model name");
-    this._input.addEventListener("input", this._onInput.bind(this), false);
-
-    this._saveButton = this.element.createChild("button");
-    this._saveButton.textContent = WebInspector.UIString("Save");
-    this._saveButton.addEventListener("click", this._onSaveClick.bind(this), false);
-
-    this._callback = callback;
-    this._result = "";
-    this._onInput();
-}
-
-WebInspector.OverridesView.DeviceTab.CustomDeviceTitleDialog.prototype = {
-    focus: function()
-    {
-        WebInspector.setCurrentFocusElement(this._input);
-        this._input.select();
-    },
-
-    _onSaveClick: function()
-    {
-        this._result = this._input.value.trim();
-        WebInspector.Dialog.hide();
-    },
-
-    _onInput: function()
-    {
-        this._saveButton.disabled = !this._input.value.trim();
-    },
-
-    /**
-     * @param {!Event} event
-     */
-    onEnter: function(event)
-    {
-        if (this._input.value.trim()) {
-            this._result = this._input.value.trim();
-        } else {
-            event.consume();
-        }
-    },
-
-    willHide: function()
-    {
-        this._callback(this._result);
-    },
-
-    __proto__: WebInspector.DialogDelegate.prototype
-}
 
 /**
  * @constructor

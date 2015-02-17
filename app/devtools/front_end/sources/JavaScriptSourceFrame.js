@@ -39,6 +39,8 @@ WebInspector.JavaScriptSourceFrame = function(scriptsPanel, uiSourceCode)
     this._scriptsPanel = scriptsPanel;
     this._breakpointManager = WebInspector.breakpointManager;
     this._uiSourceCode = uiSourceCode;
+    if (uiSourceCode.contentType() === WebInspector.resourceTypes.Script)
+        this._compiler = new WebInspector.JavaScriptCompiler(this);
 
     WebInspector.UISourceCodeFrame.call(this, uiSourceCode);
     if (uiSourceCode.project().type() === WebInspector.projectTypes.Debugger)
@@ -49,7 +51,7 @@ WebInspector.JavaScriptSourceFrame = function(scriptsPanel, uiSourceCode)
 
     this.textEditor.element.addEventListener("keydown", this._onKeyDown.bind(this), true);
 
-    this.textEditor.addEventListener(WebInspector.TextEditor.Events.GutterClick, this._handleGutterClick.bind(this), this);
+    this.textEditor.addEventListener(WebInspector.CodeMirrorTextEditor.Events.GutterClick, this._handleGutterClick.bind(this), this);
 
     this._breakpointManager.addEventListener(WebInspector.BreakpointManager.Events.BreakpointAdded, this._breakpointAdded, this);
     this._breakpointManager.addEventListener(WebInspector.BreakpointManager.Events.BreakpointRemoved, this._breakpointRemoved, this);
@@ -243,6 +245,8 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         this._scriptsPanel.setIgnoreExecutionLineEvents(true);
         WebInspector.UISourceCodeFrame.prototype.onTextChanged.call(this, oldRange, newRange);
         this._scriptsPanel.setIgnoreExecutionLineEvents(false);
+        if (this._compiler)
+            this._compiler.scheduleCompile();
     },
 
     populateLineGutterContextMenu: function(contextMenu, lineNumber)
@@ -251,7 +255,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         var breakpoint = this._breakpointManager.findBreakpointOnLine(this._uiSourceCode, lineNumber);
         if (!breakpoint) {
             // This row doesn't have a breakpoint: We want to show Add Breakpoint and Add and Edit Breakpoint.
-            contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^breakpoint"), this._setBreakpoint.bind(this, lineNumber, 0, "", true));
+            contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^breakpoint"), this._createNewBreakpoint.bind(this, lineNumber, 0, "", true));
             contextMenu.appendItem(WebInspector.UIString.capitalize("Add ^conditional ^breakpoint…"), this._editBreakpointCondition.bind(this, lineNumber));
         } else {
             // This row has a breakpoint, we want to show edit and remove breakpoint, and either disable or enable.
@@ -518,7 +522,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         }
 
         var token = this.textEditor.tokenAtTextPosition(textPosition.startLine, textPosition.startColumn);
-        if (!token)
+        if (!token || !token.type)
             return;
         var lineNumber = textPosition.startLine;
         var line = this.textEditor.line(lineNumber);
@@ -555,7 +559,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         if (!anchorBox.forSelection) {
             while (startHighlight > 1 && line.charAt(startHighlight - 1) === '.') {
                 var token = this.textEditor.tokenAtTextPosition(lineNumber, startHighlight - 2);
-                if (!token) {
+                if (!token || !token.type) {
                     this._popoverHelper.hidePopover();
                     return;
                 }
@@ -657,7 +661,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
             if (breakpoint)
                 breakpoint.setCondition(newText);
             else
-                this._setBreakpoint(lineNumber, 0, newText, true);
+                this._createNewBreakpoint(lineNumber, 0, newText, true);
         }
 
         var config = new WebInspector.InplaceEditor.Config(finishEditing.bind(this, true), finishEditing.bind(this, false));
@@ -848,7 +852,7 @@ WebInspector.JavaScriptSourceFrame.prototype = {
         if (this._muted)
             return;
 
-        var eventData = /** @type {!WebInspector.TextEditor.GutterClickEventData} */ (event.data);
+        var eventData = /** @type {!WebInspector.CodeMirrorTextEditor.GutterClickEventData} */ (event.data);
         var lineNumber = eventData.lineNumber;
         var eventObject = eventData.event;
 
@@ -872,7 +876,19 @@ WebInspector.JavaScriptSourceFrame.prototype = {
             else
                 breakpoint.remove();
         } else
-            this._setBreakpoint(lineNumber, 0, "", true);
+            this._createNewBreakpoint(lineNumber, 0, "", true);
+    },
+
+    /**
+     * @param {number} lineNumber
+     * @param {number} columnNumber
+     * @param {string} condition
+     * @param {boolean} enabled
+     */
+    _createNewBreakpoint: function(lineNumber, columnNumber, condition, enabled)
+    {
+        this._setBreakpoint(lineNumber, columnNumber, condition, enabled);
+        WebInspector.userMetrics.ScriptsBreakpointSet.record();
     },
 
     toggleBreakpointOnCurrentLine: function()

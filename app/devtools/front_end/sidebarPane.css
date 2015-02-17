@@ -44,21 +44,11 @@
     color: #888;
 }
 
-.sidebar-pane > .body .placard.dimmed {
-    opacity: 0.6;
-    font-style: italic;
-}
-
-.sidebar-pane > .body .placard + .info {
-    border-top: 1px solid rgb(189, 189, 189);
-    background-color: rgb(255, 255, 194);
-}
-
 .sidebar-pane.visible > .body {
     display: block;
 }
 
-.sidebar-pane .section .properties {
+.sidebar-pane .section .properties-tree {
     padding-left: 16px;
 }
 
@@ -197,7 +187,7 @@
     vertical-align: bottom;
 }
 
-.hidden-placards-message {
+.hidden-callframes-message {
     text-align: center;
     font-style: italic;
     padding: 4px;

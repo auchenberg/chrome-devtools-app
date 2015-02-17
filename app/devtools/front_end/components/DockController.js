@@ -44,6 +44,9 @@ WebInspector.DockController = function(canDock)
 
     WebInspector.settings.currentDockState = WebInspector.settings.createSetting("currentDockState", "");
     WebInspector.settings.lastDockState = WebInspector.settings.createSetting("lastDockState", "");
+
+    /** @type {!WebInspector.StatusBarStatesSettingButton|undefined} */
+    this._dockToggleButton;
 }
 
 WebInspector.DockController.State = {
@@ -106,6 +109,8 @@ WebInspector.DockController.prototype = {
         if (this._dockSide === dockSide)
             return;
 
+        if (this._dockToggleButton)
+            this._dockToggleButton.setEnabled(false);
         var eventData = { from: this._dockSide, to: dockSide };
         this.dispatchEventToListeners(WebInspector.DockController.Events.BeforeDockSideChanged, eventData);
         console.timeStamp("DockController.setIsDocked");
@@ -121,6 +126,8 @@ WebInspector.DockController.prototype = {
     _setIsDockedResponse: function(eventData)
     {
         this.dispatchEventToListeners(WebInspector.DockController.Events.AfterDockSideChanged, eventData);
+        if (this._dockToggleButton)
+            this._dockToggleButton.setEnabled(true);
     },
 
     /**
@@ -199,7 +206,7 @@ WebInspector.DockController.ToggleDockActionDelegate.prototype = {
     handleAction: function()
     {
         var toggleButton = new WebInspector.DockController.ButtonProvider().item();
-        if (!toggleButton)
+        if (!toggleButton || !toggleButton.enabled())
             return false;
         /** @type {!WebInspector.StatusBarStatesSettingButton} */ (toggleButton).toggle();
         return true;

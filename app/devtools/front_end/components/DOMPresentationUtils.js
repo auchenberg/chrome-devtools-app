@@ -99,15 +99,18 @@ WebInspector.DOMPresentationUtils.linkifyNodeReference = function(node)
     if (!node)
         return createTextNode(WebInspector.UIString("<node>"));
 
-    var link = createElement("span");
-    link.className = "node-link";
+    var root = createElement("div");
+    var shadowRoot = root.createShadowRoot();
+    shadowRoot.appendChild(WebInspector.View.createStyleElement("components/nodeLink.css"));
+    var link = shadowRoot.createChild("div", "node-link");
+
     WebInspector.DOMPresentationUtils.decorateNodeLabel(node, link);
 
     link.addEventListener("click", WebInspector.Revealer.reveal.bind(WebInspector.Revealer, node, undefined), false);
     link.addEventListener("mouseover", node.highlight.bind(node, undefined, undefined), false);
     link.addEventListener("mouseleave", node.domModel().hideDOMNodeHighlight.bind(node.domModel()), false);
 
-    return link;
+    return root;
 }
 
 /**
@@ -116,8 +119,10 @@ WebInspector.DOMPresentationUtils.linkifyNodeReference = function(node)
  */
 WebInspector.DOMPresentationUtils.linkifyDeferredNodeReference = function(deferredNode)
 {
-    var link = createElement("span");
-    link.className = "node-link";
+    var root = createElement("div");
+    var shadowRoot = root.createShadowRoot();
+    shadowRoot.appendChild(WebInspector.View.createStyleElement("components/nodeLink.css"));
+    var link = shadowRoot.createChild("div", "node-link");
 
     link.addEventListener("click", deferredNode.resolve.bind(deferredNode, onDeferredNodeResolved), false);
 
@@ -129,7 +134,7 @@ WebInspector.DOMPresentationUtils.linkifyDeferredNodeReference = function(deferr
         WebInspector.Revealer.reveal(node);
     }
 
-    return link;
+    return root;
 }
 
 /**

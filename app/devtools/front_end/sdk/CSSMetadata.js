@@ -92,6 +92,15 @@ WebInspector.CSSMetadata.isLengthProperty = function(propertyName)
     return WebInspector.CSSMetadata._distancePropertiesKeySet[propertyName] || propertyName.startsWith("margin") || propertyName.startsWith("padding") || propertyName.indexOf("width") !== -1 || propertyName.indexOf("height") !== -1;
 }
 
+/**
+ * @param {string} propertyName
+ * @return {boolean}
+ */
+WebInspector.CSSMetadata.isBezierAwareProperty = function(propertyName)
+{
+    return !!WebInspector.CSSMetadata._bezierAwareProperties[propertyName.toLowerCase()];
+}
+
 // Originally taken from http://www.w3.org/TR/CSS21/propidx.html and augmented.
 WebInspector.CSSMetadata.InheritedProperties = [
     "azimuth", "border-collapse", "border-spacing", "caption-side", "color", "cursor", "direction", "elevation",
@@ -137,6 +146,11 @@ WebInspector.CSSMetadata._distanceProperties = [
     'background-position', 'border-spacing', 'bottom', 'font-size', 'height', 'left', 'letter-spacing', 'max-height', 'max-width', 'min-height',
     'min-width', 'right', 'text-indent', 'top', 'width', 'word-spacing'
 ];
+
+WebInspector.CSSMetadata._bezierAwareProperties = [
+    "animation", "animation-timing-function", "transition", "transition-timing-function", "-webkit-animation", "-webkit-animation-timing-function",
+    "-webkit-transition", "-webkit-transition-timing-function"
+].keySet();
 
 WebInspector.CSSMetadata._colorAwareProperties = [
     "background", "background-color", "background-image", "border", "border-color", "border-top", "border-right", "border-bottom",

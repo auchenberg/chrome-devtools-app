@@ -770,6 +770,8 @@ WebInspector.HeapSnapshotConstructorsDataGrid.prototype = {
                     return;
                 }
             }
+            // There are no visible top level nodes with such className.
+            callback(null);
         }
         this.snapshot.nodeClassName(parseInt(id, 10), didGetClassName.bind(this));
     },

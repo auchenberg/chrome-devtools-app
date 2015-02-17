@@ -50,14 +50,6 @@ WebInspector.MemoryCountersGraph = function(delegate, model)
 }
 
 WebInspector.MemoryCountersGraph.prototype = {
-    timelineStarted: function()
-    {
-    },
-
-    timelineStopped: function()
-    {
-    },
-
     /**
      * @override
      * @param {?RegExp} textFilter
@@ -65,28 +57,25 @@ WebInspector.MemoryCountersGraph.prototype = {
     refreshRecords: function(textFilter)
     {
         this.reset();
-        var records = this._model.records();
+        var events = this._model.mainThreadEvents();
+        for (var i = 0; i < events.length; ++i) {
+            var event = events[i];
+            if (event.name !== WebInspector.TimelineModel.RecordType.UpdateCounters)
+                continue;
 
-        /**
-         * @param {!WebInspector.TimelineModel.Record} record
-         * @this {!WebInspector.MemoryCountersGraph}
-         */
-        function addStatistics(record)
-        {
-            var counters = WebInspector.TimelineUIUtils.isCoalescable.countersForRecord(record);
+            var counters = event.args.data;
             if (!counters)
                 return;
             for (var name in counters) {
                 var counter = this._countersByName[name];
                 if (counter)
-                    counter.appendSample(record.endTime() || record.startTime(), counters[name]);
+                    counter.appendSample(event.startTime, counters[name]);
             }
 
             var gpuMemoryLimitCounterName = "gpuMemoryLimitKB";
             if (this._gpuMemoryCounter && (gpuMemoryLimitCounterName in counters))
                 this._gpuMemoryCounter.setLimit(counters[gpuMemoryLimitCounterName]);
         }
-        WebInspector.TimelineModel.forAllRecords(records, null, addStatistics.bind(this));
         this.scheduleRefresh();
     },
 

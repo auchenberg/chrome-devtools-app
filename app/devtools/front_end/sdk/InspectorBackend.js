@@ -43,6 +43,15 @@ function InspectorBackendClass()
 
 InspectorBackendClass._DevToolsErrorCode = -32000;
 
+/**
+ * @param {string} error
+ * @param {!Object} messageObject
+ */
+InspectorBackendClass.reportProtocolError = function(error, messageObject)
+{
+    console.error(error + ": " + JSON.stringify(messageObject));
+}
+
 InspectorBackendClass.prototype = {
 
     _initProtocolAgentsConstructor: function()
@@ -362,7 +371,7 @@ InspectorBackendClass.Connection.prototype = {
     registerAgentsOn: function(object)
     {
         for (var domain in this._agents)
-            object[domain + "Agent"]  = this._agents[domain];
+            object[domain + "Agent"]  = {};
     },
 
     /**
@@ -450,14 +459,6 @@ InspectorBackendClass.Connection.prototype = {
     },
 
     /**
-     * @param {!Object} messageObject
-     */
-    reportProtocolError: function(messageObject)
-    {
-        console.error("Protocol Error: the message with wrong id. Message =  " + JSON.stringify(messageObject));
-    },
-
-    /**
      * @param {!Object|string} message
      */
     dispatch: function(message)
@@ -468,10 +469,9 @@ InspectorBackendClass.Connection.prototype = {
         var messageObject = /** @type {!Object} */ ((typeof message === "string") ? JSON.parse(message) : message);
 
         if ("id" in messageObject) { // just a response for some request
-
             var callback = this._callbacks[messageObject.id];
             if (!callback) {
-                this.reportProtocolError(messageObject);
+                InspectorBackendClass.reportProtocolError("Protocol Error: the message with wrong id", messageObject);
                 return;
             }
 
@@ -490,10 +490,14 @@ InspectorBackendClass.Connection.prototype = {
                 this.runAfterPendingDispatches();
             return;
         } else {
+            if (messageObject.error) {
+                InspectorBackendClass.reportProtocolError("Generic message format error", messageObject);
+                return;
+            }
             var method = messageObject.method.split(".");
             var domainName = method[0];
             if (!(domainName in this._dispatchers)) {
-                console.error("Protocol Error: the message " + messageObject.method + " is for non-existing domain '" + domainName + "'");
+                InspectorBackendClass.reportProtocolError("Protocol Error: the message " + messageObject.method + " is for non-existing domain '" + domainName + "'", messageObject);
                 return;
             }
 
@@ -1023,12 +1027,12 @@ InspectorBackendClass.DispatcherPrototype.prototype = {
             return;
 
         if (!(functionName in this._dispatcher)) {
-            console.error("Protocol Error: Attempted to dispatch an unimplemented method '" + messageObject.method + "'");
+            InspectorBackendClass.reportProtocolError("Protocol Error: Attempted to dispatch an unimplemented method '" + messageObject.method + "'", messageObject);
             return;
         }
 
         if (!this._eventArgs[messageObject.method]) {
-            console.error("Protocol Error: Attempted to dispatch an unspecified method '" + messageObject.method + "'");
+            InspectorBackendClass.reportProtocolError("Protocol Error: Attempted to dispatch an unspecified method '" + messageObject.method + "'", messageObject);
             return;
         }
 

@@ -344,18 +344,18 @@ WebInspector.ExecutionContext.prototype = {
             }
 
             /**
-             * @param {string} primitiveType
+             * @param {string=} type
              * @suppressReceiverCheck
              * @this {WebInspector.ExecutionContext}
              */
-            function getCompletions(primitiveType)
+            function getCompletions(type)
             {
                 var object;
-                if (primitiveType === "string")
+                if (type === "string")
                     object = new String("");
-                else if (primitiveType === "number")
+                else if (type === "number")
                     object = new Number(0);
-                else if (primitiveType === "boolean")
+                else if (type === "boolean")
                     object = new Boolean(false);
                 else
                     object = this;
@@ -363,6 +363,8 @@ WebInspector.ExecutionContext.prototype = {
                 var resultSet = {};
                 for (var o = object; o; o = o.__proto__) {
                     try {
+                        if (type === "array" && o === object && ArrayBuffer.isView(o) && o.length > 9999)
+                            continue;
                         var names = Object.getOwnPropertyNames(o);
                         for (var i = 0; i < names.length; ++i)
                             resultSet[names[i]] = true;
@@ -373,7 +375,7 @@ WebInspector.ExecutionContext.prototype = {
             }
 
             if (result.type === "object" || result.type === "function")
-                result.callFunctionJSON(getCompletions, undefined, receivedPropertyNames.bind(this));
+                result.callFunctionJSON(getCompletions, [WebInspector.RemoteObject.toCallArgument(result.subtype)], receivedPropertyNames.bind(this));
             else if (result.type === "string" || result.type === "number" || result.type === "boolean")
                 this.evaluate("(" + getCompletions + ")(\"" + result.type + "\")", "completion", false, true, true, false, receivedPropertyNamesFromEval.bind(this));
         }
@@ -464,8 +466,3 @@ WebInspector.ExecutionContext.prototype = {
 
     __proto__: WebInspector.SDKObject.prototype
 }
-
-/**
- * @type {!WebInspector.RuntimeModel}
- */
-WebInspector.runtimeModel;

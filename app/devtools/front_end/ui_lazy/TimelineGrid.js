@@ -34,6 +34,7 @@
 WebInspector.TimelineGrid = function()
 {
     this.element = createElement("div");
+    this.element.appendChild(WebInspector.View.createStyleElement("ui_lazy/timelineGrid.css"));
 
     this._dividersElement = this.element.createChild("div", "resources-dividers");
 
@@ -49,12 +50,12 @@ WebInspector.TimelineGrid = function()
 
 /**
  * @param {!WebInspector.TimelineGrid.Calculator} calculator
+ * @param {number=} freeZoneAtLeft
  * @return {!{offsets: !Array.<number>, precision: number}}
  */
-WebInspector.TimelineGrid.calculateDividerOffsets = function(calculator)
+WebInspector.TimelineGrid.calculateDividerOffsets = function(calculator, freeZoneAtLeft)
 {
-    const minGridSlicePx = 64; // minimal distance between grid lines.
-    const gridFreeZoneAtLeftPx = 50;
+    /** @const */ var minGridSlicePx = 64; // minimal distance between grid lines.
 
     var clientWidth = calculator.computePosition(calculator.maximumBoundary());
     var dividersCount = clientWidth / minGridSlicePx;
@@ -73,25 +74,23 @@ WebInspector.TimelineGrid.calculateDividerOffsets = function(calculator)
     if (gridSliceTime * pixelsPerTime >= 2 * minGridSlicePx)
         gridSliceTime = gridSliceTime / 2;
 
-    var firstDividerTime = Math.ceil((calculator.minimumBoundary() - calculator.zeroTime()) / gridSliceTime) * gridSliceTime + calculator.zeroTime();
+    var leftBoundaryTime = calculator.minimumBoundary() - calculator.paddingLeft() / pixelsPerTime;
+    var firstDividerTime = Math.ceil((leftBoundaryTime - calculator.zeroTime()) / gridSliceTime) * gridSliceTime + calculator.zeroTime();
     var lastDividerTime = calculator.maximumBoundary();
     // Add some extra space past the right boundary as the rightmost divider label text
     // may be partially shown rather than just pop up when a new rightmost divider gets into the view.
-    if (calculator.paddingLeft() > 0)
-        lastDividerTime = lastDividerTime + minGridSlicePx / pixelsPerTime;
+    lastDividerTime += minGridSlicePx / pixelsPerTime;
     dividersCount = Math.ceil((lastDividerTime - firstDividerTime) / gridSliceTime);
-
-    var skipLeftmostDividers = calculator.paddingLeft() === 0;
 
     if (!gridSliceTime)
         dividersCount = 0;
 
     var offsets = [];
     for (var i = 0; i < dividersCount; ++i) {
-        var left = calculator.computePosition(firstDividerTime + gridSliceTime * i);
-        if (skipLeftmostDividers && left < gridFreeZoneAtLeftPx)
+        var time = firstDividerTime + gridSliceTime * i;
+        if (calculator.computePosition(time) < freeZoneAtLeft)
             continue;
-        offsets.push(firstDividerTime + gridSliceTime * i);
+        offsets.push(time);
     }
 
     return {offsets: offsets, precision: Math.max(0, -Math.floor(Math.log(gridSliceTime * 1.01) / Math.LN10))};
@@ -138,13 +137,11 @@ WebInspector.TimelineGrid.drawCanvasGrid = function(canvas, calculator, dividerO
         time = dividerOffsets[i];
         var position = calculator.computePosition(time);
         context.beginPath();
-        if (position - lastPosition > minWidthForTitle) {
-            if (!printDeltas || i !== 0) {
-                var text = printDeltas ? calculator.formatTime(calculator.zeroTime() + time - lastTime) : calculator.formatTime(time, precision);
-                var textWidth = context.measureText(text).width;
-                var textPosition = printDeltas ? (position + lastPosition - textWidth) / 2 : position - textWidth - paddingRight;
-                context.fillText(text, textPosition, paddingTop);
-            }
+        if (!printDeltas || i !== 0 && position - lastPosition > minWidthForTitle) {
+            var text = printDeltas ? calculator.formatTime(calculator.zeroTime() + time - lastTime) : calculator.formatTime(time, precision);
+            var textWidth = context.measureText(text).width;
+            var textPosition = printDeltas ? (position + lastPosition - textWidth) / 2 : position - textWidth - paddingRight;
+            context.fillText(text, textPosition, paddingTop);
         }
         context.moveTo(position, 0);
         context.lineTo(position, height);
@@ -174,19 +171,14 @@ WebInspector.TimelineGrid.prototype = {
 
     /**
      * @param {!WebInspector.TimelineGrid.Calculator} calculator
-     * @param {?Array.<number>=} dividerOffsets
-     * @param {boolean=} printDeltas
+     * @param {number=} freeZoneAtLeft
      * @return {boolean}
      */
-    updateDividers: function(calculator, dividerOffsets, printDeltas)
+    updateDividers: function(calculator, freeZoneAtLeft)
     {
-        var precision = 0;
-        if (!dividerOffsets) {
-            var dividersData = WebInspector.TimelineGrid.calculateDividerOffsets(calculator);
-            dividerOffsets = dividersData.offsets;
-            precision = dividersData.precision;
-            printDeltas = false;
-        }
+        var dividersData = WebInspector.TimelineGrid.calculateDividerOffsets(calculator, freeZoneAtLeft);
+        var dividerOffsets = dividersData.offsets;
+        var precision = dividersData.precision;
 
         var dividersElementClientWidth = this._dividersElement.clientWidth;
 
@@ -194,9 +186,6 @@ WebInspector.TimelineGrid.prototype = {
         var divider = /** @type {?Element} */ (this._dividersElement.firstChild);
         var dividerLabelBar = /** @type {?Element} */ (this._dividersLabelBarElement.firstChild);
 
-        const minWidthForTitle = 60;
-        var lastPosition = 0;
-        var lastTime = 0;
         for (var i = 0; i < dividerOffsets.length; ++i) {
             if (!divider) {
                 divider = createElement("div");
@@ -214,18 +203,8 @@ WebInspector.TimelineGrid.prototype = {
 
             var time = dividerOffsets[i];
             var position = calculator.computePosition(time);
-            if (position - lastPosition > minWidthForTitle)
-                dividerLabelBar._labelElement.textContent = printDeltas ? calculator.formatTime(time - lastTime) : calculator.formatTime(time, precision);
-            else
-                dividerLabelBar._labelElement.textContent = "";
+            dividerLabelBar._labelElement.textContent = calculator.formatTime(time, precision);
 
-            if (printDeltas)
-                dividerLabelBar._labelElement.style.width = Math.ceil(position - lastPosition) + "px";
-            else
-                dividerLabelBar._labelElement.style.removeProperty("width");
-
-            lastPosition = position;
-            lastTime = time;
             var percentLeft = 100 * position / dividersElementClientWidth;
             divider.style.left = percentLeft + "%";
             dividerLabelBar.style.left = percentLeft + "%";

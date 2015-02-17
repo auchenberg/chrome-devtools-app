@@ -137,18 +137,18 @@ WebInspector.Main.prototype = {
         Runtime.experiments.register("composedShadowDOM", "Composed Shadow DOM view.", true);
         Runtime.experiments.register("customObjectFormatters", "Custom object formatters", true);
         Runtime.experiments.register("devicesPanel", "Devices panel");
+        Runtime.experiments.register("externalDeviceList", "External device list", true);
         Runtime.experiments.register("fileSystemInspection", "FileSystem inspection");
         Runtime.experiments.register("gpuTimeline", "GPU data on timeline", true);
         Runtime.experiments.register("layersPanel", "Layers panel");
         Runtime.experiments.register("networkRequestHeadersFilterInDetailsView", "Network request headers filter in details view", true);
         Runtime.experiments.register("privateScriptInspection", "Private script inspection");
         Runtime.experiments.register("promiseTracker", "Promise inspector");
-        Runtime.experiments.register("requestTimingInNetworkTimeline", "Request timing directly in Network timeline", true);
         Runtime.experiments.register("showPrimaryLoadWaterfallInNetworkTimeline", "Show primary load waterfall in Network timeline", true);
         Runtime.experiments.register("stepIntoAsync", "Step into async");
         Runtime.experiments.register("timelineInvalidationTracking", "Timeline invalidation tracking");
-        Runtime.experiments.register("timelinePowerProfiler", "Timeline power profiler");
         Runtime.experiments.register("timelineFlowEvents", "Timeline flow events", true);
+        Runtime.experiments.register("timelineDetailsChart", "Show costly functions in Timeline details", true);
         Runtime.experiments.cleanUpStaleExperiments();
 
         if (InspectorFrontendHost.isUnderTest()) {
@@ -197,7 +197,9 @@ WebInspector.Main.prototype = {
         WebInspector.ContextMenu.installHandler(document);
         WebInspector.dockController = new WebInspector.DockController(canDock);
         WebInspector.overridesSupport = new WebInspector.OverridesSupport(canDock);
+        WebInspector.emulatedDevicesList = new WebInspector.EmulatedDevicesList();
         WebInspector.multitargetConsoleModel = new WebInspector.MultitargetConsoleModel();
+        WebInspector.multitargetNetworkManager = new WebInspector.MultitargetNetworkManager();
 
         WebInspector.shortcutsScreen = new WebInspector.ShortcutsScreen();
         // set order of some sections explicitly
@@ -306,38 +308,41 @@ WebInspector.Main.prototype = {
     _mainTargetCreated: function(target)
     {
         console.timeStamp("Main._mainTargetCreated");
-
-        var mainTarget = /** @type {!WebInspector.Target} */(target);
+        this._mainTarget = /** @type {!WebInspector.Target} */(target);
         this._registerShortcuts();
 
-        WebInspector.workerTargetManager = new WebInspector.WorkerTargetManager(mainTarget, WebInspector.targetManager);
+        WebInspector.workerTargetManager = new WebInspector.WorkerTargetManager(this._mainTarget, WebInspector.targetManager);
 
-        mainTarget.registerInspectorDispatcher(this);
+        this._mainTarget.registerInspectorDispatcher(this);
 
         if (WebInspector.isWorkerFrontend()) {
-            mainTarget.runtimeAgent().run();
-            mainTarget.workerManager.addEventListener(WebInspector.WorkerManager.Events.WorkerDisconnected, onWorkerDisconnected);
+            this._mainTarget.runtimeAgent().run();
+            this._mainTarget.workerManager.addEventListener(WebInspector.WorkerManager.Events.WorkerDisconnected, onWorkerDisconnected.bind(this));
         }
 
+        /**
+         * @this {WebInspector.Main}
+         */
         function onWorkerDisconnected()
         {
             var screen = new WebInspector.WorkerTerminatedScreen();
-            var listener = hideScreen.bind(null, screen);
-            mainTarget.debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, listener);
+            var listener = hideScreen.bind(this, screen);
+            this._mainTarget.debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, listener);
 
             /**
              * @param {!WebInspector.WorkerTerminatedScreen} screen
+             * @this {WebInspector.Main}
              */
             function hideScreen(screen)
             {
-                mainTarget.debuggerModel.removeEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, listener);
+                this._mainTarget.debuggerModel.removeEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, listener);
                 screen.hide();
             }
 
             screen.showModal();
         }
 
-        InspectorAgent.enable(inspectorAgentEnableCallback);
+        target.inspectorAgent().enable(inspectorAgentEnableCallback);
 
         function inspectorAgentEnableCallback()
         {
@@ -413,7 +418,7 @@ WebInspector.Main.prototype = {
                 return;
             }
 
-            var request = WebInspector.networkLog.requestForURL(anchor.href);
+            var request = WebInspector.NetworkLog.requestForURL(anchor.href);
             if (request) {
                 WebInspector.Revealer.reveal(request);
                 return;
@@ -552,7 +557,7 @@ WebInspector.Main.prototype = {
      */
     inspect: function(payload, hints)
     {
-        var object = WebInspector.runtimeModel.createRemoteObject(payload);
+        var object = this._mainTarget.runtimeModel.createRemoteObject(payload);
         if (object.isNode()) {
             WebInspector.Revealer.revealPromise(object).then(object.release.bind(object));
             return;
@@ -597,6 +602,7 @@ WebInspector.Main.prototype = {
     targetCrashed: function()
     {
         (new WebInspector.HelpScreenUntilReload(
+            this._mainTarget,
             WebInspector.UIString("Inspected target crashed"),
             WebInspector.UIString("Inspected target has crashed. Once it reloads we will attach to it automatically."))).showModal();
     },
@@ -614,7 +620,8 @@ WebInspector.Main.prototype = {
 
 WebInspector.reload = function()
 {
-    InspectorAgent.reset();
+    for (var target of WebInspector.targetManager.targets())
+        target.inspectorAgent().reset();
     window.top.location.reload();
 }
 
@@ -775,6 +782,8 @@ WebInspector.Main.ShortcutPanelSwitchSettingDelegate.prototype = {
 WebInspector.Main._reloadPage = function(hard)
 {
     if (!WebInspector.targetManager.hasTargets())
+        return false;
+    if (WebInspector.isWorkerFrontend())
         return false;
 
     var targets = WebInspector.targetManager.targets();

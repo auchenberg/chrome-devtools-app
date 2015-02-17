@@ -231,3 +231,10 @@
 .audit-launcher-view .progress-indicator {
     display: inline-block;
 }
+
+.resource-url {
+    float: right;
+    text-align: right;
+    max-width: 100%;
+    margin-left: 4px;
+}

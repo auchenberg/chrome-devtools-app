@@ -692,7 +692,7 @@ Runtime.Module.prototype = {
             }
             var sourceURL = window.location.href;
             if (window.location.search)
-                sourceURL.replace(window.location.search, "");
+                sourceURL = sourceURL.replace(window.location.search, "");
             sourceURL = sourceURL.substring(0, sourceURL.lastIndexOf("/") + 1) + path;
             Runtime.cachedResources[path] = content + "\n/*# sourceURL=" + sourceURL + " */";
         }

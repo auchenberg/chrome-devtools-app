@@ -55,7 +55,7 @@ FormatterWorker = {
  */
 var FormatterParameters;
 
-var onmessage = function(event) {
+self.onmessage = function(event) {
     var data = /** @type !{method: string, params: !FormatterParameters} */ (event.data);
     if (!data.method)
         return;

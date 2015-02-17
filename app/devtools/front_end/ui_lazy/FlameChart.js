@@ -57,7 +57,7 @@ WebInspector.FlameChartDelegate.prototype = {
 WebInspector.FlameChart = function(dataProvider, flameChartDelegate, isTopDown)
 {
     WebInspector.HBox.call(this, true);
-    this.registerRequiredCSS("ui/flameChart.css");
+    this.registerRequiredCSS("ui_lazy/flameChart.css");
     this.contentElement.classList.add("flame-chart-main-pane");
     this._flameChartDelegate = flameChartDelegate;
     this._isTopDown = isTopDown;
@@ -75,7 +75,8 @@ WebInspector.FlameChart = function(dataProvider, flameChartDelegate, isTopDown)
 
     this._vScrollElement = this.contentElement.createChild("div", "flame-chart-v-scroll");
     this._vScrollContent = this._vScrollElement.createChild("div");
-    this._vScrollElement.addEventListener("scroll", this.scheduleUpdate.bind(this), false);
+    this._vScrollElement.addEventListener("scroll", this._onScroll.bind(this), false);
+    this._scrollTop = 0;
 
     this._entryInfo = this.contentElement.createChild("div", "flame-chart-entry-info");
     this._markerHighlighElement = this.contentElement.createChild("div", "flame-chart-marker-highlight-element");
@@ -93,7 +94,6 @@ WebInspector.FlameChart = function(dataProvider, flameChartDelegate, isTopDown)
     this._timeWindowRight = Infinity;
     this._barHeight = dataProvider.barHeight();
     this._barHeightDelta = this._isTopDown ? -this._barHeight : this._barHeight;
-    this._minWidth = 2;
     this._paddingLeft = this._dataProvider.paddingLeft();
     this._markerPadding = 2;
     this._markerRadius = this._barHeight / 2 - this._markerPadding;
@@ -104,7 +104,7 @@ WebInspector.FlameChart = function(dataProvider, flameChartDelegate, isTopDown)
     this._textWidth = {};
 }
 
-WebInspector.FlameChart.DividersBarHeight = 20;
+WebInspector.FlameChart.DividersBarHeight = 18;
 
 WebInspector.FlameChart.MinimalTimeWindowMs = 0.01;
 
@@ -470,6 +470,9 @@ WebInspector.FlameChart.prototype = {
         }
     },
 
+    /**
+     * @param {number} entryIndex
+     */
     _revealEntry: function(entryIndex)
     {
         var timelineData = this._timelineData();
@@ -932,8 +935,7 @@ WebInspector.FlameChart.prototype = {
         context.scale(ratio, ratio);
 
         var timeWindowRight = this._timeWindowRight;
-        var timeWindowLeft = this._timeWindowLeft;
-        var minWidth = this._minWidth;
+        var timeWindowLeft = this._timeWindowLeft - this._paddingLeftTime;
         var entryTotalTimes = timelineData.entryTotalTimes;
         var entryStartTimes = timelineData.entryStartTimes;
         var entryLevels = timelineData.entryLevels;
@@ -973,6 +975,7 @@ WebInspector.FlameChart.prototype = {
                     break;
 
                 var barX = this._timeToPositionClipped(entryStartTime);
+                // Check if the entry entirely fits into an already drawn pixel, we can just skip drawing it.
                 if (barX >= lastDrawOffset)
                     continue;
                 lastDrawOffset = barX;
@@ -1001,8 +1004,8 @@ WebInspector.FlameChart.prototype = {
                 var entryIndex = indexes[i];
                 var entryStartTime = entryStartTimes[entryIndex];
                 var barX = this._timeToPositionClipped(entryStartTime);
-                var barRight = this._timeToPositionClipped(entryStartTime + entryTotalTimes[entryIndex]);
-                var barWidth = Math.max(barRight - barX, minWidth);
+                var barRight = this._timeToPositionClipped(entryStartTime + entryTotalTimes[entryIndex]) + 1;
+                var barWidth = barRight - barX;
                 var barLevel = entryLevels[entryIndex];
                 var barY = this._levelToHeight(barLevel);
                 if (isNaN(entryTotalTimes[entryIndex])) {
@@ -1010,7 +1013,7 @@ WebInspector.FlameChart.prototype = {
                     context.arc(barX, barY + barHeight / 2, this._markerRadius, 0, Math.PI * 2);
                     markerIndices[nextMarkerIndex++] = entryIndex;
                 } else {
-                    context.rect(barX, barY, barWidth, barHeight);
+                    context.rect(barX, barY, barWidth, barHeight - 1);
                     if (barWidth > minTextWidth || this._dataProvider.forceDecoration(entryIndex))
                         titleIndices[nextTitleIndex++] = entryIndex;
                 }
@@ -1037,8 +1040,8 @@ WebInspector.FlameChart.prototype = {
             var entryIndex = titleIndices[i];
             var entryStartTime = entryStartTimes[entryIndex];
             var barX = this._timeToPositionClipped(entryStartTime);
-            var barRight = this._timeToPositionClipped(entryStartTime + entryTotalTimes[entryIndex]);
-            var barWidth = Math.max(barRight - barX, minWidth);
+            var barRight = this._timeToPositionClipped(entryStartTime + entryTotalTimes[entryIndex]) + 1;
+            var barWidth = barRight - barX;
             var barLevel = entryLevels[entryIndex];
             var barY = this._levelToHeight(barLevel);
             var text = this._dataProvider.entryTitle(entryIndex);
@@ -1197,8 +1200,13 @@ WebInspector.FlameChart.prototype = {
         this._updateElementPosition(this._selectedElement, this._selectedEntryIndex);
     },
 
+    /**
+     * @param {!Element} element
+     * @param {number} entryIndex
+     */
     _updateElementPosition: function(element, entryIndex)
     {
+        /** @const */ var elementMinWidth = 2;
         if (element.parentElement)
             element.remove();
         if (entryIndex === -1)
@@ -1211,13 +1219,16 @@ WebInspector.FlameChart.prototype = {
         var barRight = this._timeToPositionClipped(timeRange.endTime);
         if (barRight === 0 || barX === this._canvas.width)
             return;
-        var barWidth = Math.max(barRight - barX, this._minWidth);
+        var barWidth = barRight - barX;
+        var barCenter = barX + barWidth / 2;
+        barWidth = Math.max(barWidth, elementMinWidth);
+        barX = barCenter - barWidth / 2;
         var barY = this._levelToHeight(timelineData.entryLevels[entryIndex]) - this._scrollTop;
         var style = element.style;
         style.left = barX + "px";
         style.top = barY + "px";
-        style.width = barWidth + "px";
-        style.height = this._barHeight + "px";
+        style.width = barWidth + 1 + "px";
+        style.height = this._barHeight - 1 + "px";
         this.contentElement.appendChild(element);
     },
 
@@ -1239,11 +1250,19 @@ WebInspector.FlameChart.prototype = {
         return Math.floor((time - this._minimumBoundary) * this._timeToPixel) - this._pixelWindowLeft + this._paddingLeft;
     },
 
+    /**
+     * @param {number} level
+     * @return {number}
+     */
     _levelToHeight: function(level)
     {
          return this._baseHeight - level * this._barHeightDelta;
     },
 
+    /**
+     * @param {!Array.<!{title: string, text: string}>} entryInfo
+     * @return {!Element}
+     */
     _buildEntryInfo: function(entryInfo)
     {
         var infoTable = createElementWithClass("table", "info-table");
@@ -1332,22 +1351,35 @@ WebInspector.FlameChart.prototype = {
 
         this._totalHeight = this._levelToHeight(this._dataProvider.maxStackDepth() + 1);
         this._vScrollContent.style.height = this._totalHeight + "px";
-        this._scrollTop = this._vScrollElement.scrollTop;
         this._updateScrollBar();
     },
 
     onResize: function()
     {
         this._updateScrollBar();
+        this._updateContentElementSize();
         this.scheduleUpdate();
     },
 
     _updateScrollBar: function()
     {
         var showScroll = this._totalHeight > this._offsetHeight;
-        this._vScrollElement.classList.toggle("hidden", !showScroll);
+        if (this._vScrollElement.classList.contains("hidden") === showScroll) {
+            this._vScrollElement.classList.toggle("hidden", !showScroll);
+            this._updateContentElementSize();
+        }
+    },
+
+    _updateContentElementSize: function()
+    {
         this._offsetWidth = this.contentElement.offsetWidth - (WebInspector.isMac() ? 0 : this._vScrollElement.offsetWidth);
         this._offsetHeight = this.contentElement.offsetHeight;
+    },
+
+    _onScroll: function()
+    {
+        this._scrollTop = this._vScrollElement.scrollTop;
+        this.scheduleUpdate();
     },
 
     scheduleUpdate: function()

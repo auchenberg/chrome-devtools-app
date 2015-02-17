@@ -4,30 +4,30 @@
  * found in the LICENSE file.
  */
 
-.outline-disclosure {
+.elements-disclosure {
     width: 100%;
     display: inline-block;
     line-height: normal;
 }
 
-.outline-disclosure li {
+.elements-disclosure li {
     padding: 0 0 0 14px;
     margin-top: 1px;
     margin-left: -2px;
     word-wrap: break-word;
 }
 
-.outline-disclosure li.parent {
+.elements-disclosure li.parent {
     margin-left: -13px;
 }
 
-.outline-disclosure li.parent::before {
+.elements-disclosure li.parent::before {
     float: left;
     width: 10px;
     box-sizing: border-box;
 }
 
-.outline-disclosure li.parent::before {
+.elements-disclosure li.parent::before {
     -webkit-user-select: none;
     -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
     -webkit-mask-size: 320px 144px;
@@ -38,17 +38,17 @@
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
-.outline-disclosure li.parent::before {
+.elements-disclosure li.parent::before {
     -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
 }
 } /* media */
 
-.outline-disclosure li.parent::before {
+.elements-disclosure li.parent::before {
     -webkit-mask-position: -4px -96px;
     background-color: rgb(110, 110, 110);
 }
 
-.outline-disclosure li .selection {
+.elements-disclosure li .selection {
     display: none;
     position: absolute;
     left: 0;
@@ -57,7 +57,7 @@
     z-index: -1;
 }
 
-.outline-disclosure li.hovered:not(.selected) .selection {
+.elements-disclosure li.hovered:not(.selected) .selection {
     display: block;
     left: 3px;
     right: 3px;
@@ -65,34 +65,34 @@
     border-radius: 5px;
 }
 
-.outline-disclosure li.parent.expanded::before {
+.elements-disclosure li.parent.expanded::before {
     -webkit-mask-position: -20px -96px;
 }
 
-.outline-disclosure li.selected .selection {
+.elements-disclosure li.selected .selection {
     display: block;
     background-color: rgb(212, 212, 212);
 }
 
-.outline-disclosure ol {
+.elements-disclosure ol {
     list-style-type: none;
     -webkit-padding-start: 12px;
     margin: 0;
 }
 
-.outline-disclosure ol.children {
+.elements-disclosure ol.children {
     display: none;
 }
 
-.outline-disclosure ol.children.expanded {
+.elements-disclosure ol.children.expanded {
     display: block;
 }
 
-.outline-disclosure li .webkit-html-tag.close {
+.elements-disclosure li .webkit-html-tag.close {
     margin-left: -12px;
 }
 
-.outline-disclosure > ol {
+.elements-disclosure > ol {
     position: relative;
     margin: 0;
     cursor: default;
@@ -102,19 +102,19 @@
     padding-left: 2px;
 }
 
-.outline-disclosure ol:focus li.selected {
+.elements-disclosure ol:focus li.selected {
     color: white;
 }
 
-.outline-disclosure ol:focus li.parent.selected::before {
+.elements-disclosure ol:focus li.parent.selected::before {
     background-color: white;
 }
 
-.outline-disclosure ol:focus li.selected * {
+.elements-disclosure ol:focus li.selected * {
     color: inherit;
 }
 
-.outline-disclosure ol:focus li.selected .selection {
+.elements-disclosure ol:focus li.selected .selection {
     background-color: rgb(56, 121, 217);
 }
 
@@ -129,13 +129,13 @@
     -webkit-user-modify: read-write-plaintext-only;
 }
 
-.outline-disclosure li.elements-drag-over .selection {
+.elements-disclosure li.elements-drag-over .selection {
     display: block;
     margin-top: -2px;
     border-top: 2px solid rgb(56, 121, 217);
 }
 
-.outline-disclosure li.in-clipboard .highlight {
+.elements-disclosure li.in-clipboard .highlight {
     outline: 1px dotted darkgrey;
 }
 
@@ -240,7 +240,7 @@ button, input, select {
     white-space: pre !important;
 }
 
-.outline-disclosure .elements-tree-nowrap li {
+.elements-disclosure .elements-tree-nowrap li {
     word-wrap: normal;
 }
 
@@ -264,7 +264,7 @@ button, input, select {
     border-radius: 2px;
 }
 
-.outline-disclosure.single-node li {
+.elements-disclosure.single-node li {
     padding-left: 2px;
 }
 
@@ -285,7 +285,7 @@ li.parent.shadow-root {
     opacity: 0.7;
 }
 
-.shadow-host-display-mode-toolbar:hover .shadow-host-display-mode-toolbar-button {
+li.hovered .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
     opacity: 1;
 }
 
@@ -294,5 +294,32 @@ li.parent.shadow-root {
 }
 
 .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled.custom-mode {
+    opacity: 1;
+}
+
+li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
+    opacity: 0.3;
+}
+
+li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled {
+    opacity: 0.8;
+}
+
+li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled.custom-mode {
+    opacity: 1;
+    color: rgb(36, 114, 245);
+}
+
+.elements-disclosure ol:focus li.selected .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
+    color: rgb(255, 255, 255);
+    opacity: 0.7;
+}
+
+.elements-disclosure ol:focus li.selected.hovered .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
+    opacity: 1;
+}
+
+.elements-disclosure ol:focus li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled {
+    color: rgb(235, 242, 255);
     opacity: 1;
 }

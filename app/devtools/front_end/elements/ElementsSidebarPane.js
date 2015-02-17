@@ -12,6 +12,7 @@ WebInspector.ElementsSidebarPane = function(title)
     WebInspector.SidebarPane.call(this, title);
     this._updateThrottler = new WebInspector.Throttler(100);
     this._node = null;
+    this._updateWhenVisible = false;
 }
 
 WebInspector.ElementsSidebarPane.prototype = {
@@ -64,7 +65,8 @@ WebInspector.ElementsSidebarPane.prototype = {
     wasShown: function()
     {
         WebInspector.SidebarPane.prototype.wasShown.call(this);
-        this.update();
+        if (this._updateWhenVisible)
+            this.update();
     },
 
     __proto__: WebInspector.SidebarPane.prototype

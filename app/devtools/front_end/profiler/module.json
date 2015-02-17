@@ -35,7 +35,8 @@
         }
     ],
     "dependencies": [
-        "components"
+        "components",
+        "ui_lazy"
     ],
     "scripts": [
         "ProfilesPanel.js",
@@ -52,7 +53,8 @@
         "ProfileLauncherView.js",
         "CanvasProfileView.js",
         "CanvasReplayStateView.js",
-        "ProfileTypeRegistry.js"
+        "ProfileTypeRegistry.js",
+        "TargetsComboBoxController.js"
     ],
     "stylesheets": [
         "canvasProfiler.css",

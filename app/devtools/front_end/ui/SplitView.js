@@ -49,7 +49,7 @@ WebInspector.SplitView = function(isVertical, secondIsSidebar, settingName, defa
     this._sidebarElement.createChild("content").select = ".insertion-point-sidebar";
     this._resizerElement = this.contentElement.createChild("div", "shadow-split-view-resizer");
 
-    this._resizerWidget = new WebInspector.ResizerWidget();
+    this._resizerWidget = new WebInspector.SimpleResizerWidget();
     this._resizerWidget.setEnabled(true);
     this._resizerWidget.addEventListener(WebInspector.ResizerWidget.Events.ResizeStart, this._onResizeStart, this);
     this._resizerWidget.addEventListener(WebInspector.ResizerWidget.Events.ResizeUpdate, this._onResizeUpdate, this);

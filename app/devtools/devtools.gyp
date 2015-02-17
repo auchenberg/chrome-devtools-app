@@ -104,6 +104,7 @@
                             '<(PRODUCT_DIR)/resources/inspector/toolbox.html',
                             '<(PRODUCT_DIR)/resources/inspector/toolbox.js',
                             '<(PRODUCT_DIR)/resources/inspector/audits_module.js',
+                            '<(PRODUCT_DIR)/resources/inspector/components_lazy_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/console_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/devices_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/elements_module.js',
@@ -119,6 +120,7 @@
                             '<(PRODUCT_DIR)/resources/inspector/sources_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/temp_storage_shared_worker_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/timeline_module.js',
+                            '<(PRODUCT_DIR)/resources/inspector/ui_lazy_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/devtools_extension_api.js',
                         ],
                         'inputs': [
@@ -263,6 +265,7 @@
                             '<(_output_path)/toolbox.html',
                             '<(_output_path)/toolbox.js',
                             '<(_output_path)/audits_module.js',
+                            '<(_output_path)/components_lazy_module.js',
                             '<(_output_path)/console_module.js',
                             '<(_output_path)/devices_module.js',
                             '<(_output_path)/elements_module.js',
@@ -278,6 +281,7 @@
                             '<(_output_path)/sources_module.js',
                             '<(_output_path)/temp_storage_shared_worker_module.js',
                             '<(_output_path)/timeline_module.js',
+                            '<(_output_path)/ui_lazy_module.js',
                         ],
                     },
                     { # Debug

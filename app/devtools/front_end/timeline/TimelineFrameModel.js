@@ -85,6 +85,22 @@ WebInspector.TimelineFrameModelBase.prototype = {
 
     /**
      * @param {!WebInspector.TracingModel.Event} rasterTask
+     * @return {boolean}
+     */
+    hasRasterTile: function(rasterTask)
+    {
+        var data = rasterTask.args["tileData"];
+        if (!data)
+            return false;
+        var frameId = data["sourceFrameNumber"];
+        var frame = frameId && this._frameById[frameId];
+        if (!frame || !frame.layerTree)
+            return false;
+        return true;
+    },
+
+    /**
+     * @param {!WebInspector.TracingModel.Event} rasterTask
      * @param {function(?DOMAgent.Rect, ?WebInspector.PaintProfilerSnapshot)} callback
      */
     requestRasterTile: function(rasterTask, callback)
@@ -95,15 +111,9 @@ WebInspector.TimelineFrameModelBase.prototype = {
             return;
         }
         var data = rasterTask.args["tileData"];
-        if (!data) {
-            console.error("Malformed RasterTask event, missing tileData");
-            callback(null, null);
-            return;
-        }
         var frameId = data["sourceFrameNumber"];
         var frame = frameId && this._frameById[frameId];
         if (!frame || !frame.layerTree) {
-            console.error("Missing frame: " + frameId);
             callback(null, null);
             return;
         }
@@ -231,8 +241,6 @@ WebInspector.TimelineFrameModelBase.prototype = {
     {
         if (!this._lastFrame)
             return;
-        this._mainFrameRequested = false;
-        this._mainFrameCommitted = true;
         if (this._framePendingActivation) {
             this._lastFrame._addTimeForCategories(this._framePendingActivation.timeByCategory);
             this._lastFrame.paints = this._framePendingActivation.paints;
@@ -254,6 +262,8 @@ WebInspector.TimelineFrameModelBase.prototype = {
             return;
         this._framePendingActivation = this._framePendingCommit;
         this._framePendingCommit = null;
+        this._mainFrameRequested = false;
+        this._mainFrameCommitted = true;
     },
 
     /**

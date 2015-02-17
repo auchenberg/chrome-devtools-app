@@ -100,16 +100,80 @@ li.breakpoint-hit .breakpoint-hit-marker {
     z-index: -1;
 }
 
-.event-listener-breakpoints.properties-tree li {
-    height: 16px;
-    padding-top: 3px;
+.event-listener-breakpoints {
+    margin-top: 0;
+    padding: 2px 6px;
+    list-style: none;
+    min-height: 18px;
 }
 
-.event-listener-breakpoints.properties-tree .children li {
+.event-listener-breakpoints ol {
+    display: none;
+    margin: 0;
+    -webkit-padding-start: 12px;
+    list-style: none;
+}
+
+.event-listener-breakpoints ol.expanded {
+    display: block;
+}
+
+.event-listener-breakpoints li {
+    margin-left: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    -webkit-user-select: text;
+    cursor: default;
+    padding-top: 2px;
+    line-height: 12px;
+}
+
+.event-listener-breakpoints li.parent {
+    margin-left: 1px;
+}
+
+.event-listener-breakpoints li.parent::before {
+    -webkit-user-select: none;
+    background-image: url(Images/statusbarButtonGlyphs.png);
+    background-size: 320px 144px;
+    opacity: 0.5;
+    content: "a";
+    width: 8px;
+    float: left;
+    margin-right: 4px;
+    color: transparent;
+    text-shadow: none;
+}
+
+@media (-webkit-min-device-pixel-ratio: 1.5) {
+.event-listener-breakpoints li.parent::before {
+    background-image: url(Images/statusbarButtonGlyphs_2x.png);
+}
+} /* media */
+
+.event-listener-breakpoints li.parent::before {
+    background-position: -4px -96px;
+}
+
+.event-listener-breakpoints li.parent.expanded::before {
+    background-position: -20px -96px;
+}
+
+.event-listener-breakpoints .children li {
     margin-left: 12px;
     height: 16px;
 }
 
 .event-listener-breakpoints .checkbox-elem {
     font-size: 10px;
+}
+
+.async-operations li > label {
+    float: left;
+}
+
+.async-operations li > div {
+    float: right;
+    margin: 2px 3px 0 2px;
 }

@@ -59,6 +59,31 @@ WebInspector.CodeMirrorUtils.toRange = function(start, end)
     return new WebInspector.TextRange(start.line, start.ch, end.line, end.ch);
 }
 
+/**
+ * @param {!CodeMirror.ChangeObject} changeObject
+ * @return {{oldRange: !WebInspector.TextRange, newRange: !WebInspector.TextRange}}
+ */
+WebInspector.CodeMirrorUtils.changeObjectToEditOperation = function(changeObject)
+{
+    var oldRange = WebInspector.CodeMirrorUtils.toRange(changeObject.from, changeObject.to);
+    var newRange = oldRange.clone();
+    var linesAdded = changeObject.text.length;
+    if (linesAdded === 0) {
+        newRange.endLine = newRange.startLine;
+        newRange.endColumn = newRange.startColumn;
+    } else if (linesAdded === 1) {
+        newRange.endLine = newRange.startLine;
+        newRange.endColumn = newRange.startColumn + changeObject.text[0].length;
+    } else {
+        newRange.endLine = newRange.startLine + linesAdded - 1;
+        newRange.endColumn = changeObject.text[linesAdded - 1].length;
+    }
+    return {
+        oldRange: oldRange,
+        newRange: newRange
+    };
+}
+
 WebInspector.CodeMirrorUtils.prototype = {
     /**
      * @override

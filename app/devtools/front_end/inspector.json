@@ -11,6 +11,8 @@
     { "name": "workspace", "type": "autostart" },
     { "name": "bindings", "type": "autostart" },
     { "name": "extensions", "type": "autostart" },
+    { "name": "ui_lazy" },
+    { "name": "components_lazy" },
     { "name": "elements" },
     { "name": "network" },
     { "name": "sources" },

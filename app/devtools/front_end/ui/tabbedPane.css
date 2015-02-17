@@ -182,10 +182,11 @@
     width: auto;
     flex: 0 0 auto;
     flex-direction: column;
+    padding-top: 10px;
 }
 
 .tabbed-pane-shadow.vertical-tab-layout .tabbed-pane-content {
-    padding: 0 10px 10px 0;
+    padding: 10px 10px 10px 0;
     overflow-x: hidden;
 }
 

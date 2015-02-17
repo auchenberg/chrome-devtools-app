@@ -98,6 +98,7 @@ li.selected .base-storage-tree-element-subtitle {
 
 .resources.panel li .status .bubble-repeat-count {
     height: 13px;
+    margin-top: 1px;
     padding-top: 0;
 }
 
@@ -246,6 +247,7 @@ li.selected .base-storage-tree-element-subtitle {
     right: 3px;
     max-width: 8px;
     max-height: 11px;
+    overflow: hidden;
 }
 
 .resource-sidebar-tree-item.resources-type-document .icon {

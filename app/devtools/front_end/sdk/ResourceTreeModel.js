@@ -76,6 +76,33 @@ WebInspector.ResourceTreeModel.EventTypes = {
     ColorPicked: "ColorPicked"
 }
 
+
+/**
+ * @return {!Array.<!WebInspector.ResourceTreeFrame>}
+ */
+WebInspector.ResourceTreeModel.frames = function()
+{
+    var result = [];
+    for (var target of WebInspector.targetManager.targets())
+        result = result.concat(Object.values(target.resourceTreeModel._frames));
+    return result;
+}
+
+/**
+ * @param {string} url
+ * @return {?WebInspector.Resource}
+ */
+WebInspector.ResourceTreeModel.resourceForURL = function(url)
+{
+    for (var target of WebInspector.targetManager.targets()) {
+        var mainFrame = target.resourceTreeModel.mainFrame;
+        var result = mainFrame ? mainFrame.resourceForURL(url) : null;
+        if (result)
+            return result;
+    }
+    return null;
+}
+
 WebInspector.ResourceTreeModel.prototype = {
     _fetchResourceTree: function()
     {
@@ -470,12 +497,11 @@ WebInspector.ResourceTreeModel.prototype = {
     /**
      * @param {boolean=} ignoreCache
      * @param {string=} scriptToEvaluateOnLoad
-     * @param {string=} scriptPreprocessor
      */
-    reloadPage: function(ignoreCache, scriptToEvaluateOnLoad, scriptPreprocessor)
+    reloadPage: function(ignoreCache, scriptToEvaluateOnLoad)
     {
         this.dispatchEventToListeners(WebInspector.ResourceTreeModel.EventTypes.WillReloadPage);
-        this._agent.reload(ignoreCache, scriptToEvaluateOnLoad, scriptPreprocessor);
+        this._agent.reload(ignoreCache, scriptToEvaluateOnLoad);
     },
 
     __proto__: WebInspector.SDKModel.prototype
@@ -909,8 +935,3 @@ WebInspector.PageDispatcher.prototype = {
         // Frontend is not interested in interstitials.
     }
 }
-
-/**
- * @type {!WebInspector.ResourceTreeModel}
- */
-WebInspector.resourceTreeModel;

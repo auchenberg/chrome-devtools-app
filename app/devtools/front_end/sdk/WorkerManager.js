@@ -180,8 +180,3 @@ WebInspector.WorkerDispatcher.prototype = {
         this._workerManager._disconnectedFromWorker();
     }
 }
-
-/**
- * @type {!WebInspector.WorkerManager}
- */
-WebInspector.workerManager;

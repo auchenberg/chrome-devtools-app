@@ -106,6 +106,10 @@
     cursor: pointer;
 }
 
+.network-log-grid.data-grid .timeline-column {
+    padding: 1px 0;
+}
+
 #network-container:not(.brief-mode) .network-log-grid.data-grid td.name-column:hover {
     text-decoration: underline;
 }
@@ -132,8 +136,16 @@
     color: inherit;
 }
 
-.network-log-grid.data-grid tr.selected .network-cell-subtitle {
-    color: white;
+.network-log-grid.data-grid tr.selected,
+.network-log-grid.data-grid tr.selected .network-cell-subtitle,
+.network-log-grid.data-grid tr.selected .network-dim-cell {
+    color: inherit !important;
+}
+
+.network-log-grid.data-grid:focus tr.selected,
+.network-log-grid.data-grid:focus tr.selected .network-cell-subtitle,
+.network-log-grid.data-grid:focus tr.selected .network-dim-cell {
+    color: white !important;
 }
 
 .network-log-grid tr.highlighted-row {
@@ -274,6 +286,10 @@
     left: 12px;
 }
 
+.network-timeline-grid .resources-event-dividers {
+    margin-left: 1px;
+}
+
 .network-graph-label {
     position: absolute;
     top: 0;
@@ -337,21 +353,14 @@
     position: absolute;
     top: 13px;
     bottom: 13px;
-    margin-left: -1px;
-    min-width: 2px;
+    min-width: 3px;
+}
+
+.network-graph-bar:not(.request-timing) {
     border-width: 1px;
     border-style: solid;
     border-color: hsl(0, 0%, 75%);
     background: linear-gradient(0deg, hsl(0, 0%, 85%), hsl(0, 0%, 95%));
-}
-
-.network-graph-bar.request-timing {
-    border-right-width: 0;
-    margin: 4px 0;
-}
-
-.network-graph-bar.request-timing:last-child {
-    border-right-width: 1px;
 }
 
 .network-graph-bar.waiting:not(.request-timing) {
@@ -360,36 +369,45 @@
 
 /* Resource categories */
 
+.network-graph-bar.request-timing.total,
+.network-graph-bar.request-timing.proxy,
+.network-graph-bar.request-timing.dns,
+.network-graph-bar.request-timing.ssl,
+.network-graph-bar.request-timing.connecting,
+.network-graph-bar.request-timing.blocking {
+    margin: 3px 0;
+}
+
+.network-graph-bar.request-timing.total {
+    border: solid 1px #AAAAAA;
+}
+
 .network-graph-bar.request-timing.receiving {
-    border-color: hsl(210, 49%, 60%);
-    background: linear-gradient(0deg, hsl(210, 72%, 65%), hsl(210, 100%, 80%));
-    margin: 0;
+    background-color: #03A9F4;
 }
 
 .network-graph-bar.request-timing.waiting {
-    border-color: hsl(120, 49%, 60%);
-    background: linear-gradient(0deg, hsl(120, 72%, 65%), hsl(120, 100%, 80%));
-    margin: 2px 0;
+    background-color: #00C853;
 }
 
 .network-graph-bar.request-timing.connecting {
-    border-color: hsl(30, 49%, 60%);
-    background: linear-gradient(0deg, hsl(30, 72%, 65%), hsl(30, 100%, 80%));
+    background-color: #FF9800;
 }
 
 .network-graph-bar.request-timing.ssl {
-    border-color: hsl(270, 31%, 60%);
-    background: linear-gradient(0deg, hsl(270, 46%, 65%), hsl(270, 64%, 80%));
+    background-color: #9C27B0;
 }
 
 .network-graph-bar.request-timing.dns {
-    border-color: hsl(180, 31%, 60%);
-    background: linear-gradient(0deg, hsl(180, 46%, 65%), hsl(180, 64%, 80%));
+    background-color: #009688;
 }
 
 .network-graph-bar.request-timing.proxy {
-    border-color: hsl(60, 31%, 60%);
-    background: linear-gradient(0deg, hsl(60, 46%, 65%), hsl(60, 64%, 80%));
+    background-color: #A1887F;
+}
+
+.network-graph-bar.request-timing.blocking {
+    background-color: #AAAAAA;
 }
 
 .network-graph-bar.cached {
@@ -492,20 +510,16 @@
     pointer-events: none;
 }
 
-.network-event-divider-padding {
-    position: absolute;
-    width: 8px;
-    top: 0;
-    bottom: 0;
-    pointer-events: auto;
-}
-
 .network-event-divider {
     position: absolute;
     width: 2px;
     top: 31px;
     bottom: 0;
     z-index: 300;
+}
+
+.network-event-divider.invisible {
+    visibility: hidden;
 }
 
 .network-timeline-grid.small .network-event-divider {
@@ -516,8 +530,16 @@
     background-color: rgba(255, 0, 0, 0.5);
 }
 
+.network-summary-bar .summary-red {
+    color: red;
+}
+
 .network-blue-divider {
     background-color: rgba(0, 0, 255, 0.5);
+}
+
+.network-summary-bar .summary-blue {
+    color: blue;
 }
 
 .network-log-grid.data-grid .resources-dividers {

@@ -360,6 +360,21 @@ WebInspector.InspectorFrontendHostImpl.prototype = {
     },
 
     /**
+     * Support for legacy front-ends (<M38).
+     * @param {number} zoomFactor
+     */
+    setZoomFactor: function(zoomFactor)
+    {
+    },
+
+    /**
+     * Support for legacy front-ends (<M34).
+     */
+    sendMessageToEmbedder: function()
+    {
+    },
+
+    /**
      * Support for legacy front-ends (<M34).
      * @param {string} dockSide
      */

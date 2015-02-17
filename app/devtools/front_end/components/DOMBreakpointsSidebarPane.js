@@ -83,7 +83,7 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         }
 
         /**
-         * @param {string} type
+         * @param {!DOMDebuggerAgent.DOMBreakpointType} type
          * @this {WebInspector.DOMBreakpointsSidebarPane}
          */
         function toggleBreakpoint(type)
@@ -171,6 +171,8 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         {
             if (typeof b === "string")
                 b = createTextNode(b);
+            else if (b.shadowRoot)
+                b = createTextNode(b.shadowRoot.lastChild.textContent);
             element.appendChild(b);
         }
         WebInspector.formatLocalized(message, substitutions, formatters, "", append);
@@ -204,7 +206,7 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
 
     /**
      * @param {!WebInspector.DOMNode} node
-     * @param {string} type
+     * @param {!DOMDebuggerAgent.DOMBreakpointType} type
      * @param {boolean} enabled
      */
     _setBreakpoint: function(node, type, enabled)
@@ -218,12 +220,12 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
             breakpointElement._checkboxElement.checked = enabled;
         }
         if (enabled)
-            DOMDebuggerAgent.setDOMBreakpoint(node.id, type);
+            node.target().domdebuggerAgent().setDOMBreakpoint(node.id, type);
     },
 
     /**
      * @param {!WebInspector.DOMNode} node
-     * @param {string} type
+     * @param {!DOMDebuggerAgent.DOMBreakpointType} type
      * @param {boolean} enabled
      */
     _createBreakpointElement: function(node, type, enabled)
@@ -233,23 +235,25 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         element._type = type;
         element.addEventListener("contextmenu", this._contextMenu.bind(this, node, type), true);
 
-        var checkboxLabel = createCheckboxLabel(undefined, enabled);
-        checkboxLabel.className = "checkbox-elem";
-        checkboxLabel.checkboxElement.addEventListener("click", this._checkboxClicked.bind(this, node, type), false);
-        element._checkboxElement = checkboxLabel.checkboxElement;
-        element.appendChild(checkboxLabel);
+        var checkboxElement = createElement("input");
+        checkboxElement.className = "checkbox-elem";
+        checkboxElement.type = "checkbox";
+        checkboxElement.checked = enabled;
+        checkboxElement.addEventListener("click", this._checkboxClicked.bind(this, node, type), false);
+        element._checkboxElement = checkboxElement;
+        element.appendChild(checkboxElement);
 
+        var labelElement = createElement("span");
+        element.appendChild(labelElement);
 
         var linkifiedNode = WebInspector.DOMPresentationUtils.linkifyNodeReference(node);
         linkifiedNode.classList.add("monospace");
-
-        var textElement = checkboxLabel.createChild("span");
-        textElement.appendChild(linkifiedNode);
+        labelElement.appendChild(linkifiedNode);
 
         var description = createElement("div");
         description.className = "source-text";
         description.textContent = this._breakpointTypeLabels[type];
-        textElement.appendChild(description);
+        labelElement.appendChild(description);
 
         var currentElement = this.listElement.firstChild;
         while (currentElement) {
@@ -272,7 +276,7 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
 
     /**
      * @param {!WebInspector.DOMNode} node
-     * @param {string} type
+     * @param {!DOMDebuggerAgent.DOMBreakpointType} type
      */
     _removeBreakpoint: function(node, type)
     {
@@ -284,12 +288,12 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
         this.removeListElement(element);
         delete this._breakpointElements[breakpointId];
         if (element._checkboxElement.checked)
-            DOMDebuggerAgent.removeDOMBreakpoint(node.id, type);
+            node.target().domdebuggerAgent().removeDOMBreakpoint(node.id, type);
     },
 
     /**
      * @param {!WebInspector.DOMNode} node
-     * @param {string} type
+     * @param {!DOMDebuggerAgent.DOMBreakpointType} type
      * @param {!Event} event
      */
     _contextMenu: function(node, type, event)
@@ -311,15 +315,15 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
 
     /**
      * @param {!WebInspector.DOMNode} node
-     * @param {string} type
+     * @param {!DOMDebuggerAgent.DOMBreakpointType} type
      * @param {!Event} event
      */
     _checkboxClicked: function(node, type, event)
     {
         if (event.target.checked)
-            DOMDebuggerAgent.setDOMBreakpoint(node.id, type);
+            node.target().domdebuggerAgent().setDOMBreakpoint(node.id, type);
         else
-            DOMDebuggerAgent.removeDOMBreakpoint(node.id, type);
+            node.target().domdebuggerAgent().removeDOMBreakpoint(node.id, type);
         this._saveBreakpoints();
     },
 
@@ -344,7 +348,7 @@ WebInspector.DOMBreakpointsSidebarPane.prototype = {
 
     /**
      * @param {number} nodeId
-     * @param {string} type
+     * @param {!DOMDebuggerAgent.DOMBreakpointType} type
      */
     _createBreakpointId: function(nodeId, type)
     {

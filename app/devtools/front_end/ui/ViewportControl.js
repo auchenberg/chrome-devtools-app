@@ -388,7 +388,7 @@ WebInspector.ViewportControl.prototype = {
             return;
         }
 
-        var selection = this.element.window().getSelection();
+        var selection = this.element.getComponentSelection();
         var shouldRestoreSelection = this._updateSelectionModel(selection);
 
         var visibleFrom = this.element.scrollTop;
@@ -490,7 +490,7 @@ WebInspector.ViewportControl.prototype = {
      */
     _selectedText: function()
     {
-        this._updateSelectionModel(this.element.window().getSelection());
+        this._updateSelectionModel(this.element.getComponentSelection());
         if (!this._headSelection || !this._anchorSelection)
             return null;
 

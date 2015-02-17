@@ -41,16 +41,21 @@ WebInspector.TimelinePaintProfilerView.prototype = {
     /**
      * @param {!WebInspector.Target} target
      * @param {!WebInspector.TracingModel.Event} event
+     * @return {boolean}
      */
     setEvent: function(target, event)
     {
         this._disposeSnapshot();
         this._target = target;
         this._event = event;
-        if (this.isShowing())
-            this._update();
-        else
-            this._updateWhenVisible = true;
+
+        this._updateWhenVisible = true;
+
+        if (this._event.name === WebInspector.TimelineModel.RecordType.Paint)
+            return !!event.picture;
+        if (this._event.name === WebInspector.TimelineModel.RecordType.RasterTask)
+            return this._frameModel.hasRasterTile(this._event);
+        return false;
     },
 
     _update: function()

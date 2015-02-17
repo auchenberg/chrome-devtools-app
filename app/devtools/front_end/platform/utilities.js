@@ -230,8 +230,10 @@ String.prototype.trimEnd = function(maxLength)
 String.prototype.trimURL = function(baseURLDomain)
 {
     var result = this.replace(/^(https|http|file):\/\//i, "");
-    if (baseURLDomain)
-        result = result.replace(new RegExp("^" + baseURLDomain.escapeForRegExp(), "i"), "");
+    if (baseURLDomain) {
+        if (result.toLowerCase().startsWith(baseURLDomain.toLowerCase()))
+            result = result.substr(baseURLDomain.length);
+    }
     return result;
 }
 
@@ -1367,6 +1369,7 @@ function loadXHR(url)
         }
 
         var xhr = new XMLHttpRequest();
+        xhr.withCredentials = false;
         xhr.open("GET", url, true);
         xhr.onreadystatechange = onReadyStateChanged;
         xhr.send(null);

@@ -424,6 +424,7 @@ WebInspector.UISourceCode.prototype = {
             this.addRevision(content);
         }
 
+        WebInspector.userMetrics.RevisionApplied.record();
         this.requestOriginalContent(callback.bind(this));
     },
 
@@ -446,6 +447,7 @@ WebInspector.UISourceCode.prototype = {
             callback(this);
         }
 
+        WebInspector.userMetrics.RevisionApplied.record();
         this.requestOriginalContent(revert.bind(this));
     },
 
@@ -518,8 +520,6 @@ WebInspector.UISourceCode.prototype = {
      */
     extension: function()
     {
-        if (this._project.type() === WebInspector.projectTypes.Network)
-            return this.contentType().canonicalMimeType();
         var lastIndexOfDot = this._name.lastIndexOf(".");
         var extension = lastIndexOfDot !== -1 ? this._name.substr(lastIndexOfDot + 1) : "";
         var indexOfQuestionMark = extension.indexOf("?");
@@ -623,6 +623,14 @@ WebInspector.UILocation.prototype = {
     {
         return this.uiSourceCode.uri() + ":" + this.lineNumber + ":" + this.columnNumber;
     },
+
+    /**
+     * @return {string}
+     */
+    toUIString: function()
+    {
+        return this.uiSourceCode.uri() + ":" + (this.lineNumber + 1);
+    }
 }
 
 /**
@@ -675,6 +683,7 @@ WebInspector.Revision.prototype = {
             if (this._uiSourceCode._content !== content)
                 this._uiSourceCode.addRevision(content);
         }
+        WebInspector.userMetrics.RevisionApplied.record();
         this.requestContent(revert.bind(this));
     },
 

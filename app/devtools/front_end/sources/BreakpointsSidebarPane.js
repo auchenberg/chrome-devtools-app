@@ -539,7 +539,7 @@ WebInspector.EventListenerBreakpointsSidebarPane = function()
     WebInspector.SidebarPane.call(this, WebInspector.UIString("Event Listener Breakpoints"));
     this.registerRequiredCSS("components/breakpointsList.css");
 
-    this.categoriesElement = this.bodyElement.createChild("ol", "properties-tree event-listener-breakpoints");
+    this.categoriesElement = this.bodyElement.createChild("ol", "event-listener-breakpoints");
     this.categoriesElement.tabIndex = 0;
     this.categoriesTreeOutline = new TreeOutline(this.categoriesElement);
 
@@ -558,6 +558,7 @@ WebInspector.EventListenerBreakpointsSidebarPane = function()
     this._createCategory(WebInspector.UIString("Media"), ["play", "pause", "playing", "canplay", "canplaythrough", "seeking", "seeked", "timeupdate", "ended", "ratechange", "durationchange", "volumechange", "loadstart", "progress", "suspend", "abort", "error", "emptied", "stalled", "loadedmetadata", "loadeddata", "waiting"], false, ["audio", "video"]);
     this._createCategory(WebInspector.UIString("Mouse"), ["click", "dblclick", "mousedown", "mouseup", "mouseover", "mousemove", "mouseout", "mouseenter", "mouseleave", "mousewheel", "wheel", "contextmenu"]);
     this._createCategory(WebInspector.UIString("Promise"), ["newPromise", "promiseResolved", "promiseRejected"], true);
+    this._createCategory(WebInspector.UIString("Script"), ["scriptFirstStatement"], true);
     this._createCategory(WebInspector.UIString("Timer"), ["setTimer", "clearTimer", "timerFired"], true);
     this._createCategory(WebInspector.UIString("Touch"), ["touchstart", "touchmove", "touchend", "touchcancel"]);
     this._createCategory(WebInspector.UIString("XHR"), ["readystatechange", "load", "loadstart", "loadend", "abort", "error", "progress", "timeout"], false, ["XMLHttpRequest", "XMLHttpRequestUpload"]);
@@ -586,6 +587,7 @@ WebInspector.EventListenerBreakpointsSidebarPane.eventNameForUI = function(event
             "instrumentation:newPromise": WebInspector.UIString("Promise Created"),
             "instrumentation:promiseResolved": WebInspector.UIString("Promise Resolved"),
             "instrumentation:promiseRejected": WebInspector.UIString("Promise Rejected"),
+            "instrumentation:scriptFirstStatement": WebInspector.UIString("Script First Statement"),
             "instrumentation:requestAnimationFrame": WebInspector.UIString("Request Animation Frame"),
             "instrumentation:cancelAnimationFrame": WebInspector.UIString("Cancel Animation Frame"),
             "instrumentation:animationFrameFired": WebInspector.UIString("Animation Frame Fired"),

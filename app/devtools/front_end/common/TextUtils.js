@@ -103,23 +103,21 @@ WebInspector.TextUtils = {
     /**
      * @param {string} text
      * @param {function(string):boolean} isWordChar
-     * @return {!Array.<string>}
+     * @param {function(string)} wordCallback
      */
-    textToWords: function(text, isWordChar)
+    textToWords: function(text, isWordChar, wordCallback)
     {
-        var words = [];
         var startWord = -1;
         for(var i = 0; i < text.length; ++i) {
             if (!isWordChar(text.charAt(i))) {
                 if (startWord !== -1)
-                    words.push(text.substring(startWord, i));
+                    wordCallback(text.substring(startWord, i));
                 startWord = -1;
             } else if (startWord === -1)
                 startWord = i;
         }
         if (startWord !== -1)
-            words.push(text.substring(startWord));
-        return words;
+            wordCallback(text.substring(startWord));
     },
 
     /**

@@ -141,8 +141,3 @@ WebInspector.CPUProfilerModel.prototype = {
 
     __proto__: WebInspector.SDKModel.prototype
 }
-
-/**
- * @type {!WebInspector.CPUProfilerModel}
- */
-WebInspector.cpuProfilerModel;

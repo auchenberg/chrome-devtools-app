@@ -402,9 +402,18 @@
 }
 
 .memory-counter-sidebar-info .swatch {
+    margin-left: 1px;
+    margin-right: 2px;
+    width: 10px;
+    height: 10px;
+    position: relative;
+    top: 1px;
+    display: inline-block;
+    line-height: 1px;
     background-image: none;
     border: 1px solid rgba(0,0,0,0.3);
     opacity: 0.5;
+    -webkit-user-select: none;
 }
 
 .memory-counter-sidebar-info .title {
@@ -638,6 +647,10 @@
     -webkit-user-select: text;
 }
 
+.timeline-details-view-row-value .stack-preview-container {
+    line-height: 11px;
+}
+
 .timeline-details-view-row-details {
     padding-left: 10px;
 }
@@ -681,11 +694,6 @@
     line-height: 12px;
 }
 
-.timeline-details-view-row-stack-trace .webkit-html-external-link,
-.timeline-details-view-row-stack-trace .webkit-html-resource-link {
-    color: #333 !important;
-}
-
 .timeline-aggregated-info {
     flex: none;
     position: relative;
@@ -712,34 +720,15 @@
     align-items: center;
 }
 
-.layer-tree.outline-disclosure {
-    z-index: 10;
-}
 
-.layer-tree.outline-disclosure > ol,
-.profiler-log-view > ol {
-    margin-left: -12px
+.layer-tree,
+.profiler-log-view {
     overflow: auto;
 }
 
-.layer-tree.outline-disclosure ol.children,
-.profiler-log-view ol.children {
-    margin-left: -14px;
-    padding-left: 22px;
-}
-
-.layer-tree.outline-disclosure li,
-.profiler-log-view li {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    height: 16px;
-    line-height: 16px;
-    margin-top: 0;
-}
-
-.layer-tree.outline-disclosure .dimmed {
+.layer-tree::shadow .dimmed {
     opacity: 0.6;
+    padding-left: 5px;
 }
 
 .layers-3d-view {
@@ -799,17 +788,6 @@
     font-size: 10px;
 }
 
-.profiler-log-view.outline-disclosure,
-.layer-tree.outline-disclosure {
-    font-size: 12px;
-    line-height: 14px;
-}
-
-.profiler-log-view.outline-disclosure li.parent::before,
-.layer-tree.outline-disclosure li.parent::before  {
-    top: 1px;
-}
-
 .paint-profiler-canvas-container canvas {
     z-index: 200;
     background-color: white;
@@ -826,15 +804,6 @@
 
 .paint-profiler-canvas-container .overview-grid-window-resizer {
     z-index: 2000;
-}
-
-.profiler-log-view .console-formatted-string {
-    white-space: nowrap;
-}
-
-.profiler-log-view.section .properties {
-    display: block;
-    padding-right: 0 !important;
 }
 
 .paint-profiler-image-view {

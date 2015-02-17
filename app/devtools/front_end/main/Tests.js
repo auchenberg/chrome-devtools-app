@@ -287,7 +287,8 @@ TestSuite.prototype.testShowScriptsTab = function()
 TestSuite.prototype.testScriptsTabIsPopulatedOnInspectedPageRefresh = function()
 {
     var test = this;
-    WebInspector.debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, waitUntilScriptIsParsed);
+    var debuggerModel = WebInspector.targetManager.mainTarget().debuggerModel;
+    debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, waitUntilScriptIsParsed);
 
     this.showPanel("elements").then(function() {
         // Reload inspected page. It will reset the debugger agent.
@@ -296,7 +297,7 @@ TestSuite.prototype.testScriptsTabIsPopulatedOnInspectedPageRefresh = function()
 
     function waitUntilScriptIsParsed()
     {
-        WebInspector.debuggerModel.removeEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, waitUntilScriptIsParsed);
+        debuggerModel.removeEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, waitUntilScriptIsParsed);
         test.showPanel("sources").then(function() {
             test._waitUntilScriptsAreParsed(["debugger_test_page.html"],
                 function() {
@@ -387,7 +388,8 @@ TestSuite.prototype.testNoScriptDuplicatesOnPanelSwitch = function()
 // frontend is being loaded.
 TestSuite.prototype.testPauseWhenLoadingDevTools = function()
 {
-    if (WebInspector.debuggerModel.debuggerPausedDetails)
+    var debuggerModel = WebInspector.targetManager.mainTarget().debuggerModel;
+    if (debuggerModel.debuggerPausedDetails)
         return;
 
     this.showPanel("sources").then(function() {
@@ -567,9 +569,10 @@ TestSuite.prototype.testConsoleOnNavigateBack = function()
 
 TestSuite.prototype.testReattachAfterCrash = function()
 {
-    PageAgent.navigate("about:crash");
-    PageAgent.navigate("about:blank");
-    WebInspector.runtimeModel.addEventListener(WebInspector.RuntimeModel.Events.ExecutionContextCreated, this.releaseControl, this);
+    var target = WebInspector.targetManager.mainTarget();
+    target.pageAgent().navigate("about:crash");
+    target.pageAgent().navigate("about:blank");
+    target.runtimeModel.addEventListener(WebInspector.RuntimeModel.Events.ExecutionContextCreated, this.releaseControl, this);
 };
 
 
@@ -609,7 +612,8 @@ TestSuite.prototype.testPauseInSharedWorkerInitialization1 = function()
 
 TestSuite.prototype.testPauseInSharedWorkerInitialization2 = function()
 {
-    if (WebInspector.debuggerModel.isPaused())
+    var debuggerModel = WebInspector.targetManager.mainTarget().debuggerModel;
+    if (debuggerModel.isPaused())
         return;
     this._waitForScriptPause(this.releaseControl.bind(this));
     this.takeControl();
@@ -637,7 +641,7 @@ TestSuite.prototype.testDeviceMetricsOverrides = function()
 
     function testOverrides(params, metrics, callback)
     {
-        PageAgent.invoke_setDeviceMetricsOverride(params, getMetrics);
+        WebInspector.targetManager.mainTarget().pageAgent().invoke_setDeviceMetricsOverride(params, getMetrics);
 
         function getMetrics()
         {
@@ -798,7 +802,7 @@ TestSuite.prototype.evaluateInConsole_ = function(code, callback)
     {
         WebInspector.context.removeFlavorChangeListener(WebInspector.ExecutionContext, showConsoleAndEvaluate, this);
         var consoleView = WebInspector.ConsolePanel._view();
-        consoleView._prompt.text = code;
+        consoleView._prompt.setText(code);
         consoleView._promptElement.dispatchEvent(TestSuite.createKeyEvent("Enter"));
 
         this.addSniffer(WebInspector.ConsoleView.prototype, "_consoleMessageAddedForTest",

@@ -84,7 +84,7 @@ WebInspector.DOMSyntaxHighlighter.prototype = {
                     node.createTextChild(plainText);
                 }
                 if (i < lines.length - 1)
-                    node.createChild("br");
+                    node.createTextChild("\n");
             }
         }
 
@@ -108,4 +108,17 @@ WebInspector.DOMSyntaxHighlighter.prototype = {
             plainTextStart = newColumn;
         }
     }
+}
+
+/**
+ * @interface
+ */
+WebInspector.TokenizerFactory = function() { }
+
+WebInspector.TokenizerFactory.prototype = {
+    /**
+     * @param {string} mimeType
+     * @return {function(string, function(string, ?string, number, number))}
+     */
+    createTokenizer: function(mimeType) { }
 }

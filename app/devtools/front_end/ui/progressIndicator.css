@@ -19,6 +19,11 @@
     justify-content: center;
 }
 
+.progress-indicator-shadow-container .title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
 .progress-indicator-shadow-container span {
     padding: 6px;
 }

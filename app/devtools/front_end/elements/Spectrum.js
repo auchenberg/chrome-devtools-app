@@ -309,119 +309,129 @@ WebInspector.Spectrum.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.Object}
+ * @extends {WebInspector.StylesPopoverIcon}
+ * @param {!WebInspector.StylePropertyTreeElementBase} treeElement
+ * @param {?WebInspector.StylesPopoverHelper} stylesPopoverHelper
+ * @param {?WebInspector.Spectrum} spectrum
+ * @param {!Element} nameElement
+ * @param {!Element} valueElement
+ * @param {string} text
  */
-WebInspector.SpectrumPopupHelper = function()
+WebInspector.ColorSwatchIcon = function(treeElement, stylesPopoverHelper, spectrum, nameElement, valueElement, text)
 {
-    this._spectrum = new WebInspector.Spectrum();
-    this._spectrum.contentElement.addEventListener("keydown", this._onKeyDown.bind(this), false);
+    WebInspector.StylesPopoverIcon.call(this, treeElement, stylesPopoverHelper, nameElement, valueElement, text);
 
-    this._popover = new WebInspector.Popover();
-    this._popover.setCanShrink(false);
-    this._popover.element.addEventListener("mousedown", consumeEvent, false);
-
-    this._hideProxy = this.hide.bind(this, true);
+    this._stylesPopoverHelper = stylesPopoverHelper;
+    this._spectrum = spectrum;
+    this._boundSpectrumChanged = this._spectrumChanged.bind(this);
 }
 
-WebInspector.SpectrumPopupHelper.Events = {
-    Hidden: "Hidden"
-};
+/**
+ * @param {!WebInspector.Color} color
+ * @return {!WebInspector.Color.Format}
+ */
+WebInspector.ColorSwatchIcon._colorFormat = function(color)
+{
+    const cf = WebInspector.Color.Format;
+    var format;
+    var formatSetting = WebInspector.settings.colorFormat.get();
+    if (formatSetting === cf.Original)
+        format = cf.Original;
+    else if (formatSetting === cf.RGB)
+        format = (color.hasAlpha() ? cf.RGBA : cf.RGB);
+    else if (formatSetting === cf.HSL)
+        format = (color.hasAlpha() ? cf.HSLA : cf.HSL);
+    else if (!color.hasAlpha())
+        format = (color.canBeShortHex() ? cf.ShortHEX : cf.HEX);
+    else
+        format = cf.RGBA;
 
-WebInspector.SpectrumPopupHelper.prototype = {
+    return format;
+}
+
+WebInspector.ColorSwatchIcon.prototype = {
     /**
-     * @return {!WebInspector.Spectrum}
+     * @override
+     * @return {?WebInspector.View}
      */
-    spectrum: function()
+    view: function()
     {
         return this._spectrum;
     },
 
     /**
-     * @return {boolean}
+     * @param {boolean=} readOnly
      */
-    toggle: function(element, color, format)
+    _createSwatch: function(readOnly)
     {
-        if (this._popover.isShowing())
-            this.hide(true);
+        this._colorSwatch = createElementWithClass("span", "swatch popover-icon");
+        this._swatchInnerElement = this._colorSwatch.createChild("span", "swatch-inner");
+        var shiftClickMessage = WebInspector.UIString("Shift-click to change color format.");
+        this._colorSwatch.title = readOnly ? shiftClickMessage : String.sprintf("%s\n%s", WebInspector.UIString("Click to open a colorpicker."), shiftClickMessage);
+        this._colorSwatch.addEventListener("mousedown", consumeEvent, false);
+        this._colorSwatch.addEventListener("dblclick", consumeEvent, false);
+        this._iconElement = this._colorSwatch;
+    },
+
+    /**
+     * @param {string} colorString
+     */
+    _setColorString: function(colorString)
+    {
+        this._swatchInnerElement.style.backgroundColor = colorString;
+    },
+
+    /**
+     * @return {!Node}
+     */
+    icon: function()
+    {
+        this._color = WebInspector.Color.parse(this._text);
+
+        // We can be called with valid non-color values of |text| (like 'none' from border style)
+        if (!this._color)
+            return createTextNode(this._text);
+
+        this._format = WebInspector.ColorSwatchIcon._colorFormat(this._color);
+        this._createSwatch(!this._isEditable);
+        this._setColorString(this._text);
+        this._colorSwatch.addEventListener("click", this._iconClick.bind(this), false);
+
+        this._colorValueElement = createElement("span");
+        if (this._format === WebInspector.Color.Format.Original)
+            this._colorValueElement.textContent = this._text;
         else
-            this.show(element, color, format);
+            this._colorValueElement.textContent = this._color.asString(this._format);
 
-        return this._popover.isShowing();
+        var container = createElement("nobr");
+        container.appendChild(this._colorSwatch);
+        container.appendChild(this._colorValueElement);
+        return container;
     },
 
     /**
-     * @return {boolean}
+     * @param {!WebInspector.Event} event
      */
-    show: function(element, color, format)
+    _spectrumChanged: function(event)
     {
-        if (this._popover.isShowing()) {
-            if (this._anchorElement === element)
-                return false;
-
-            // Reopen the picker for another anchor element.
-            this.hide(true);
-        }
-
-        delete this._isHidden;
-        this._anchorElement = element;
-
-        this._spectrum.setColor(color);
-        this._spectrum._originalFormat = format !== WebInspector.Color.Format.Original ? format : color.format();
-        this.reposition(element);
-
-        var document = this._popover.element.ownerDocument;
-        document.addEventListener("mousedown", this._hideProxy, false);
-        document.defaultView.addEventListener("resize", this._hideProxy, false);
-
-        WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.ColorPicked, this._colorPicked, this);
-        PageAgent.setColorPickerEnabled(true);
-        return true;
-    },
-
-    reposition: function(element)
-    {
-        if (!this._previousFocusElement)
-            this._previousFocusElement = WebInspector.currentFocusElement();
-        this._popover.showView(this._spectrum, element);
-        WebInspector.setCurrentFocusElement(this._spectrum.contentElement);
+        var colorString = /** @type {string} */ (event.data);
+        this._spectrum.displayText = colorString;
+        this._colorValueElement.textContent = colorString;
+        this._setColorString(colorString);
+        this._valueChanged();
     },
 
     /**
-     * @param {boolean=} commitEdit
+     * @override
+     * @param {!WebInspector.Event} event
      */
-    hide: function(commitEdit)
+    popoverHidden: function(event)
     {
-        if (this._isHidden)
-            return;
-        var document = this._popover.element.ownerDocument;
-        this._isHidden = true;
-        this._popover.hide();
-
-        document.removeEventListener("mousedown", this._hideProxy, false);
-        document.defaultView.removeEventListener("resize", this._hideProxy, false);
-
-        PageAgent.setColorPickerEnabled(false);
+        for (var target of WebInspector.targetManager.targets())
+            target.pageAgent().setColorPickerEnabled(false);
         WebInspector.targetManager.removeModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.ColorPicked, this._colorPicked, this);
-
-        this.dispatchEventToListeners(WebInspector.SpectrumPopupHelper.Events.Hidden, !!commitEdit);
-
-        WebInspector.setCurrentFocusElement(this._previousFocusElement);
-        delete this._previousFocusElement;
-
-        delete this._anchorElement;
-    },
-
-    _onKeyDown: function(event)
-    {
-        if (event.keyIdentifier === "Enter") {
-            this.hide(true);
-            event.consume(true);
-            return;
-        }
-        if (event.keyIdentifier === "U+001B") { // Escape key
-            this.hide(false);
-            event.consume(true);
-        }
+        this._spectrum.removeEventListener(WebInspector.Spectrum.Events.ColorChanged, this._boundSpectrumChanged);
+        WebInspector.StylesPopoverIcon.prototype.popoverHidden.call(this, event);
     },
 
     /**
@@ -436,29 +446,94 @@ WebInspector.SpectrumPopupHelper.prototype = {
         InspectorFrontendHost.bringToFront();
     },
 
-    __proto__: WebInspector.Object.prototype
-}
-
-/**
- * @constructor
- * @param {boolean=} readOnly
- */
-WebInspector.ColorSwatch = function(readOnly)
-{
-    this.element = createElementWithClass("span", "swatch");
-    this._swatchInnerElement = this.element.createChild("span", "swatch-inner");
-    var shiftClickMessage = WebInspector.UIString("Shift-click to change color format.");
-    this.element.title = readOnly ? shiftClickMessage : String.sprintf("%s\n%s", WebInspector.UIString("Click to open a colorpicker."), shiftClickMessage);
-    this.element.addEventListener("mousedown", consumeEvent, false);
-    this.element.addEventListener("dblclick", consumeEvent, false);
-}
-
-WebInspector.ColorSwatch.prototype = {
     /**
-     * @param {string} colorString
+     * @override
+     * @param {!Event} e
+     * @return {boolean}
      */
-    setColorString: function(colorString)
+    toggle: function(e)
     {
-        this._swatchInnerElement.style.backgroundColor = colorString;
-    }
+        if (!this._stylesPopoverHelper || e.shiftKey) {
+            this._changeColorDisplay();
+            return false;
+        }
+
+        if (this._stylesPopoverHelper.isShowing()) {
+            this._stylesPopoverHelper.hide(true);
+        } else {
+            this._spectrum.setColor(this._color);
+            this._spectrum._originalFormat = this._format !== WebInspector.Color.Format.Original ? this._format : this._color.format();
+            this._stylesPopoverHelper.show(this._spectrum, this._colorSwatch);
+
+            WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.ColorPicked, this._colorPicked, this);
+            for (var target of WebInspector.targetManager.targets())
+                target.pageAgent().setColorPickerEnabled(true);
+
+            this._spectrum.displayText = this._color.asString(this._format);
+            this._spectrum.addEventListener(WebInspector.Spectrum.Events.ColorChanged, this._boundSpectrumChanged);
+        }
+
+        return this._stylesPopoverHelper.isShowing();
+    },
+
+    _changeColorDisplay: function()
+    {
+        /**
+         * @param {!WebInspector.Color} color
+         * @param {string} curFormat
+         */
+        function nextFormat(color, curFormat)
+        {
+            // The format loop is as follows:
+            // * original
+            // * rgb(a)
+            // * hsl(a)
+            // * nickname (if the color has a nickname)
+            // * if the color is simple:
+            //   - shorthex (if has short hex)
+            //   - hex
+            var cf = WebInspector.Color.Format;
+
+            switch (curFormat) {
+                case cf.Original:
+                    return !color.hasAlpha() ? cf.RGB : cf.RGBA;
+
+                case cf.RGB:
+                case cf.RGBA:
+                    return !color.hasAlpha() ? cf.HSL : cf.HSLA;
+
+                case cf.HSL:
+                case cf.HSLA:
+                    if (color.nickname())
+                        return cf.Nickname;
+                    if (!color.hasAlpha())
+                        return color.canBeShortHex() ? cf.ShortHEX : cf.HEX;
+                    else
+                        return cf.Original;
+
+                case cf.ShortHEX:
+                    return cf.HEX;
+
+                case cf.HEX:
+                    return cf.Original;
+
+                case cf.Nickname:
+                    if (!color.hasAlpha())
+                        return color.canBeShortHex() ? cf.ShortHEX : cf.HEX;
+                    else
+                        return cf.Original;
+
+                default:
+                    return cf.RGBA;
+            }
+        }
+
+        do {
+            this._format = nextFormat(this._color, this._format);
+            var currentValue = this._color.asString(this._format);
+        } while (currentValue === this._colorValueElement.textContent);
+        this._colorValueElement.textContent = currentValue;
+    },
+
+    __proto__: WebInspector.StylesPopoverIcon.prototype
 }

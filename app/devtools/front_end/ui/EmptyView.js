@@ -35,21 +35,23 @@
 WebInspector.EmptyView = function(text)
 {
     WebInspector.VBox.call(this);
+    this.registerRequiredCSS("ui/emptyView.css");
+    this.element.classList.add("empty-view");
+    this.textElement = this.element.createChild("span");
     this._text = text;
 }
 
 WebInspector.EmptyView.prototype = {
     wasShown: function()
     {
-        this.element.classList.add("empty-view");
-        this.element.textContent = this._text;
+        this.textElement.textContent = this._text;
     },
 
     set text(text)
     {
         this._text = text;
         if (this.isShowing())
-            this.element.textContent = this._text;
+            this.textElement.textContent = this._text;
     },
 
     __proto__: WebInspector.VBox.prototype

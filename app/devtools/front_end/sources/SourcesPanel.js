@@ -78,6 +78,7 @@ WebInspector.SourcesPanel = function(workspaceForTest)
     this.sidebarPanes.watchExpressions = new WebInspector.WatchExpressionsSidebarPane();
     this.sidebarPanes.callstack = new WebInspector.CallStackSidebarPane();
     this.sidebarPanes.callstack.addEventListener(WebInspector.CallStackSidebarPane.Events.CallFrameSelected, this._callFrameSelectedInSidebar.bind(this));
+    this.sidebarPanes.callstack.addEventListener(WebInspector.CallStackSidebarPane.Events.RevealHiddenCallFrames, this._hiddenCallFramesRevealedInSidebar.bind(this));
     this.sidebarPanes.callstack.registerShortcuts(this.registerShortcuts.bind(this));
 
     this.sidebarPanes.scopechain = new WebInspector.ScopeChainSidebarPane();
@@ -85,6 +86,8 @@ WebInspector.SourcesPanel = function(workspaceForTest)
     this.sidebarPanes.domBreakpoints = WebInspector.domBreakpointsSidebarPane.createProxy(this);
     this.sidebarPanes.xhrBreakpoints = new WebInspector.XHRBreakpointsSidebarPane();
     this.sidebarPanes.eventListenerBreakpoints = new WebInspector.EventListenerBreakpointsSidebarPane();
+    if (Runtime.experiments.isEnabled("stepIntoAsync"))
+        this.sidebarPanes.asyncOperationBreakpoints = new WebInspector.AsyncOperationsSidebarPane();
 
     this._extensionSidebarPanes = [];
     this._installDebuggerSidebarController();
@@ -282,6 +285,7 @@ WebInspector.SourcesPanel.prototype = {
         this._paused = false;
         this._clearInterface();
         this._toggleDebuggerSidebarButton.disabled = false;
+        this._switchToPausedTargetTimeout = setTimeout(this._switchToPausedTarget.bind(this), 500);
     },
 
     /**
@@ -354,13 +358,16 @@ WebInspector.SourcesPanel.prototype = {
         this._ignoreExecutionLineEvents = ignoreExecutionLineEvents;
     },
 
+    /**
+     * @param {!WebInspector.UILocation} uiLocation
+     */
     _executionLineChanged: function(uiLocation)
     {
         this._sourcesView.clearCurrentExecutionLine();
         this._sourcesView.setExecutionLine(uiLocation);
         if (this._ignoreExecutionLineEvents)
             return;
-        this._sourcesView.showSourceLocation(uiLocation.uiSourceCode, uiLocation.lineNumber, 0, undefined, true);
+        this._sourcesView.showSourceLocation(uiLocation.uiSourceCode, uiLocation.lineNumber, uiLocation.columnNumber, undefined, true);
     },
 
     /**
@@ -451,6 +458,26 @@ WebInspector.SourcesPanel.prototype = {
 
         this._sourcesView.clearCurrentExecutionLine();
         this._updateDebuggerButtons();
+
+        if (this._switchToPausedTargetTimeout)
+            clearTimeout(this._switchToPausedTargetTimeout);
+    },
+
+    _switchToPausedTarget: function()
+    {
+        delete this._switchToPausedTargetTimeout;
+        if (this._paused)
+            return;
+        var target = WebInspector.context.flavor(WebInspector.Target);
+        if (target && target.debuggerModel.isPaused())
+            return;
+        var targets = WebInspector.targetManager.targets();
+        for (var i = 0; i < targets.length; ++i) {
+            if (targets[i].debuggerModel.isPaused()) {
+                WebInspector.context.setFlavor(WebInspector.Target, targets[i]);
+                break;
+            }
+        }
     },
 
     _togglePauseOnExceptions: function()
@@ -612,6 +639,12 @@ WebInspector.SourcesPanel.prototype = {
     {
         var callFrame = /** @type {!WebInspector.DebuggerModel.CallFrame} */ (event.data);
         callFrame.target().debuggerModel.setSelectedCallFrame(callFrame);
+    },
+
+    _hiddenCallFramesRevealedInSidebar: function()
+    {
+        if (Runtime.experiments.isEnabled("stepIntoAsync"))
+            this.sidebarPanes.asyncOperationBreakpoints.revealHiddenCallFrames(WebInspector.context.flavor(WebInspector.Target));
     },
 
     /**
@@ -1115,6 +1148,8 @@ WebInspector.SourcesPanel.prototype = {
             sidebarPaneStack.addPane(this.sidebarPanes.domBreakpoints);
             sidebarPaneStack.addPane(this.sidebarPanes.xhrBreakpoints);
             sidebarPaneStack.addPane(this.sidebarPanes.eventListenerBreakpoints);
+            if (Runtime.experiments.isEnabled("stepIntoAsync"))
+                sidebarPaneStack.addPane(this.sidebarPanes.asyncOperationBreakpoints);
 
             var tabbedPane = new WebInspector.SidebarTabbedPane();
             splitView.setSidebarView(tabbedPane);
@@ -1135,7 +1170,8 @@ WebInspector.SourcesPanel.prototype = {
         this.sidebarPanes.jsBreakpoints.expand();
         this.sidebarPanes.callstack.expand();
         this._sidebarPaneStack = sidebarPaneStack;
-        this._updateTargetsSidebarVisibility();
+        this._sidebarPaneStack.togglePaneHidden(this.sidebarPanes.threads, true);
+        this._showThreadsSidebarPaneIfNeeded();
         if (WebInspector.settings.watchExpressions.get().length > 0)
             this.sidebarPanes.watchExpressions.expand();
     },
@@ -1174,7 +1210,7 @@ WebInspector.SourcesPanel.prototype = {
      */
     targetAdded: function(target)
     {
-        this._updateTargetsSidebarVisibility();
+        this._showThreadsSidebarPaneIfNeeded();
     },
 
     /**
@@ -1183,15 +1219,16 @@ WebInspector.SourcesPanel.prototype = {
      */
     targetRemoved: function(target)
     {
-        this._updateTargetsSidebarVisibility();
+        this._showThreadsSidebarPaneIfNeeded();
     },
 
-    _updateTargetsSidebarVisibility: function()
+    _showThreadsSidebarPaneIfNeeded: function()
     {
-        if (!this._sidebarPaneStack)
-            return;
         // FIXME(413886): We could remove worker frontend check here once we support explicit threads and do not send main thread for service/shared workers to frontend.
-        this._sidebarPaneStack.togglePaneHidden(this.sidebarPanes.threads, WebInspector.targetManager.targets().length < 2 || WebInspector.isWorkerFrontend());
+        if (!this._sidebarPaneStack || WebInspector.isWorkerFrontend() || WebInspector.targetManager.targets().length < 2)
+            return;
+
+        this._sidebarPaneStack.togglePaneHidden(this.sidebarPanes.threads, false);
     },
 
     __proto__: WebInspector.Panel.prototype
@@ -1399,12 +1436,18 @@ WebInspector.SourcesPanel.DisableJavaScriptSettingDelegate.prototype = {
      */
     _settingChanged: function(event)
     {
-        PageAgent.setScriptExecutionDisabled(event.data, this._updateScriptDisabledCheckbox.bind(this));
+        // Only applies to the main target.
+        var target = WebInspector.targetManager.mainTarget();
+        if (target)
+            target.pageAgent().setScriptExecutionDisabled(/** @type {boolean} */(event.data), this._updateScriptDisabledCheckbox.bind(this));
     },
 
     _updateScriptDisabledCheckbox: function()
     {
-        PageAgent.getScriptExecutionStatus(executionStatusCallback.bind(this));
+        // Only applies to the main target.
+        var target = WebInspector.targetManager.mainTarget();
+        if (target)
+            target.pageAgent().getScriptExecutionStatus(executionStatusCallback.bind(this));
 
         /**
          * @param {?Protocol.Error} error

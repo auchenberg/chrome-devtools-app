@@ -264,7 +264,10 @@ WebInspector.StylesSourceMapping.prototype = {
             userCallback(error);
             delete this._isSettingContent;
         }
-        this._cssModel.setStyleSheetText(styleSheetIds[0], content, majorChange, callback.bind(this));
+
+
+        for (var i = 0; i < styleSheetIds.length; ++i)
+            this._cssModel.setStyleSheetText(styleSheetIds[i], content, majorChange, i === styleSheetIds.length - 1 ? callback.bind(this) : null);
     },
 
     /**

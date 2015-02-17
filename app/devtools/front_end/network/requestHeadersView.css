@@ -109,7 +109,7 @@
 .request-headers-view .filter-input {
     outline: none !important;
     border: none;
-    border-top: solid 1px #ccc;
+    border-bottom: solid 1px #ccc;
     flex: 0 0 19px;
     padding: 0 4px;
 }

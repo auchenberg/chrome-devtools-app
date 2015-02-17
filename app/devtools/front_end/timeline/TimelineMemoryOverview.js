@@ -55,8 +55,8 @@ WebInspector.TimelineMemoryOverview.prototype = {
         this.resetCanvas();
         var ratio = window.devicePixelRatio;
 
-        var records = this._model.records();
-        if (!records.length) {
+        var events = this._model.mainThreadEvents();
+        if (!events.length) {
             this.resetHeapSizeLabels();
             return;
         }
@@ -67,17 +67,26 @@ WebInspector.TimelineMemoryOverview.prototype = {
         var minTime = this._model.minimumRecordTime();
         var maxTime = this._model.maximumRecordTime();
         /**
-         * @param {!WebInspector.TimelineModel.Record} record
+         * @param {!WebInspector.TracingModel.Event} event
+         * @return {boolean}
          */
-        function calculateMinMaxSizes(record)
+        function isUpdateCountersEvent(event)
         {
-            var counters = WebInspector.TimelineUIUtils.isCoalescable.countersForRecord(record);
+            return event.name === WebInspector.TimelineModel.RecordType.UpdateCounters;
+        }
+        events = events.filter(isUpdateCountersEvent);
+        /**
+         * @param {!WebInspector.TracingModel.Event} event
+         */
+        function calculateMinMaxSizes(event)
+        {
+            var counters = event.args.data;
             if (!counters || !counters.jsHeapSizeUsed)
                 return;
             maxUsedHeapSize = Math.max(maxUsedHeapSize, counters.jsHeapSizeUsed);
             minUsedHeapSize = Math.min(minUsedHeapSize, counters.jsHeapSizeUsed);
         }
-        this._model.forAllRecords(calculateMinMaxSizes);
+        events.forEach(calculateMinMaxSizes);
         minUsedHeapSize = Math.min(minUsedHeapSize, maxUsedHeapSize);
 
         var lineWidth = 1;
@@ -89,18 +98,18 @@ WebInspector.TimelineMemoryOverview.prototype = {
         var histogram = new Array(width);
 
         /**
-         * @param {!WebInspector.TimelineModel.Record} record
+         * @param {!WebInspector.TracingModel.Event} event
          */
-        function buildHistogram(record)
+        function buildHistogram(event)
         {
-            var counters = WebInspector.TimelineUIUtils.isCoalescable.countersForRecord(record);
+            var counters = event.args.data;
             if (!counters || !counters.jsHeapSizeUsed)
                 return;
-            var x = Math.round((record.endTime() - minTime) * xFactor);
+            var x = Math.round((event.startTime - minTime) * xFactor);
             var y = Math.round((counters.jsHeapSizeUsed - minUsedHeapSize) * yFactor);
             histogram[x] = Math.max(histogram[x] || 0, y);
         }
-        this._model.forAllRecords(buildHistogram);
+        events.forEach(buildHistogram);
 
         var ctx = this._context;
         var heightBeyondView = height + lowerOffset + lineWidth;

@@ -95,7 +95,6 @@
 
 .console-timestamp {
     color: gray;
-    margin-right: 10px;
     -webkit-user-select: none;
 }
 
@@ -129,14 +128,6 @@
     top: 0;
 }
 
-.console-message .outline-disclosure .stacktrace-entry:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.stacktrace-entry .webkit-html-blackbox-link {
-    opacity: 0.6;
-}
-
 .bubble-repeat-count {
     display: inline-block;
     height: 14px;
@@ -157,11 +148,6 @@
 .console-message .bubble-repeat-count {
     margin-right: 4px;
     margin-left: -18px;
-}
-
-.console-async-trace-text {
-    margin-left: -10px;
-    font-style: italic;
 }
 
 .repeated-message.console-error-level::before,
@@ -312,10 +298,6 @@
     background-position: -192px -107px;
 }
 
-.console-user-command > .console-message-text {
-    color: rgb(0, 128, 255);
-}
-
 .console-user-command-result {
     display: block;
 }
@@ -376,6 +358,13 @@
     white-space: pre-wrap;
 }
 
+.console-message-url {
+    float: right;
+    text-align: right;
+    max-width: 100%;
+    margin-left: 4px;
+}
+
 .console-message-nowrap-below,
 .console-message-nowrap-below div,
 .console-message-nowrap-below span {
@@ -384,4 +373,11 @@
 
 .console-view .status-bar::shadow .console-context {
     max-width: 200px;
+}
+
+.highlighted-search-result.current-search-result {
+    border-radius: 1px;
+    padding: 1px;
+    margin: -1px;
+    background-color: rgba(255, 127, 0, 0.8);
 }

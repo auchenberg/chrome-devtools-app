@@ -98,7 +98,7 @@ WebInspector.CustomPreviewSection.prototype = {
 
         var array = /** @type {!Array.<*>} */(jsonML);
         if (array[0] === "object")
-            return this._renderObjectTag(array);
+            return this._layoutObjectTag(array);
         else
             return this._renderElement(array);
     },
@@ -120,7 +120,7 @@ WebInspector.CustomPreviewSection.prototype = {
             var attributes = object.shift();
             for (var key in attributes) {
                 var value = attributes[key];
-                if ((typeof value !== "string") || !this._validateStyleAttributes(value))
+                if ((key !== "style") || (typeof value !== "string") || !this._validateStyleAttributes(value))
                     continue;
 
                 element.setAttribute(key, value);
@@ -135,7 +135,7 @@ WebInspector.CustomPreviewSection.prototype = {
      * @param {!Array.<*>} objectTag
      * @return {!Node}
      */
-    _renderObjectTag: function(objectTag)
+    _layoutObjectTag: function(objectTag)
     {
         objectTag.shift();
         var attributes = objectTag.shift();
@@ -196,7 +196,11 @@ WebInspector.CustomPreviewSection.prototype = {
              */
             function substituteObjectTagsInCustomPreview(jsonMLObject)
             {
-                if (!(jsonMLObject instanceof [].constructor))
+                if (!jsonMLObject || (typeof jsonMLObject !== "object") || (typeof jsonMLObject.splice !== "function"))
+                    return;
+
+                var obj = jsonMLObject.length;
+                if (!(typeof obj === "number" && obj >>> 0 === obj && (obj > 0 || 1 / obj > 0)))
                     return;
 
                 var startIndex = 1;

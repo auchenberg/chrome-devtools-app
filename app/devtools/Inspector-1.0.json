@@ -1596,7 +1596,7 @@
                 "id": "PseudoIdRules",
                 "type": "object",
                 "properties": [
-                    { "name": "pseudoId", "type": "integer", "description": "Pseudo style identifier (see <code>enum PseudoId</code> in <code>RenderStyleConstants.h</code>)."},
+                    { "name": "pseudoId", "type": "integer", "description": "Pseudo style identifier (see <code>enum PseudoId</code> in <code>LayoutStyleConstants.h</code>)."},
                     { "name": "rules", "type": "array", "items": { "$ref": "CSSRule" }, "description": "CSS rules applicable to the pseudo style."}
                 ],
                 "description": "CSS rule collection for a single pseudo style."

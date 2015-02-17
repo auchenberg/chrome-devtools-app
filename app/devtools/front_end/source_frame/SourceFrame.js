@@ -61,47 +61,6 @@ WebInspector.SourceFrame = function(contentProvider)
     this._errorPopoverHelper.setTimeout(100, 100);
 }
 
-/**
- * @param {string} query
- * @param {string=} modifiers
- * @return {!RegExp}
- */
-WebInspector.SourceFrame.createSearchRegex = function(query, modifiers)
-{
-    var regex;
-    modifiers = modifiers || "";
-
-    // First try creating regex if user knows the / / hint.
-    try {
-        if (/^\/.+\/$/.test(query)) {
-            regex = new RegExp(query.substring(1, query.length - 1), modifiers);
-            regex.__fromRegExpQuery = true;
-        }
-    } catch (e) {
-        // Silent catch.
-    }
-
-    // Otherwise just do a plain text search.
-    if (!regex)
-        regex = createPlainTextSearchRegex(query, modifiers);
-
-    return regex;
-}
-
-/**
- * @param {!WebInspector.SearchableView.SearchConfig} searchConfig
- * @param {boolean=} global
- * @return {!RegExp}
- */
-WebInspector.SourceFrame._createSearchRegexForConfig = function(searchConfig, global)
-{
-    var modifiers = searchConfig.caseSensitive ? "" : "i";
-    if (global)
-        modifiers += "g";
-    var query = searchConfig.isRegex ? "/" + searchConfig.query + "/" : searchConfig.query;
-    return WebInspector.SourceFrame.createSearchRegex(query, modifiers);
-}
-
 WebInspector.SourceFrame.Events = {
     ScrollChanged: "ScrollChanged",
     SelectionChanged: "SelectionChanged",
@@ -215,6 +174,7 @@ WebInspector.SourceFrame.prototype = {
         }
 
         this._rowMessageBuckets = {};
+        this._errorPopoverHelper.hidePopover();
     },
 
     /**
@@ -317,6 +277,11 @@ WebInspector.SourceFrame.prototype = {
         this.clearMessages();
     },
 
+    /**
+     * @param {string} content
+     * @param {string} mimeType
+     * @return {string}
+     */
     _simplifyMimeType: function(content, mimeType)
     {
         if (!mimeType)
@@ -401,7 +366,7 @@ WebInspector.SourceFrame.prototype = {
         this._currentSearchResultIndex = -1;
         this._searchResults = [];
 
-        var regex = WebInspector.SourceFrame._createSearchRegexForConfig(searchConfig);
+        var regex = searchConfig.toSearchRegex();
         this._searchRegex = regex;
         this._searchResults = this._collectRegexMatches(regex);
         searchFinishedCallback(this, this._searchResults.length);
@@ -540,7 +505,7 @@ WebInspector.SourceFrame.prototype = {
         this._textEditor.highlightSearchResults(this._searchRegex, null);
 
         var oldText = this._textEditor.copyRange(range);
-        var regex = WebInspector.SourceFrame._createSearchRegexForConfig(searchConfig);
+        var regex = searchConfig.toSearchRegex();
         var text;
         if (regex.__fromRegExpQuery)
             text = oldText.replace(regex, replacement);
@@ -563,7 +528,7 @@ WebInspector.SourceFrame.prototype = {
         var text = this._textEditor.text();
         var range = this._textEditor.range();
 
-        var regex = WebInspector.SourceFrame._createSearchRegexForConfig(searchConfig, true);
+        var regex = searchConfig.toSearchRegex(true);
         if (regex.__fromRegExpQuery)
             text = text.replace(regex, replacement);
         else
@@ -665,11 +630,6 @@ WebInspector.SourceFrame.prototype = {
             from: from,
             to: to
         });
-    },
-
-    inheritScrollPositions: function(sourceFrame)
-    {
-        this._textEditor.inheritScrollPositions(sourceFrame._textEditor);
     },
 
     /**
@@ -875,7 +835,7 @@ WebInspector.SourceFrame.RowMessage.prototype = {
 /**
  * @constructor
  * @param {!WebInspector.SourceFrame} sourceFrame
- * @param {!WebInspector.TextEditor} textEditor
+ * @param {!WebInspector.CodeMirrorTextEditor} textEditor
  * @param {number} lineNumber
  */
 WebInspector.SourceFrame.RowMessageBucket = function(sourceFrame, textEditor, lineNumber)

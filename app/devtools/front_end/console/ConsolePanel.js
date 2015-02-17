@@ -57,17 +57,32 @@ WebInspector.ConsolePanel.prototype = {
         return this._view.defaultFocusedElement();
     },
 
+    /**
+     * @override
+     */
     wasShown: function()
     {
         WebInspector.Panel.prototype.wasShown.call(this);
         this._view.show(this.element);
     },
 
+    /**
+     * @override
+     */
     willHide: function()
     {
         WebInspector.Panel.prototype.willHide.call(this);
         if (WebInspector.ConsolePanel.WrapperView._instance)
             WebInspector.ConsolePanel.WrapperView._instance._showViewInWrapper();
+    },
+
+    /**
+     * @override
+     * @return {?WebInspector.SearchableView}
+     */
+    searchableView: function()
+    {
+        return WebInspector.ConsolePanel._view().searchableView();
     },
 
     __proto__: WebInspector.Panel.prototype

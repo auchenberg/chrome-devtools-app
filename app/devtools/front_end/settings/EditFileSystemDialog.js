@@ -51,8 +51,8 @@ WebInspector.EditFileSystemDialog = function(fileSystemPath)
 
     WebInspector.isolatedFileSystemManager.mapping().addEventListener(WebInspector.FileSystemMapping.Events.FileMappingAdded, this._fileMappingAdded, this);
     WebInspector.isolatedFileSystemManager.mapping().addEventListener(WebInspector.FileSystemMapping.Events.FileMappingRemoved, this._fileMappingRemoved, this);
-    WebInspector.isolatedFileSystemManager.mapping().addEventListener(WebInspector.ExcludedFolderManager.Events.ExcludedFolderAdded, this._excludedFolderAdded, this);
-    WebInspector.isolatedFileSystemManager.mapping().addEventListener(WebInspector.ExcludedFolderManager.Events.ExcludedFolderRemoved, this._excludedFolderRemoved, this);
+    WebInspector.isolatedFileSystemManager.excludedFolderManager().addEventListener(WebInspector.ExcludedFolderManager.Events.ExcludedFolderAdded, this._excludedFolderAdded, this);
+    WebInspector.isolatedFileSystemManager.excludedFolderManager().addEventListener(WebInspector.ExcludedFolderManager.Events.ExcludedFolderRemoved, this._excludedFolderRemoved, this);
 
     var blockHeader = contents.createChild("div", "block-header");
     blockHeader.textContent = WebInspector.UIString("Mappings");

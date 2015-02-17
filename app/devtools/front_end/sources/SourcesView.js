@@ -91,6 +91,10 @@ WebInspector.SourcesView.Events = {
  */
 WebInspector.SourcesView.uiSourceCodeHighlighterType = function(uiSourceCode)
 {
+    var networkContentType = WebInspector.networkProject.uiSourceCodeContentType(uiSourceCode);
+    if (networkContentType)
+        return networkContentType.canonicalMimeType();
+
     var mimeType = WebInspector.ResourceType.mimeTypesForExtensions[uiSourceCode.extension().toLowerCase()];
     return mimeType || uiSourceCode.contentType().canonicalMimeType();
 }

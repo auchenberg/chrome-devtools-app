@@ -428,11 +428,11 @@ WebInspector.ProfileHeader.prototype = {
 /**
  * @constructor
  * @implements {WebInspector.ProfileType.DataDisplayDelegate}
- * @extends {WebInspector.PanelWithSidebarTree}
+ * @extends {WebInspector.PanelWithSidebar}
  */
 WebInspector.ProfilesPanel = function()
 {
-    WebInspector.PanelWithSidebarTree.call(this, "profiles");
+    WebInspector.PanelWithSidebar.call(this, "profiles");
     this.registerRequiredCSS("ui/panelEnablerView.css");
     this.registerRequiredCSS("profiler/heapProfiler.css");
     this.registerRequiredCSS("profiler/profilesPanel.css");
@@ -441,7 +441,12 @@ WebInspector.ProfilesPanel = function()
     this.splitView().setMainView(mainView);
 
     this.profilesItemTreeElement = new WebInspector.ProfilesSidebarTreeElement(this);
-    this.sidebarTree.appendChild(this.profilesItemTreeElement);
+
+    var sidebarTreeElement = this.panelSidebarElement().createChild("ol", "sidebar-tree");
+    this._sidebarTree = new TreeOutline(sidebarTreeElement);
+    this.setDefaultFocusedElement(sidebarTreeElement);
+
+    this._sidebarTree.appendChild(this.profilesItemTreeElement);
 
     this.profileViews = createElement("div");
     this.profileViews.id = "profile-views";
@@ -632,7 +637,7 @@ WebInspector.ProfilesPanel.prototype = {
         this._updateRecordButton(false);
         this._launcherView.profileFinished();
 
-        this.sidebarTree.element.classList.remove("some-expandable");
+        this._sidebarTree.element.classList.remove("some-expandable");
 
         this._launcherView.detach();
         this.profileViews.removeChildren();
@@ -663,7 +668,7 @@ WebInspector.ProfilesPanel.prototype = {
         this._launcherView.addProfileType(profileType);
         var profileTypeSection = new WebInspector.ProfileTypeSidebarSection(this, profileType);
         this._typeIdToSidebarSection[profileType.id] = profileTypeSection;
-        this.sidebarTree.appendChild(profileTypeSection);
+        this._sidebarTree.appendChild(profileTypeSection);
         profileTypeSection.childrenListElement.addEventListener("contextmenu", this._handleContextMenuEvent.bind(this), true);
 
         /**
@@ -902,7 +907,7 @@ WebInspector.ProfilesPanel.prototype = {
         contextMenu.appendItem(WebInspector.UIString.capitalize("Reveal in Summary ^view"), revealInView.bind(this, "Summary"));
     },
 
-    __proto__: WebInspector.PanelWithSidebarTree.prototype
+    __proto__: WebInspector.PanelWithSidebar.prototype
 }
 
 
@@ -1004,6 +1009,7 @@ WebInspector.ProfileTypeSidebarSection.prototype = {
             if (groupElements.length === 1) {
                 // Move the last profile out of its group and remove the group.
                 var pos = sidebarParent.children.indexOf(group.sidebarTreeElement);
+                group.sidebarTreeElement.removeChild(groupElements[0]);
                 this.insertChild(groupElements[0], pos);
                 groupElements[0].small = false;
                 groupElements[0].mainTitle = group.sidebarTreeElement.title;

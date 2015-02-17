@@ -114,13 +114,13 @@ WebInspector.ResourceType.prototype = {
  * @enum {!WebInspector.ResourceType}
  */
 WebInspector.resourceTypes = {
-    Document: new WebInspector.ResourceType("document", "Document", "Documents", "rgb(47,102,236)", true),
-    Stylesheet: new WebInspector.ResourceType("stylesheet", "Stylesheet", "Stylesheets", "rgb(157,231,119)", true),
+    XHR: new WebInspector.ResourceType("xhr", "XHR", "XHR", "rgb(231,231,10)", true),
+    Script: new WebInspector.ResourceType("script", "Script", "Script", "rgb(255,121,0)", true),
+    Stylesheet: new WebInspector.ResourceType("stylesheet", "Stylesheet", "Style", "rgb(157,231,119)", true),
     Image: new WebInspector.ResourceType("image", "Image", "Images", "rgb(164,60,255)", false),
     Media: new WebInspector.ResourceType("media", "Media", "Media", "rgb(164,60,255)", false), // FIXME: Decide the color.
-    Script: new WebInspector.ResourceType("script", "Script", "Scripts", "rgb(255,121,0)", true),
-    XHR: new WebInspector.ResourceType("xhr", "XHR", "XHR", "rgb(231,231,10)", true),
     Font: new WebInspector.ResourceType("font", "Font", "Fonts", "rgb(255,82,62)", false),
+    Document: new WebInspector.ResourceType("document", "Document", "Documents", "rgb(47,102,236)", true),
     TextTrack: new WebInspector.ResourceType("texttrack", "TextTrack", "TextTracks", "rgb(164,60,255)", true), // FIXME: Decide the color.
     WebSocket: new WebInspector.ResourceType("websocket", "WebSocket", "WebSockets", "rgb(186,186,186)", false), // FIXME: Decide the color.
     Other: new WebInspector.ResourceType("other", "Other", "Other", "rgb(186,186,186)", false)

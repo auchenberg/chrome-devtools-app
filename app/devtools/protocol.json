@@ -262,8 +262,7 @@
                 "name": "reload",
                 "parameters": [
                     { "name": "ignoreCache", "type": "boolean", "optional": true, "description": "If true, browser cache is ignored (as if the user pressed Shift+refresh)." },
-                    { "name": "scriptToEvaluateOnLoad", "type": "string", "optional": true, "description": "If set, the script will be injected into all frames of the inspected page after reload." },
-                    { "name": "scriptPreprocessor", "type": "string", "optional": true, "description": "Script body that should evaluate to function that will preprocess all the scripts before their compilation.", "hidden": true }
+                    { "name": "scriptToEvaluateOnLoad", "type": "string", "optional": true, "description": "If set, the script will be injected into all frames of the inspected page after reload." }
                 ],
                 "description": "Reloads given page optionally ignoring the cache.",
                 "handlers": ["browser", "renderer"]
@@ -629,7 +628,7 @@
                 "description": "Sets overlay message."
             },
             {
-                "name": "animationsPlaybackRate",
+                "name": "getAnimationsPlaybackRate",
                 "returns": [
                     { "name": "playbackRate", "type": "number", "description": "Playback rate for animations on page."}
                 ],
@@ -642,6 +641,14 @@
                     { "name": "playbackRate", "type": "number", "description": "Playback rate for animations on page" }
                 ],
                 "description": "Sets the playback rate of the document timeline.",
+                "hidden": true
+            },
+            {
+                "name": "setCurrentTime",
+                "parameters": [
+                    { "name": "currentTime", "type": "number", "description": "Current time for the page animation timeline" }
+                ],
+                "description": "Sets the current time of the document timeline.",
                 "hidden": true
             }
         ],
@@ -1395,7 +1402,6 @@
                 "name": "loadResourceForFrontend",
                 "async": true,
                 "parameters": [
-                    { "name": "frameId", "$ref": "Page.FrameId", "description": "Frame to load the resource from." },
                     { "name": "url", "type": "string", "description": "URL of the resource to load." },
                     { "name": "requestHeaders", "$ref": "Network.Headers", "optional": true, "description": "Request headers." }
                 ],
@@ -1405,6 +1411,15 @@
                     { "name": "content", "type": "string", "description": "Resource content." }
                 ],
                 "description": "Loads a resource in the context of a frame on the inspected page without cross origin checks.",
+                "hidden": true
+            },
+            {
+                "name": "setDataSizeLimitsForTest",
+                "parameters": [
+                    { "name": "maxTotalSize", "type": "integer", "description": "Maximum total buffer size." },
+                    { "name": "maxResourceSize", "type": "integer", "description": "Maximum per-resource size." }
+                ],
+                "description": "For testing.",
                 "hidden": true
             }
         ],
@@ -1538,6 +1553,18 @@
                     { "name": "requestId", "$ref": "RequestId", "description": "Request identifier." },
                     { "name": "timestamp", "$ref": "Timestamp", "description": "Timestamp." },
                     { "name": "response", "$ref": "WebSocketFrame", "description": "WebSocket response data." }
+                ],
+                "hidden": true
+            },
+            {
+                "name": "eventSourceMessageReceived",
+                "description": "Fired when EventSource message is received.",
+                "parameters": [
+                    { "name": "requestId", "$ref": "RequestId", "description": "Request identifier." },
+                    { "name": "timestamp", "$ref": "Timestamp", "description": "Timestamp." },
+                    { "name": "eventName", "type": "string", "description": "Message type." },
+                    { "name": "eventId", "type": "string", "description": "Message identifier." },
+                    { "name": "data", "type": "string", "description": "Message content." }
                 ],
                 "hidden": true
             }
@@ -2155,9 +2182,7 @@
                     { "name": "useCapture", "type": "boolean", "description": "<code>EventListener</code>'s useCapture." },
                     { "name": "isAttribute", "type": "boolean", "description": "<code>EventListener</code>'s isAttribute." },
                     { "name": "nodeId", "$ref": "NodeId", "description": "Target <code>DOMNode</code> id." },
-                    { "name": "handlerBody", "type": "string", "description": "Event handler function body." },
                     { "name": "location", "$ref": "Debugger.Location", "description": "Handler code location." },
-                    { "name": "sourceName", "type": "string", "optional": true, "description": "Source script URL." },
                     { "name": "handler", "$ref": "Runtime.RemoteObject", "optional": true, "description": "Event handler function value." }
                 ],
                 "description": "DOM interaction is implemented in terms of mirror objects that represent the actual DOM nodes. DOMNode is a base node mirror type."
@@ -2629,6 +2654,17 @@
                 ],
                 "description": "Returns the id of the nearest ancestor that is a relayout boundary.",
                 "hidden": true
+            },
+            {
+                "name": "getHighlightObjectForTest",
+                "parameters": [
+                    { "name": "nodeId", "$ref": "NodeId", "description": "Id of the node to get highlight object for." }
+                ],
+                "returns": [
+                    { "name": "highlight", "type": "object", "description": "Highlight data for the node." }
+                ],
+                "description": "For testing.",
+                "hidden": true
             }
         ],
         "events": [
@@ -2775,7 +2811,7 @@
                 "id": "PseudoIdMatches",
                 "type": "object",
                 "properties": [
-                    { "name": "pseudoId", "type": "integer", "description": "Pseudo style identifier (see <code>enum PseudoId</code> in <code>RenderStyleConstants.h</code>)."},
+                    { "name": "pseudoId", "type": "integer", "description": "Pseudo style identifier (see <code>enum PseudoId</code> in <code>LayoutStyleConstants.h</code>)."},
                     { "name": "matches", "type": "array", "items": { "$ref": "RuleMatch" }, "description": "Matches of CSS rules applicable to the pseudo style."}
                 ],
                 "description": "CSS rule collection for a single pseudo style."
@@ -3128,22 +3164,8 @@
     },
     {
         "domain": "Timeline",
-        "description": "Timeline provides its clients with instrumentation records that are generated during the page runtime. Timeline instrumentation can be started and stopped using corresponding commands. While timeline is started, it is generating timeline event records.",
+        "description": "Timeline domain is deprecated. Please use Tracing instead.",
         "types": [
-            {
-                "id": "Counters",
-                "type": "object",
-                "properties": [
-                    { "name": "documents", "type": "integer", "optional": true },
-                    { "name": "nodes", "type": "integer", "optional": true },
-                    { "name": "jsEventListeners", "type": "integer", "optional": true },
-                    { "name": "jsHeapSizeUsed", "type": "number", "optional": true, "description": "Currently used size of JS heap." },
-                    { "name": "gpuMemoryUsedKB", "type": "number", "optional": true, "description": "Current GPU memory usage in kilobytes." },
-                    { "name": "gpuMemoryLimitKB", "type": "number", "optional": true, "description": "Current GPU memory limit in kilobytes." }
-                ],
-                "description": "Current values of counters.",
-                "hidden": true
-            },
             {
                 "id": "TimelineEvent",
                 "type": "object",
@@ -3163,11 +3185,11 @@
         "commands": [
             {
                 "name": "enable",
-                "description": "Enables timeline. After this call, timeline can be started from within the page (for example upon console.timeline)."
+                "description": "Deprecated."
             },
             {
                 "name": "disable",
-                "description": "Disables timeline."
+                "description": "Deprecated."
             },
             {
                 "name": "start",
@@ -3178,11 +3200,11 @@
                     { "name": "includeCounters", "optional": true, "type": "boolean", "hidden": true, "description": "Whether counters data should be included into timeline events." },
                     { "name": "includeGPUEvents", "optional": true, "type": "boolean", "hidden": true, "description": "Whether events from GPU process should be collected." }
                 ],
-                "description": "Starts capturing instrumentation events."
+                "description": "Deprecated."
             },
             {
                 "name": "stop",
-                "description": "Stops capturing instrumentation events."
+                "description": "Deprecated."
             }
         ],
         "events": [
@@ -3191,31 +3213,7 @@
                 "parameters": [
                     { "name": "record", "$ref": "TimelineEvent", "description": "Timeline event record data." }
                 ],
-                "description": "Fired for every instrumentation event while timeline is started."
-            },
-            {
-                "name": "progress",
-                "parameters": [
-                    { "name": "count", "type": "number" }
-                ],
-                "hidden": true
-            },
-            {
-                "name": "started",
-                "parameters": [
-                    { "name": "consoleTimeline", "type": "boolean", "optional": true, "description": "If specified, identifies that timeline was started using console.timeline() call." }
-                ],
-                "description": "Fired when timeline is started.",
-                "hidden": true
-            },
-            {
-                "name": "stopped",
-                "parameters": [
-                    { "name": "consoleTimeline", "type": "boolean", "optional": true, "description": "If specified, identifies that timeline was started using console.timeline() call." },
-                    { "name": "events", "type": "array", "items": { "$ref": "TimelineEvent" }, "optional": true, "hidden": true, "description": "Timeline event record data." }
-                ],
-                "description": "Fired when timeline is stopped.",
-                "hidden": true
+                "description": "Deprecated."
             }
         ]
     },
@@ -3358,6 +3356,18 @@
                     { "name": "asyncCreationStack", "$ref": "Console.AsyncStackTrace", "optional": true, "description": "JavaScript asynchronous stack trace on promise creation, if available." },
                     { "name": "settlementStack", "$ref": "Console.StackTrace", "optional": true, "description": "JavaScript stack trace on promise settlement." },
                     { "name": "asyncSettlementStack", "$ref": "Console.AsyncStackTrace", "optional": true, "description": "JavaScript asynchronous stack trace on promise settlement, if available." }
+                ],
+                "hidden": true
+            },
+            {
+                "id": "AsyncOperation",
+                "type": "object",
+                "description": "Information about the async operation.",
+                "properties": [
+                    { "name": "id", "type": "integer", "description": "Unique id of the async operation." },
+                    { "name": "description", "type": "string", "description": "String description of the async operation." },
+                    { "name": "stackTrace", "$ref": "Console.StackTrace", "optional": true, "description": "Stack trace where async operation was scheduled." },
+                    { "name": "asyncStackTrace", "$ref": "Console.AsyncStackTrace", "optional": true, "description": "Asynchronous stack trace where async operation was scheduled, if available." }
                 ],
                 "hidden": true
             }
@@ -3578,6 +3588,7 @@
                 "parameters": [
                     { "name": "expression", "type": "string", "description": "Expression to compile." },
                     { "name": "sourceURL", "type": "string", "description": "Source url to be set for the script." },
+                    { "name": "persistScript", "type": "boolean", "description": "Specifies whether the compiled script should be persisted." },
                     { "name": "executionContextId", "$ref": "Runtime.ExecutionContextId", "optional": true, "description": "Specifies in which isolated context to perform script run. Each content script lives in an isolated context and this parameter may be used to specify one of those contexts. If the parameter is omitted or 0 the evaluation will be performed in the context of the inspected page." }
                 ],
                 "returns": [
@@ -3699,6 +3710,7 @@
                     { "name": "endLine", "type": "integer", "description": "Last line of the script." },
                     { "name": "endColumn", "type": "integer", "description": "Length of the last line of the script." },
                     { "name": "isContentScript", "type": "boolean", "optional": true, "description": "Determines whether this script is a user extension script." },
+                    { "name": "isInternalScript", "type": "boolean", "optional": true, "description": "Determines whether this script is an internal script.", "hidden": true },
                     { "name": "sourceMapURL", "type": "string", "optional": true, "description": "URL of source map associated with script (if any)." },
                     { "name": "hasSourceURL", "type": "boolean", "optional": true, "description": "True, if this script has sourceURL.", "hidden": true }
                 ],
@@ -3714,6 +3726,7 @@
                     { "name": "endLine", "type": "integer", "description": "Last line of the script." },
                     { "name": "endColumn", "type": "integer", "description": "Length of the last line of the script." },
                     { "name": "isContentScript", "type": "boolean", "optional": true, "description": "Determines whether this script is a user extension script." },
+                    { "name": "isInternalScript", "type": "boolean", "optional": true, "description": "Determines whether this script is an internal script.", "hidden": true },
                     { "name": "sourceMapURL", "type": "string", "optional": true, "description": "URL of source map associated with script (if any)." },
                     { "name": "hasSourceURL", "type": "boolean", "optional": true, "description": "True, if this script has sourceURL.", "hidden": true }
                 ],
@@ -3741,6 +3754,36 @@
             {
                 "name": "resumed",
                 "description": "Fired when the virtual machine resumed execution."
+            },
+            {
+                "name": "promiseUpdated",
+                "parameters": [
+                    { "name": "eventType", "type": "string", "enum": ["new", "update", "gc"], "description": "Type of the event." },
+                    { "name": "promise", "$ref": "PromiseDetails", "description": "Information about the updated <code>Promise</code>." }
+                ],
+                "description": "Fired when a <code>Promise</code> is created, updated or garbage collected.",
+                "hidden": true
+            },
+            {
+                "name": "asyncOperationStarted",
+                "parameters": [
+                    { "name": "operation", "$ref": "AsyncOperation", "description": "Information about the async operation." }
+                ],
+                "description": "Fired when an async operation is scheduled (while in a debugger stepping session).",
+                "hidden": true
+            },
+            {
+                "name": "asyncOperationCompleted",
+                "parameters": [
+                    { "name": "id", "type": "integer", "description": "ID of the async operation that was completed." }
+                ],
+                "description": "Fired when an async operation is completed (while in a debugger stepping session).",
+                "hidden": true
+            },
+            {
+                "name": "asyncOperationsCleared",
+                "description": "Fired when all async operations are cleared (e.g. fired upon exiting from a debugger stepping session).",
+                "hidden": true
             }
         ]
     },
@@ -4298,6 +4341,7 @@
                     { "name": "text", "type": "string", "optional": true, "description": "Text as generated by processing a virtual key code with a keyboard layout. Not needed for for <code>keyUp</code> and <code>rawKeyDown</code> events (default: \"\")" },
                     { "name": "unmodifiedText", "type": "string", "optional": true, "description": "Text that would have been generated by the keyboard if no modifiers were pressed (except for shift). Useful for shortcut (accelerator) key handling (default: \"\")." },
                     { "name": "keyIdentifier", "type": "string", "optional": true, "description": "Unique key identifier (e.g., 'U+0041') (default: \"\")." },
+                    { "name": "code", "type": "string", "optional": true, "description": "Unique DOM defined string value for each physical key (e.g., 'KeyA') (default: \"\")." },
                     { "name": "windowsVirtualKeyCode", "type": "integer", "optional": true, "description": "Windows virtual key code (default: 0)." },
                     { "name": "nativeVirtualKeyCode", "type": "integer", "optional": true, "description": "Native virtual key code (default: 0)." },
                     { "name": "autoRepeat", "type": "boolean", "optional": true, "description": "Whether the event was generated from auto repeat (default: false)." },
@@ -4358,7 +4402,7 @@
             {
                 "id": "LayerId",
                 "type": "string",
-                "description": "Unique RenderLayer identifier."
+                "description": "Unique Layer identifier."
             },
             {
                 "id": "SnapshotId",
@@ -4534,7 +4578,6 @@
     },
     {
         "domain": "Tracing",
-        "hidden": true,
         "commands": [
             {
                 "name": "start",
@@ -4659,7 +4702,8 @@
                     { "name": "playbackRate", "type": "number", "description": "<code>AnimationPlayer</code>'s playback rate." },
                     { "name": "startTime", "type": "number", "description": "<code>AnimationPlayer</code>'s start time." },
                     { "name": "currentTime", "type": "number", "description": "<code>AnimationPlayer</code>'s current time." },
-                    { "name": "source", "$ref": "AnimationNode", "description": "<code>AnimationPlayer</code>'s source animation node." }
+                    { "name": "source", "$ref": "AnimationNode", "description": "<code>AnimationPlayer</code>'s source animation node." },
+                    { "name": "type", "type": "string", "enum": ["CSSTransition", "CSSAnimation", "WebAnimation"], "description": "Animation type of <code>AnimationPlayer</code>." }
                 ],
                 "description": "AnimationPlayer instance."
             },
@@ -4668,17 +4712,17 @@
                 "type": "object",
                 "hidden": true,
                 "properties": [
-                    { "name": "startDelay", "type": "number", "description": "<code>AnimationNode</code>'s start delay." },
+                    { "name": "delay", "type": "number", "description": "<code>AnimationNode</code>'s delay." },
                     { "name": "playbackRate", "type": "number", "description": "<code>AnimationNode</code>'s playbackRate." },
                     { "name": "iterationStart", "type": "number", "description": "<code>AnimationNode</code>'s iteration start." },
-                    { "name": "iterationCount", "type": "number", "description": "<code>AnimationNode</code>'s iteration count." },
+                    { "name": "iterations", "type": "number", "description": "<code>AnimationNode</code>'s iterations." },
                     { "name": "duration", "type": "number", "description": "<code>AnimationNode</code>'s iteration duration." },
-                    { "name": "direction", "type": "number", "description": "<code>AnimationNode</code>'s playback direction." },
-                    { "name": "fillMode", "type": "number", "description": "<code>AnimationNode</code>'s fill mode." },
-                    { "name": "timeFraction", "type": "number", "description": "<code>AnimationNode</code>'s time fraction." },
+                    { "name": "direction", "type": "string", "description": "<code>AnimationNode</code>'s playback direction." },
+                    { "name": "fill", "type": "string", "description": "<code>AnimationNode</code>'s fill mode." },
                     { "name": "name", "type": "string", "description": "<code>AnimationNode</code>'s name." },
                     { "name": "backendNodeId", "$ref": "DOM.BackendNodeId", "description": "<code>AnimationNode</code>'s target node." },
-                    { "name": "keyframesRule", "$ref": "KeyframesRule", "optional": true, "description": "<code>AnimationNode</code>'s keyframes." }
+                    { "name": "keyframesRule", "$ref": "KeyframesRule", "optional": true, "description": "<code>AnimationNode</code>'s keyframes." },
+                    { "name": "easing", "type": "string", "description": "<code>AnimationNode</code>'s timing function." }
                 ],
                 "description": "AnimationNode instance"
             },
@@ -4696,7 +4740,8 @@
                 "type": "object",
                 "properties": [
                     { "name": "offset", "type": "string", "description": "Keyframe's time offset." },
-                    { "name": "style", "$ref": "CSS.CSSStyle", "description": "Keyframe's associated CSS style declaration." }
+                    { "name": "style", "$ref": "CSS.CSSStyle", "description": "Keyframe's associated CSS style declaration." },
+                    { "name": "easing", "type": "string", "description": "<code>AnimationNode</code>'s timing function." }
                 ],
                 "description": "Keyframe Style"
             }
@@ -4717,73 +4762,14 @@
                 ],
                 "description": "Returns animation players relevant to the node.",
                 "hidden": true
-            },
-            {
-                "name": "pauseAnimationPlayer",
-                "parameters": [
-                    { "name": "id", "type": "string", "description": "Id of the animation player." }
-                ],
-                "returns": [
-                    { "name": "animationPlayer", "$ref": "AnimationPlayer", "description": "Animation Player with current time set." }
-                ],
-                "description": "Pauses animations relevant to the node.",
-                "hidden": true
-            },
-            {
-                "name": "playAnimationPlayer",
-                "parameters": [
-                    { "name": "id", "type": "string", "description": "Id of the animation player." }
-                ],
-                "returns": [
-                    { "name": "animationPlayer", "$ref": "AnimationPlayer", "description": "Animation Player with current time set." }
-                ],
-                "description": "Plays animations relevant to the node.",
-                "hidden": true
-            },
-            {
-                "name": "setAnimationPlayerCurrentTime",
-                "parameters": [
-                    { "name": "id", "type": "string", "description": "Id of the animation player." },
-                    { "name": "currentTime", "type": "number", "description": "Current time to set animation to"}
-                ],
-                "returns": [
-                    { "name": "animationPlayer", "$ref": "AnimationPlayer", "description": "Animation Player with current time set." }
-                ],
-                "description": "Sets the current time on given AnimationPlayer.",
-                "hidden": true
-            },
-            {
-                "name": "getAnimationPlayerState",
-                "parameters": [
-                    { "name": "id", "type": "string", "description": "Id of the animation player." }
-                ],
-                "returns": [
-                    { "name": "currentTime", "type": "number", "description": "Current time of the animation player." },
-                    { "name": "isRunning", "type": "boolean", "description": "If the animation player is still running." }
-                ],
-                "description": "Gets the state of an AnimationPlayer.",
-                "hidden": true
-            },
-            {
-                "name": "startListening",
-                "parameters": [
-                    { "name": "nodeId", "$ref": "DOM.NodeId", "description": "Id of the node to record on." },
-                    { "name": "includeSubtreeAnimations", "type": "boolean", "description": "Include animations from elements subtree." }
-                ],
-                "description": "Sets the parameters of recording for new animations events.",
-                "hidden": true
-            },
-            {
-                "name": "stopListening",
-                "description": "Stops recording for new animation player events.",
-                "hidden": true
             }
         ],
         "events": [
             {
                 "name": "animationPlayerCreated",
                 "parameters": [
-                    { "name": "player", "$ref": "AnimationPlayer", "description": "AnimationPlayer that was created." }
+                    { "name": "player", "$ref": "AnimationPlayer", "description": "AnimationPlayer that was created." },
+                    { "name": "resetTimeline", "type": "boolean", "description": "Whether the timeline should be reset." }
                 ],
                 "hidden": true
             }

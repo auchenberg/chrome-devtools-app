@@ -30,12 +30,16 @@
 
 /**
  * @constructor
+ * @param {!WebInspector.LayerViewHost} layerViewHost
  * @extends {WebInspector.View}
+ * @implements {WebInspector.LayerView}
  */
-WebInspector.LayerDetailsView = function()
+WebInspector.LayerDetailsView = function(layerViewHost)
 {
     WebInspector.View.call(this);
     this.element.classList.add("layer-details-view");
+    this._layerViewHost = layerViewHost;
+    this._layerViewHost.registerView(this);
     this._emptyView = new WebInspector.EmptyView(WebInspector.UIString("Select a layer to see its details"));
     this._buildContent();
 }
@@ -44,7 +48,6 @@ WebInspector.LayerDetailsView = function()
  * @enum {string}
  */
 WebInspector.LayerDetailsView.Events = {
-    ObjectSelected: "ObjectSelected",
     PaintProfilerRequested: "PaintProfilerRequested"
 }
 
@@ -84,19 +87,33 @@ WebInspector.LayerDetailsView.CompositingReasonDetail = {
     "layerForForeground": WebInspector.UIString("Layer for foreground."),
     "layerForBackground": WebInspector.UIString("Layer for background."),
     "layerForMask": WebInspector.UIString("Layer for mask."),
-    "layerForVideoOverlay": WebInspector.UIString("Layer for video overlay.")
+    "layerForVideoOverlay": WebInspector.UIString("Layer for video overlay."),
+    "scrollBlocksOn": WebInspector.UIString("Composition due to association with an element with a CSS \"scroll-blocks-on\" property applied."),
 };
 
 WebInspector.LayerDetailsView.prototype = {
     /**
-     * @param {?WebInspector.Layers3DView.Selection} selection
+     * @param {?WebInspector.LayerView.Selection} selection
+     * @override
      */
-    setObject: function(selection)
+    hoverObject: function(selection) { },
+
+    /**
+     * @param {?WebInspector.LayerView.Selection} selection
+     * @override
+     */
+    selectObject: function(selection)
     {
         this._selection = selection;
         if (this.isShowing())
             this.update();
     },
+
+    /**
+     * @param {?WebInspector.LayerTreeBase} layerTree
+     * @override
+     */
+    setLayerTree: function(layerTree) { },
 
     wasShown: function()
     {
@@ -112,7 +129,7 @@ WebInspector.LayerDetailsView.prototype = {
     {
         if (event.which !== 1)
             return;
-        this.dispatchEventToListeners(WebInspector.LayerDetailsView.Events.ObjectSelected, new WebInspector.Layers3DView.ScrollRectSelection(this._selection.layer, index));
+        this._layerViewHost.selectObject(new WebInspector.LayerView.ScrollRectSelection(this._selection.layer(), index));
     },
 
     _onPaintProfilerButtonClicked: function()
@@ -138,7 +155,7 @@ WebInspector.LayerDetailsView.prototype = {
 
     update: function()
     {
-        var layer = this._selection && this._selection.layer;
+        var layer = this._selection && this._selection.layer();
         if (!layer) {
             this._tableElement.remove();
             this._paintProfilerButton.remove();
