@@ -12,4 +12,7 @@ find app/devtools -name '.svn' -type d -exec rm -rf {} \; > /dev/null
 echo "Building generated scripts needed for DevTools"
 node --harmony ./scripts/build_generated_scripts.js
 
+echo "Injecting overrides needed for DevTools"
+node --harmony ./scripts/inject_overrides.js
+
 echo "Done."

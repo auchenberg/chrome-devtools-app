@@ -23,5 +23,3 @@ fs.writeFileSync(__dirname + '/../app/devtools/front_end/InspectorBackendCommand
 // Generate empty SupportedCSSProperties.js for now.
 var supportedCSSPropertiesContent = 'WebInspector.CSSMetadata.initializeWithSupportedProperties({});'
 fs.writeFileSync(__dirname + '/../app/devtools/front_end/SupportedCSSProperties.js', supportedCSSPropertiesContent);
-
-
