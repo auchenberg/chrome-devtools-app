@@ -40,7 +40,6 @@ WebInspector.SASSSourceMapping = function(cssModel, workspace, networkMapping, n
 {
     this.pollPeriodMs = 30 * 1000;
     this.pollIntervalMs = 200;
-
     this._cssModel = cssModel;
     this._workspace = workspace;
     this._networkProject = networkProject;
@@ -164,7 +163,7 @@ WebInspector.SASSSourceMapping.prototype = {
         if (wasLoadedFromFileSystem)
             sassFile.requestMetadata(metadataReceived.bind(this));
         else
-            NetworkAgent.loadResourceForFrontend(WebInspector.resourceTreeModel.mainFrame.id, sassURL, undefined, sassLoadedViaNetwork.bind(this));
+            WebInspector.NetworkManager.loadResourceForFrontend(sassURL, undefined, sassLoadedViaNetwork.bind(this));
 
         /**
          * @param {?Protocol.Error} error
@@ -285,7 +284,7 @@ WebInspector.SASSSourceMapping.prototype = {
             return;
         }
         var headers = { "if-modified-since": new Date(data.sassTimestamp.getTime() - 1000).toUTCString() };
-        NetworkAgent.loadResourceForFrontend(WebInspector.resourceTreeModel.mainFrame.id, cssURL, headers, contentLoaded.bind(this));
+        WebInspector.NetworkManager.loadResourceForFrontend(cssURL, headers, contentLoaded.bind(this));
 
         /**
          * @param {?Protocol.Error} error
@@ -410,7 +409,7 @@ WebInspector.SASSSourceMapping.prototype = {
      */
     addHeader: function(header)
     {
-        if (!header.sourceMapURL || !header.sourceURL || header.isInline || !WebInspector.settings.cssSourceMapsEnabled.get())
+        if (!header.sourceMapURL || !header.sourceURL || !WebInspector.settings.cssSourceMapsEnabled.get())
             return;
         var completeSourceMapURL = WebInspector.ParsedURL.completeURL(header.sourceURL, header.sourceMapURL);
         if (!completeSourceMapURL)
@@ -425,7 +424,7 @@ WebInspector.SASSSourceMapping.prototype = {
     removeHeader: function(header)
     {
         var sourceURL = header.sourceURL;
-        if (!sourceURL || !header.sourceMapURL || header.isInline || !this._completeSourceMapURLForCSSURL[sourceURL])
+        if (!sourceURL || !header.sourceMapURL || !this._completeSourceMapURLForCSSURL[sourceURL])
             return;
         delete this._sourceMapByStyleSheetURL[sourceURL];
         delete this._completeSourceMapURLForCSSURL[sourceURL];

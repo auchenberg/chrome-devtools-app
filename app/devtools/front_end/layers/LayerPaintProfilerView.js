@@ -28,7 +28,7 @@ WebInspector.LayerPaintProfilerView.prototype = {
     {
         this._logTreeView.setCommandLog(null, []);
         this._paintProfilerView.setSnapshotAndLog(null, [], null);
-        layer.requestSnapshot(onSnapshotDone.bind(this));
+        /** @type {!WebInspector.AgentLayer} */ (layer).requestSnapshot(onSnapshotDone.bind(this));
 
         /**
          * @param {!WebInspector.PaintProfilerSnapshot=} snapshot

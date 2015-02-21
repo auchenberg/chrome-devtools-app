@@ -29,6 +29,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+WebInspector.highlightedSearchResultClassName = "highlighted-search-result";
+
 /**
  * @param {!Element} element
  * @param {?function(!MouseEvent): boolean} elementDragStart
@@ -377,7 +379,7 @@ WebInspector.handleElementValueModifications = function(event, element, finishHa
     if (!arrowKeyOrMouseWheelEvent && !pageKeyPressed)
         return false;
 
-    var selection = element.window().getSelection();
+    var selection = element.getComponentSelection();
     if (!selection.rangeCount)
         return false;
 
@@ -720,7 +722,7 @@ WebInspector.setCurrentFocusElement = function(x)
         // Make a caret selection inside the new element if there isn't a range selection and there isn't already a caret selection inside.
         // This is needed (at least) to remove caret from console when focus is moved to some element in the panel.
         // The code below should not be applied to text fields and text areas, hence _isTextEditingElement check.
-        var selection = x.window().getSelection();
+        var selection = x.getComponentSelection();
         if (!WebInspector._isTextEditingElement(WebInspector._currentFocusElement) && selection.isCollapsed && !WebInspector._currentFocusElement.isInsertionCaretInside()) {
             var selectionRange = WebInspector._currentFocusElement.ownerDocument.createRange();
             selectionRange.setStart(WebInspector._currentFocusElement, 0);
@@ -800,15 +802,16 @@ WebInspector.highlightSearchResult = function(element, offset, length, domChange
  */
 WebInspector.highlightSearchResults = function(element, resultRanges, changes)
 {
-    return WebInspector.highlightRangesWithStyleClass(element, resultRanges, "highlighted-search-result", changes);
+    return WebInspector.highlightRangesWithStyleClass(element, resultRanges, WebInspector.highlightedSearchResultClassName, changes);
 }
 
 /**
  * @param {!Element} element
+ * @param {string} styleClass
  */
-WebInspector.removeSearchResultsHighlight = function(element)
+WebInspector.removeSearchResultsHighlight = function(element, styleClass)
 {
-    var highlightBits = element.querySelectorAll(".highlighted-search-result");
+    var highlightBits = element.querySelectorAll("." + styleClass);
     for (var i = 0; i < highlightBits.length; ++i) {
         var span = highlightBits[i];
         span.parentElement.replaceChild(createTextNode(span.textContent), span);
@@ -845,20 +848,19 @@ WebInspector.highlightRangesWithStyleClass = function(element, resultRanges, sty
 {
     changes = changes || [];
     var highlightNodes = [];
-    var lineText = element.textContent;
+    var lineText = element.deepTextContent();
     var ownerDocument = element.ownerDocument;
-    var textNodeSnapshot = ownerDocument.evaluate(".//text()", element, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    var textNodes = element.childTextNodes();
 
-    var snapshotLength = textNodeSnapshot.snapshotLength;
-    if (snapshotLength === 0)
+    if (textNodes.length === 0)
         return highlightNodes;
 
     var nodeRanges = [];
     var rangeEndOffset = 0;
-    for (var i = 0; i < snapshotLength; ++i) {
+    for (var i = 0; i < textNodes.length; ++i) {
         var range = {};
         range.offset = rangeEndOffset;
-        range.length = textNodeSnapshot.snapshotItem(i).textContent.length;
+        range.length = textNodes[i].textContent.length;
         rangeEndOffset = range.offset + range.length;
         nodeRanges.push(range);
     }
@@ -868,19 +870,19 @@ WebInspector.highlightRangesWithStyleClass = function(element, resultRanges, sty
         var startOffset = resultRanges[i].offset;
         var endOffset = startOffset + resultRanges[i].length;
 
-        while (startIndex < snapshotLength && nodeRanges[startIndex].offset + nodeRanges[startIndex].length <= startOffset)
+        while (startIndex < textNodes.length && nodeRanges[startIndex].offset + nodeRanges[startIndex].length <= startOffset)
             startIndex++;
         var endIndex = startIndex;
-        while (endIndex < snapshotLength && nodeRanges[endIndex].offset + nodeRanges[endIndex].length < endOffset)
+        while (endIndex < textNodes.length && nodeRanges[endIndex].offset + nodeRanges[endIndex].length < endOffset)
             endIndex++;
-        if (endIndex === snapshotLength)
+        if (endIndex === textNodes.length)
             break;
 
         var highlightNode = ownerDocument.createElement("span");
         highlightNode.className = styleClass;
         highlightNode.textContent = lineText.substring(startOffset, endOffset);
 
-        var lastTextNode = textNodeSnapshot.snapshotItem(endIndex);
+        var lastTextNode = textNodes[endIndex];
         var lastText = lastTextNode.textContent;
         lastTextNode.textContent = lastText.substring(endOffset - nodeRanges[endIndex].offset);
         changes.push({ node: lastTextNode, type: "changed", oldText: lastText, newText: lastTextNode.textContent });
@@ -894,7 +896,7 @@ WebInspector.highlightRangesWithStyleClass = function(element, resultRanges, sty
             lastTextNode.parentElement.insertBefore(prefixNode, highlightNode);
             changes.push({ node: prefixNode, type: "added", nextSibling: highlightNode, parent: lastTextNode.parentElement });
         } else {
-            var firstTextNode = textNodeSnapshot.snapshotItem(startIndex);
+            var firstTextNode = textNodes[startIndex];
             var firstText = firstTextNode.textContent;
             var anchorElement = firstTextNode.nextSibling;
 
@@ -906,7 +908,7 @@ WebInspector.highlightRangesWithStyleClass = function(element, resultRanges, sty
             changes.push({ node: firstTextNode, type: "changed", oldText: firstText, newText: firstTextNode.textContent });
 
             for (var j = startIndex + 1; j < endIndex; j++) {
-                var textNode = textNodeSnapshot.snapshotItem(j);
+                var textNode = textNodes[j];
                 var text = textNode.textContent;
                 textNode.textContent = "";
                 changes.push({ node: textNode, type: "changed", oldText: text, newText: textNode.textContent });
@@ -1391,3 +1393,57 @@ function createCheckboxLabel(title, checked)
         }
     });
 })();
+
+/**
+ * @constructor
+ */
+WebInspector.StringFormatter = function()
+{
+    this._processors = [];
+    this._regexes = [];
+}
+
+WebInspector.StringFormatter.prototype = {
+    /**
+     * @param {!RegExp} regex
+     * @param {function(string):!Node} handler
+     */
+    addProcessor: function(regex, handler)
+    {
+        this._regexes.push(regex);
+        this._processors.push(handler);
+    },
+
+    /**
+     * @param {string} text
+     * @return {!Node}
+     */
+    formatText: function(text)
+    {
+        return this._runProcessor(0, text);
+    },
+
+    /**
+     * @param {number} processorIndex
+     * @param {string} text
+     * @return {!Node}
+     */
+    _runProcessor: function(processorIndex, text)
+    {
+        if (processorIndex >= this._processors.length)
+            return createTextNode(text);
+
+        var container = createDocumentFragment();
+        var regex = this._regexes[processorIndex];
+        var processor = this._processors[processorIndex];
+
+        // Due to the nature of regex, |items| array has matched elements on its even indexes.
+        var items = text.replace(regex, "\0$1\0").split("\0");
+        for (var i = 0; i < items.length; ++i) {
+            var processedNode = i % 2 ? processor(items[i]) : this._runProcessor(processorIndex + 1, items[i]);
+            container.appendChild(processedNode);
+        }
+
+        return container;
+    }
+}

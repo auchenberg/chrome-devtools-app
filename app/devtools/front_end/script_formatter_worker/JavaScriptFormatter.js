@@ -184,6 +184,8 @@ FormatterWorker.JavaScriptFormatter.prototype = {
     {
         this._expect(FormatterWorker.JavaScriptTokens.FUNCTION);
         this._builder.addSpace();
+        if (this._peek() === FormatterWorker.JavaScriptTokens.MUL)
+            this._next();
         this._expect(FormatterWorker.JavaScriptTokens.IDENTIFIER);
         this._parseFunctionLiteral();
     },

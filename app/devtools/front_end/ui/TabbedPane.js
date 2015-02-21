@@ -291,11 +291,7 @@ WebInspector.TabbedPane.prototype = {
      */
     allTabs: function()
     {
-        var result = [];
-        var tabs = this._tabs.slice();
-        for (var i = 0; i < tabs.length; ++i)
-            result.push(tabs[i].id);
-        return result;
+        return this._tabs.map(function (tab) { return tab.id; });
     },
 
     /**
@@ -305,12 +301,29 @@ WebInspector.TabbedPane.prototype = {
     otherTabs: function(id)
     {
         var result = [];
-        var tabs = this._tabs.slice();
-        for (var i = 0; i < tabs.length; ++i) {
-            if (tabs[i].id !== id)
-                result.push(tabs[i].id);
+        for (var i = 0; i < this._tabs.length; ++i) {
+            if (this._tabs[i].id !== id)
+                result.push(this._tabs[i].id);
         }
         return result;
+    },
+
+    /**
+     * @param {string} id
+     * @return {!Array.<string>}
+     */
+    _tabsToTheRight: function(id)
+    {
+        var index = -1;
+        for (var i = 0; i < this._tabs.length; ++i) {
+            if (this._tabs[i].id === id) {
+                index = i;
+                break;
+            }
+        }
+        if (index === -1)
+            return [];
+        return this._tabs.slice(index + 1).map(function (tab) { return tab.id; });
     },
 
     /**
@@ -1071,9 +1084,18 @@ WebInspector.TabbedPaneTab.prototype = {
             this._closeTabs(this._tabbedPane.allTabs());
         }
 
+        /**
+         * @this {WebInspector.TabbedPaneTab}
+         */
+        function closeToTheRight()
+        {
+            this._closeTabs(this._tabbedPane._tabsToTheRight(this.id));
+        }
+
         var contextMenu = new WebInspector.ContextMenu(event);
         contextMenu.appendItem(WebInspector.UIString.capitalize("Close"), close.bind(this));
         contextMenu.appendItem(WebInspector.UIString.capitalize("Close ^others"), closeOthers.bind(this));
+        contextMenu.appendItem(WebInspector.UIString.capitalize("Close ^tabs to the ^right"), closeToTheRight.bind(this));
         contextMenu.appendItem(WebInspector.UIString.capitalize("Close ^all"), closeAll.bind(this));
         contextMenu.show();
     },

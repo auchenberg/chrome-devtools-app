@@ -216,9 +216,9 @@ WebInspector.ConsoleViewMessage.prototype = {
             if (consoleMessage.scriptId) {
                 this._anchorElement = this._linkifyScriptId(consoleMessage.scriptId, consoleMessage.url || "", consoleMessage.line, consoleMessage.column);
             } else {
-                var useBlackboxing = (consoleMessage.source === WebInspector.ConsoleMessage.MessageSource.ConsoleAPI);
-                var callFrame = this._callFrameAnchorFromStackTrace(consoleMessage.stackTrace, useBlackboxing);
-                if (callFrame)
+                var showBlackboxed = (consoleMessage.source !== WebInspector.ConsoleMessage.MessageSource.ConsoleAPI);
+                var callFrame = WebInspector.DebuggerPresentationUtils.callFrameAnchorFromStackTrace(this._target(), consoleMessage.stackTrace, consoleMessage.asyncStackTrace, showBlackboxed);
+                if (callFrame && callFrame.scriptId)
                     this._anchorElement = this._linkifyCallFrame(callFrame);
                 else if (consoleMessage.url && consoleMessage.url !== "undefined")
                     this._anchorElement = this._linkifyLocation(consoleMessage.url, consoleMessage.line, consoleMessage.column);
@@ -234,10 +234,7 @@ WebInspector.ConsoleViewMessage.prototype = {
 
         var dumpStackTrace = !!consoleMessage.stackTrace && consoleMessage.stackTrace.length && (consoleMessage.source === WebInspector.ConsoleMessage.MessageSource.Network || consoleMessage.level === WebInspector.ConsoleMessage.MessageLevel.Error || consoleMessage.type === WebInspector.ConsoleMessage.MessageType.Trace);
         if (dumpStackTrace) {
-            var ol = createElement("ol");
-            ol.className = "outline-disclosure";
-            var treeOutline = new TreeOutline(ol);
-
+            var treeOutline = new TreeOutline(createElementWithClass("ol", "outline-disclosure outline-disclosure-no-padding"));
             var content = this._formattedMessage;
             var root = new TreeElement(content, null, true);
             root.toggleOnClick = true;
@@ -248,14 +245,14 @@ WebInspector.ConsoleViewMessage.prototype = {
                 root.expand();
 
             this._populateStackTraceTreeElement(root);
-            this._formattedMessage = ol;
+            this._formattedMessage = treeOutline.element;
         }
     },
 
     _formattedMessageText: function()
     {
         this.formattedMessage();
-        return this._messageElement.textContent;
+        return this._messageElement.deepTextContent();
     },
 
     /**
@@ -317,30 +314,6 @@ WebInspector.ConsoleViewMessage.prototype = {
         lineNumber = lineNumber ? lineNumber - 1 : 0;
         columnNumber = columnNumber ? columnNumber - 1 : 0;
         return this._linkifier.linkifyScriptLocation(target, scriptId, url, lineNumber, columnNumber, "console-message-url");
-    },
-
-    /**
-     * @param {?Array.<!ConsoleAgent.CallFrame>|undefined} stackTrace
-     * @param {boolean} useBlackboxing
-     * @return {?ConsoleAgent.CallFrame}
-     */
-    _callFrameAnchorFromStackTrace: function(stackTrace, useBlackboxing)
-    {
-        if (!stackTrace || !stackTrace.length)
-            return null;
-        var callFrame = stackTrace[0].scriptId ? stackTrace[0] : null;
-        if (!useBlackboxing)
-            return callFrame;
-        var target = this._target();
-        for (var i = 0; i < stackTrace.length; ++i) {
-            var script = target && target.debuggerModel.scriptForId(stackTrace[i].scriptId);
-            var blackboxed = script ?
-                WebInspector.BlackboxSupport.isBlackboxed(script.sourceURL, script.isContentScript()) :
-                WebInspector.BlackboxSupport.isBlackboxedURL(stackTrace[i].url);
-            if (!blackboxed)
-                return stackTrace[i].scriptId ? stackTrace[i] : null;
-        }
-        return callFrame;
     },
 
     /**
@@ -517,14 +490,44 @@ WebInspector.ConsoleViewMessage.prototype = {
     _appendPropertiesPreview: function(parentElement, preview, object)
     {
         var isArray = preview.subtype === "array";
+        var arrayLength = WebInspector.RemoteObject.arrayLength(preview);
+        var properties = preview.properties;
+        if (isArray)
+            properties = properties.slice().stableSort(compareIndexesFirst);
+
+        /**
+         * @param {!RuntimeAgent.PropertyPreview} a
+         * @param {!RuntimeAgent.PropertyPreview} b
+         */
+        function compareIndexesFirst(a, b)
+        {
+            var index1 = toArrayIndex(a.name);
+            var index2 = toArrayIndex(b.name);
+            if (index1 < 0)
+                return index2 < 0 ? 0 : 1;
+            return index2 < 0 ? -1 : index1 - index2;
+        }
+
+        /**
+         * @param {string} name
+         * @return {number}
+         */
+        function toArrayIndex(name)
+        {
+            var index = name >>> 0;
+            if (String(index) === name && index < arrayLength)
+                return index;
+            return -1;
+        }
+
         parentElement.createTextChild(isArray ? "[" : "{");
-        for (var i = 0; i < preview.properties.length; ++i) {
+        for (var i = 0; i < properties.length; ++i) {
             if (i > 0)
                 parentElement.createTextChild(", ");
 
-            var property = preview.properties[i];
+            var property = properties[i];
             var name = property.name;
-            if (!isArray || name != i) {
+            if (!isArray || name != i || i >= arrayLength) {
                 if (/^\s|\s$|^$|\n/.test(name))
                     parentElement.createChild("span", "name").createTextChildren("\"", name.replace(/\n/g, "\u21B5"), "\"");
                 else
@@ -640,7 +643,7 @@ WebInspector.ConsoleViewMessage.prototype = {
      */
     useArrayPreviewInFormatter: function(array)
     {
-        return this._message.type !== WebInspector.ConsoleMessage.MessageType.DirXML && !!array.preview;
+        return this._message.type !== WebInspector.ConsoleMessage.MessageType.DirXML;
     },
 
     /**
@@ -649,16 +652,11 @@ WebInspector.ConsoleViewMessage.prototype = {
      */
     _formatParameterAsArray: function(array, elem)
     {
-        if (this.useArrayPreviewInFormatter(array)) {
-            this._formatParameterAsArrayOrObject(array, elem, true);
-            return;
-        }
-
-        const maxFlatArrayLength = 100;
-        if (this._message.isOutdated || array.arrayLength() > maxFlatArrayLength)
-            this._formatParameterAsObject(array, elem, false);
+        var maxFlatArrayLength = 100;
+        if (this.useArrayPreviewInFormatter(array) || array.arrayLength() > maxFlatArrayLength)
+            this._formatParameterAsArrayOrObject(array, elem, this.useArrayPreviewInFormatter(array) || array.arrayLength() <= maxFlatArrayLength);
         else
-            array.getOwnProperties(this._printArray.bind(this, array, elem));
+            array.getAllProperties(false, this._printArray.bind(this, array, elem));
     },
 
     /**
@@ -750,8 +748,10 @@ WebInspector.ConsoleViewMessage.prototype = {
      */
     _printArray: function(array, elem, properties)
     {
-        if (!properties)
+        if (!properties) {
+            this._formatParameterAsObject(array, elem, false);
             return;
+        }
 
         var elements = [];
         for (var i = 0; i < properties.length; ++i) {
@@ -958,35 +958,12 @@ WebInspector.ConsoleViewMessage.prototype = {
         return String.format(format, parameters, formatters, formattedResult, append);
     },
 
-    clearHighlight: function()
+    clearHighlights: function()
     {
         if (!this._formattedMessage)
             return;
 
-        WebInspector.removeSearchResultsHighlight(this._formattedMessage);
-    },
-
-    highlightSearchResults: function(regexObject)
-    {
-        if (!this._formattedMessage)
-            return;
-
-        this._highlightSearchResultsInElement(regexObject, this._messageElement);
-        if (this._anchorElement)
-            this._highlightSearchResultsInElement(regexObject, this._anchorElement);
-    },
-
-    _highlightSearchResultsInElement: function(regexObject, element)
-    {
-        regexObject.lastIndex = 0;
-        var text = element.textContent;
-        var match = regexObject.exec(text);
-        var matchRanges = [];
-        while (match) {
-            matchRanges.push(new WebInspector.SourceRange(match.index, match[0].length));
-            match = regexObject.exec(text);
-        }
-        WebInspector.highlightSearchResults(element, matchRanges);
+        WebInspector.removeSearchResultsHighlight(this._formattedMessage, WebInspector.highlightedSearchResultClassName);
     },
 
     /**
@@ -995,7 +972,10 @@ WebInspector.ConsoleViewMessage.prototype = {
     matchesRegex: function(regexObject)
     {
         regexObject.lastIndex = 0;
-        return regexObject.test(this._formattedMessageText()) || (!!this._anchorElement && regexObject.test(this._anchorElement.textContent));
+        var text = this._formattedMessageText();
+        if (this._anchorElement)
+            text += " " + this._anchorElement.textContent;
+        return regexObject.test(text);
     },
 
     /**
@@ -1008,7 +988,7 @@ WebInspector.ConsoleViewMessage.prototype = {
 
         if (show && !this.timestampElement) {
             this.timestampElement = this._element.createChild("span", "console-timestamp");
-            this.timestampElement.textContent = (new Date(this._message.timestamp)).toConsoleTime();
+            this.timestampElement.textContent = (new Date(this._message.timestamp)).toConsoleTime() + " ";
             var afterRepeatCountChild = this._repeatCountElement && this._repeatCountElement.nextSibling;
             this._element.insertBefore(this.timestampElement, afterRepeatCountChild || this._element.firstChild);
             return;
@@ -1118,44 +1098,12 @@ WebInspector.ConsoleViewMessage.prototype = {
      */
     _populateStackTraceTreeElement: function(parentTreeElement)
     {
-        /**
-         * @param {!Array.<!ConsoleAgent.CallFrame>=} stackTrace
-         * @this {WebInspector.ConsoleViewMessage}
-         */
-        function appendStackTrace(stackTrace)
-        {
-            if (!stackTrace)
-                return;
-
-            for (var i = 0; i < stackTrace.length; i++) {
-                var frame = stackTrace[i];
-
-                var content = createElementWithClass("div", "stacktrace-entry");
-                var functionName = WebInspector.beautifyFunctionName(frame.functionName);
-                if (frame.scriptId) {
-                    var urlElement = this._linkifyCallFrame(frame);
-                    if (!urlElement)
-                        continue;
-                    content.appendChild(urlElement);
-                    content.createTextChild(" ");
-                }
-
-                content.createChild("span", "console-message-text source-code").textContent = functionName;
-                parentTreeElement.appendChild(new TreeElement(content));
-            }
-        }
-
-        appendStackTrace.call(this, this._message.stackTrace);
-
-        for (var asyncTrace = this._message.asyncStackTrace; asyncTrace; asyncTrace = asyncTrace.asyncStackTrace) {
-            if (!asyncTrace.callFrames || !asyncTrace.callFrames.length)
-                break;
-            var content = createElementWithClass("div", "stacktrace-entry");
-            var description = WebInspector.asyncStackTraceLabel(asyncTrace.description);
-            content.createChild("span", "console-message-text source-code console-async-trace-text").textContent = description;
-            parentTreeElement.appendChild(new TreeElement(content));
-            appendStackTrace.call(this, asyncTrace.callFrames);
-        }
+        var target = this._target();
+        if (!target)
+            return;
+        var content = WebInspector.DOMPresentationUtils.buildStackTracePreviewContents(target,
+            this._linkifier, this._message.stackTrace, this._message.asyncStackTrace);
+        parentTreeElement.appendChild(new TreeElement(content));
     },
 
     resetIncrementRepeatCount: function()
@@ -1287,6 +1235,28 @@ WebInspector.ConsoleViewMessage.prototype = {
     get text()
     {
         return this._message.messageText;
+    },
+
+    /**
+     * @return {string}
+     */
+    renderedText: function ()
+    {
+        if (!this._messageElement)
+            return "";
+        return this._messageElement.deepTextContent();
+    },
+
+    /**
+     * @param {!Array.<!Object>} ranges
+     * @return {!Array.<!Element>}
+     */
+    highlightMatches: function(ranges)
+    {
+        var highlightNodes = [];
+        if (this._formattedMessage)
+            highlightNodes = WebInspector.highlightSearchResults(this._messageElement, ranges);
+        return highlightNodes;
     },
 
     /**

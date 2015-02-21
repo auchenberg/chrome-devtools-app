@@ -26,7 +26,8 @@
         }
     ],
     "dependencies": [
-        "components"
+        "components",
+        "toolbox"
     ],
     "scripts": [
         "EditFileSystemDialog.js",

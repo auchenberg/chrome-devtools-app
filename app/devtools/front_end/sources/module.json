@@ -189,8 +189,9 @@
     ],
     "scripts": [
         "jsdifflib.js",
-        "Placard.js",
+        "UIList.js",
         "AddSourceMapURLDialog.js",
+        "AsyncOperationsSidebarPane.js",
         "BreakpointsSidebarPane.js",
         "CallStackSidebarPane.js",
         "SimpleHistoryManager.js",
@@ -216,13 +217,15 @@
         "FileBasedSearchResultsPane.js",
         "SourcesSearchScope.js",
         "SourcesPanel.js",
-        "WorkspaceMappingTip.js"
+        "WorkspaceMappingTip.js",
+        "JavaScriptCompiler.js"
     ],
     "skip_compilation": [
         "jsdifflib.js"
     ],
     "stylesheets": [
         "filteredItemSelectionDialog.css",
+        "uiList.css",
         "navigatorView.css",
         "revisionHistory.css",
         "sourcesPanel.css",

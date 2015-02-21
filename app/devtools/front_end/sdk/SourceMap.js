@@ -91,23 +91,8 @@ WebInspector.SourceMap = function(sourceMappingURL, payload)
  */
 WebInspector.SourceMap.load = function(sourceMapURL, compiledURL, callback)
 {
-    var resourceTreeModel = WebInspector.resourceTreeModel;
-    if (resourceTreeModel.cachedResourcesLoaded())
-        loadResource();
-    else
-        resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.CachedResourcesLoaded, cachedResourcesLoaded);
-
-    function cachedResourcesLoaded()
-    {
-        resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.CachedResourcesLoaded, cachedResourcesLoaded);
-        loadResource();
-    }
-
-    function loadResource()
-    {
-        var headers = {};
-        NetworkAgent.loadResourceForFrontend(resourceTreeModel.mainFrame.id, sourceMapURL, headers, contentLoaded);
-    }
+    var headers = {};
+    WebInspector.NetworkManager.loadResourceForFrontend(sourceMapURL, headers, contentLoaded);
 
     /**
      * @param {?Protocol.Error} error

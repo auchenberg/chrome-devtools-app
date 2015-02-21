@@ -127,7 +127,7 @@ WebInspector.RequestPreviewView.prototype = {
             return this._createMessageView(WebInspector.UIString("Failed to load response data"));
 
         var mimeType = this.request.mimeType || "";
-        if (mimeType === "application/json" || mimeType.endsWith("+json")) {
+        if (mimeType.endsWith("json") || mimeType.endsWith("javascript")) {
             var jsonView = this._jsonView();
             if (jsonView)
                 return jsonView;

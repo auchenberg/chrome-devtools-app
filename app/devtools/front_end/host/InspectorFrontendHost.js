@@ -352,6 +352,7 @@ WebInspector.InspectorFrontendHostStub.prototype = {
      */
     setIsDocked: function(isDocked, callback)
     {
+        setTimeout(callback, 0);
     },
 
     /**

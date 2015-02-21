@@ -496,14 +496,15 @@ WebInspector.CanvasReplayStateView.prototype = {
     {
         var name = descriptor.name;
         var callArgument = descriptor.value;
+        var target = this._traceLogPlayer.target();
 
         /** @type {!Element|string} */
-        var valueElement = callArgument ? WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(callArgument) : "";
+        var valueElement = callArgument ? WebInspector.CanvasProfileDataGridHelper.createCallArgumentElement(target, callArgument) : "";
 
         /** @type {!Element|string} */
         var nameElement = name;
-        if (typeof descriptor.enumValueForName !== "undefined")
-            nameElement = WebInspector.CanvasProfileDataGridHelper.createEnumValueElement(name, +descriptor.enumValueForName);
+        if (target && typeof descriptor.enumValueForName !== "undefined")
+            nameElement = WebInspector.CanvasProfileDataGridHelper.createEnumValueElement(target, name, +descriptor.enumValueForName);
 
         if (descriptor.isArray && descriptor.values) {
             if (typeof nameElement === "string")

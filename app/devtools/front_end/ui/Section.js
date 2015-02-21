@@ -34,18 +34,15 @@
  */
 WebInspector.Section = function(title, subtitle)
 {
-    this.element = createElement("div");
-    this.element.className = "section";
+    this.element = createElementWithClass("div", "section");
     this.element._section = this;
+    this.registerRequiredCSS("ui/section.css");
 
-    this.headerElement = createElement("div");
-    this.headerElement.className = "header";
+    this.headerElement = createElementWithClass("div", "header monospace");
 
-    this.titleElement = createElement("div");
-    this.titleElement.className = "title";
+    this.titleElement = createElementWithClass("div", "title");
 
-    this.subtitleElement = createElement("div");
-    this.subtitleElement.className = "subtitle";
+    this.subtitleElement = createElementWithClass("div", "subtitle");
 
     this.headerElement.appendChild(this.subtitleElement);
     this.headerElement.appendChild(this.titleElement);
@@ -59,15 +56,6 @@ WebInspector.Section = function(title, subtitle)
         this.subtitleElement.textContent = subtitle;
     }
     this._expanded = false;
-
-    this.headerElement.classList.add("monospace");
-    this.propertiesElement = createElement("ol");
-    this.propertiesElement.className = "properties properties-tree monospace";
-    this.propertiesTreeOutline = new TreeOutline(this.propertiesElement, true);
-    this.propertiesTreeOutline.setFocusable(false);
-    this.propertiesTreeOutline.section = this;
-
-    this.element.appendChild(this.propertiesElement);
 }
 
 WebInspector.Section.prototype = {
@@ -150,6 +138,14 @@ WebInspector.Section.prototype = {
     },
 
     /**
+     * @param {string} cssFile
+     */
+    registerRequiredCSS: function(cssFile)
+    {
+        this.element.appendChild(WebInspector.View.createStyleElement(cssFile));
+    },
+
+    /**
      * @param {!Event} event
      * @protected
      */
@@ -161,4 +157,27 @@ WebInspector.Section.prototype = {
             this.expand();
         event.consume();
     }
+}
+
+/**
+ * @constructor
+ * @extends {WebInspector.Section}
+ * @param {string|!Node} title
+ * @param {string=} subtitle
+ */
+WebInspector.PropertiesSection = function(title, subtitle)
+{
+    WebInspector.Section.call(this, title, subtitle);
+    this.registerRequiredCSS("ui/propertiesSection.css");
+
+    this.propertiesElement = createElementWithClass("ol", "properties properties-tree monospace");
+    this.propertiesTreeOutline = new TreeOutline(this.propertiesElement, true);
+    this.propertiesTreeOutline.setFocusable(false);
+    this.propertiesTreeOutline.section = this;
+
+    this.element.appendChild(this.propertiesElement);
+}
+
+WebInspector.PropertiesSection.prototype = {
+    __proto__: WebInspector.Section.prototype
 }

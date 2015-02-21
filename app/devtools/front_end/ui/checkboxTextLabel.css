@@ -18,3 +18,7 @@
     margin: 1px 3px 2px 2px;
     flex-shrink: 0;
 }
+
+::content > .dt-checkbox-text {
+    line-height: 15px;
+}

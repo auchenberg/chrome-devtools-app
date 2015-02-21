@@ -42,6 +42,7 @@ WebInspector.NetworkDataGridNode = function(parentView, request)
     this._linkifier = new WebInspector.Linkifier();
     this._staleGraph = true;
     this._isNavigationRequest = false;
+    this.selectable = true;
 }
 
 WebInspector.NetworkDataGridNode._hoveredRowSymbol = Symbol("hoveredRow");
@@ -75,7 +76,7 @@ WebInspector.NetworkDataGridNode.prototype = {
      */
     createCells: function()
     {
-        this._showTiming = Runtime.experiments.isEnabled("requestTimingInNetworkTimeline") && WebInspector.settings.networkShowRequestTimingInTimeline.get() && !this._parentView.calculator().startAtZero;
+        this._showTiming = !WebInspector.settings.networkColorCodeResourceTypes.get() && !this._parentView.calculator().startAtZero;
         this._nameCell = null;
         this._timelineCell = null;
         this._initiatorCell = null;
@@ -150,16 +151,10 @@ WebInspector.NetworkDataGridNode.prototype = {
         this._linkifier.reset();
     },
 
-    _onClick: function()
-    {
-        if (!this._parentView.allowRequestSelection())
-            this.select();
-    },
-
     select: function()
     {
-        this._parentView.dispatchEventToListeners(WebInspector.NetworkLogView.EventTypes.RequestSelected, this._request);
         WebInspector.SortableDataGridNode.prototype.select.apply(this, arguments);
+        this._parentView.dispatchEventToListeners(WebInspector.NetworkLogView.EventTypes.RequestSelected, this._request);
 
         WebInspector.notifications.dispatchEventToListeners(WebInspector.UserMetrics.UserAction, {
             action: WebInspector.UserMetrics.UserActionNames.NetworkRequestSelected,
@@ -185,11 +180,6 @@ WebInspector.NetworkDataGridNode.prototype = {
     _openInNewTab: function()
     {
         InspectorFrontendHost.openInNewTab(this._request.url);
-    },
-
-    get selectable()
-    {
-        return this._parentView.allowRequestSelection();
     },
 
     /**
@@ -250,7 +240,6 @@ WebInspector.NetworkDataGridNode.prototype = {
     _renderNameCell: function(cell)
     {
         this._nameCell = cell;
-        cell.addEventListener("click", this._onClick.bind(this), false);
         cell.addEventListener("dblclick", this._openInNewTab.bind(this), false);
         var iconElement;
         if (this._request.resourceType() === WebInspector.resourceTypes.Image) {
@@ -312,7 +301,8 @@ WebInspector.NetworkDataGridNode.prototype = {
         switch (initiator.type) {
         case WebInspector.NetworkRequest.InitiatorType.Parser:
             cell.title = initiator.url + ":" + initiator.lineNumber;
-            cell.appendChild(WebInspector.linkifyResourceAsNode(initiator.url, initiator.lineNumber - 1));
+            var uiSourceCode = WebInspector.networkMapping.uiSourceCodeForURL(initiator.url);
+            cell.appendChild(WebInspector.linkifyResourceAsNode(initiator.url, initiator.lineNumber - 1, undefined, undefined, uiSourceCode ? uiSourceCode.displayName() : undefined));
             this._appendSubtitle(cell, WebInspector.UIString("Parser"));
             break;
 
@@ -405,7 +395,7 @@ WebInspector.NetworkDataGridNode.prototype = {
             this._expandTimelineButton = this._timelineCell.createChild("div", "network-expand-timeline-button");
             this._expandTimelineButton.createChild("div", "network-expand-timeline-glyph");
             this._expandTimelineButton.title = WebInspector.UIString("Show full timeline");
-            this._expandTimelineButton.addEventListener("click", this._onExpandTimeline.bind(this));
+            this._expandTimelineButton.addEventListener("mousedown", this._onExpandTimeline.bind(this));
         } else if (!show && this._expandTimelineButton) {
             this._expandTimelineButton.remove();
             this._expandTimelineButton = null;
@@ -415,6 +405,7 @@ WebInspector.NetworkDataGridNode.prototype = {
     _onExpandTimeline: function(event)
     {
         this._parentView.expandTimeline();
+        event.consume();
     },
 
     _updateTimingGraph: function()
@@ -429,7 +420,7 @@ WebInspector.NetworkDataGridNode.prototype = {
         for (var i = 0; i < timeRanges.length; ++i) {
             var range = timeRanges[i];
             var start = calculator.computePercentageFromEventTime(range.start);
-            var end = calculator.computePercentageFromEventTime(range.end);
+            var end = (range.end !== Number.MAX_VALUE) ? calculator.computePercentageFromEventTime(range.end) : 100;
             if (!nextBar)
                 nextBar = container.createChild("div");
             nextBar.className = "network-graph-bar request-timing";

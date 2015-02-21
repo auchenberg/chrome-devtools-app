@@ -55,15 +55,6 @@ WebInspector.Panel.prototype = {
     },
 
     /**
-     * @override
-     * @return {!Element}
-     */
-    defaultFocusedElement: function()
-    {
-        return this.element;
-    },
-
-    /**
      * @return {?WebInspector.SearchableView}
      */
     searchableView: function()
@@ -131,7 +122,7 @@ WebInspector.Panel.prototype = {
  * @param {number=} defaultWidth
  * @constructor
  */
-WebInspector.PanelWithSidebarTree = function(name, defaultWidth)
+WebInspector.PanelWithSidebar = function(name, defaultWidth)
 {
     WebInspector.Panel.call(this, name);
 
@@ -146,11 +137,9 @@ WebInspector.PanelWithSidebarTree = function(name, defaultWidth)
     this._panelSplitView.setSidebarView(this._sidebarView);
 
     this._sidebarView.element.classList.add("sidebar");
-    var sidebarTreeElement = this._sidebarView.element.createChild("ol", "sidebar-tree");
-    this.sidebarTree = new TreeOutline(sidebarTreeElement);
 }
 
-WebInspector.PanelWithSidebarTree.prototype = {
+WebInspector.PanelWithSidebar.prototype = {
     /**
      * @return {!Element}
      */
@@ -173,15 +162,6 @@ WebInspector.PanelWithSidebarTree.prototype = {
     splitView: function()
     {
         return this._panelSplitView;
-    },
-
-    /**
-     * @override
-     * @return {!Element}
-     */
-    defaultFocusedElement: function()
-    {
-        return this.sidebarTree.element || this.element;
     },
 
     __proto__: WebInspector.Panel.prototype

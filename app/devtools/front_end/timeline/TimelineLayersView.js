@@ -19,25 +19,21 @@ WebInspector.TimelineLayersView = function()
     this._paintTiles = [];
 
     var vbox = new WebInspector.VBox();
-    vbox.element.classList.add("outline-disclosure", "layer-tree");
-    var sidebarTreeElement = vbox.element.createChild("ol");
     this.setSidebarView(vbox);
 
-    var treeOutline = new TreeOutline(sidebarTreeElement);
-    this._layerTreeOutline = new WebInspector.LayerTreeOutline(treeOutline);
-    this._layerTreeOutline.addEventListener(WebInspector.LayerTreeOutline.Events.LayerSelected, this._onObjectSelected, this);
-    this._layerTreeOutline.addEventListener(WebInspector.LayerTreeOutline.Events.LayerHovered, this._onObjectHovered, this);
+    this._layerViewHost = new WebInspector.LayerViewHost();
 
-    this._layers3DView = new WebInspector.Layers3DView();
-    this._layers3DView.addEventListener(WebInspector.Layers3DView.Events.ObjectSelected, this._onObjectSelected, this);
-    this._layers3DView.addEventListener(WebInspector.Layers3DView.Events.ObjectHovered, this._onObjectHovered, this);
+    var layerTreeOutline = new WebInspector.LayerTreeOutline(this._layerViewHost);
+    vbox.element.appendChild(layerTreeOutline.element);
+
+    this._layers3DView = new WebInspector.Layers3DView(this._layerViewHost);
     this._layers3DView.addEventListener(WebInspector.Layers3DView.Events.PaintProfilerRequested, this._jumpToPaintEvent, this);
     this._rightSplitView.setMainView(this._layers3DView);
 
-    this._layerDetailsView = new WebInspector.LayerDetailsView();
-    this._rightSplitView.setSidebarView(this._layerDetailsView);
-    this._layerDetailsView.addEventListener(WebInspector.LayerDetailsView.Events.PaintProfilerRequested, this._jumpToPaintEvent, this);
-    this._layerDetailsView.addEventListener(WebInspector.LayerDetailsView.Events.ObjectSelected, this._onObjectSelected, this);
+    var layerDetailsView = new WebInspector.LayerDetailsView(this._layerViewHost);
+    this._rightSplitView.setSidebarView(layerDetailsView);
+    layerDetailsView.addEventListener(WebInspector.LayerDetailsView.Events.PaintProfilerRequested, this._jumpToPaintEvent, this);
+
 }
 
 WebInspector.TimelineLayersView.prototype = {
@@ -143,71 +139,9 @@ WebInspector.TimelineLayersView.prototype = {
          */
         function onLayersAndTilesReady()
         {
-            this._layerTreeOutline.update(layerTree);
-            this._layers3DView.setLayerTree(layerTree);
+            this._layerViewHost.setLayerTree(layerTree);
             this._layers3DView.setTiles(this._paintTiles);
         }
-    },
-
-    /**
-     * @param {?WebInspector.Layers3DView.Selection} selection
-     */
-    _selectObject: function(selection)
-    {
-        var layer = selection && selection.layer;
-        if (this._currentlySelectedLayer === selection)
-            return;
-        this._currentlySelectedLayer = selection;
-        this._toggleNodeHighlight(layer ? layer.nodeForSelfOrAncestor() : null);
-        this._layerTreeOutline.selectLayer(layer);
-        this._layers3DView.selectObject(selection);
-        this._layerDetailsView.setObject(selection);
-    },
-
-    /**
-     * @param {?WebInspector.Layers3DView.Selection} selection
-     */
-    _hoverObject: function(selection)
-    {
-        var layer = selection && selection.layer;
-        if (this._currentlyHoveredLayer === selection)
-            return;
-        this._currentlyHoveredLayer = selection;
-        this._toggleNodeHighlight(layer ? layer.nodeForSelfOrAncestor() : null);
-        this._layerTreeOutline.hoverLayer(layer);
-        this._layers3DView.hoverObject(selection);
-    },
-
-    /**
-     * @param {?WebInspector.DOMNode} node
-     */
-    _toggleNodeHighlight: function(node)
-    {
-        if (node) {
-            node.highlightForTwoSeconds();
-            return;
-        }
-        if (this._target)
-            this._target.domModel.hideDOMNodeHighlight();
-
-    },
-
-    /**
-     * @param {!WebInspector.Event} event
-     */
-    _onObjectSelected: function(event)
-    {
-        var selection = /** @type {!WebInspector.Layers3DView.Selection} */ (event.data);
-        this._selectObject(selection);
-    },
-
-    /**
-     * @param {!WebInspector.Event} event
-     */
-    _onObjectHovered: function(event)
-    {
-        var selection = /** @type {!WebInspector.Layers3DView.Selection} */ (event.data);
-        this._hoverObject(selection);
     },
 
     _disposeTiles: function()

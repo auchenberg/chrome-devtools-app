@@ -29,53 +29,15 @@
  */
 
 /**
- * @interface
- */
-WebInspector.CompletionDictionary = function() { }
-
-WebInspector.CompletionDictionary.prototype = {
-    /**
-     * @param {string} word
-     */
-    addWord: function(word) { },
-
-    /**
-     * @param {string} word
-     */
-    removeWord: function(word) { },
-
-    /**
-     * @param {string} word
-     * @return {boolean}
-     */
-    hasWord: function(word) { },
-
-    /**
-     * @param {string} prefix
-     * @return {!Array.<string>}
-     */
-    wordsWithPrefix: function(prefix) { },
-
-    /**
-     * @param {string} word
-     * @return {number}
-     */
-    wordCount: function(word) { },
-
-    reset: function() { }
-}
-
-/**
  * @constructor
- * @implements {WebInspector.CompletionDictionary}
  */
-WebInspector.SampleCompletionDictionary = function() {
+WebInspector.TextDictionary = function()
+{
     this._words = {};
 }
 
-WebInspector.SampleCompletionDictionary.prototype = {
+WebInspector.TextDictionary.prototype = {
     /**
-     * @override
      * @param {string} word
      */
     addWord: function(word)
@@ -87,7 +49,6 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
-     * @override
      * @param {string} word
      */
     removeWord: function(word)
@@ -101,7 +62,6 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
-     * @override
      * @param {string} prefix
      * @return {!Array.<string>}
      */
@@ -116,7 +76,6 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
-     * @override
      * @param {string} word
      * @return {boolean}
      */
@@ -126,7 +85,6 @@ WebInspector.SampleCompletionDictionary.prototype = {
     },
 
     /**
-     * @override
      * @param {string} word
      * @return {number}
      */
@@ -135,9 +93,6 @@ WebInspector.SampleCompletionDictionary.prototype = {
         return this._words[word] ? this._words[word] : 0;
     },
 
-    /**
-     * @override
-     */
     reset: function()
     {
         this._words = {};

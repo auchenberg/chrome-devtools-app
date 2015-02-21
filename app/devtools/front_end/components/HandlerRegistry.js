@@ -180,9 +180,20 @@ WebInspector.HandlerRegistry.prototype = {
         if (!resourceURL)
             return;
 
+        var uiSourceCode = WebInspector.networkMapping.uiSourceCodeForURL(resourceURL);
+        function open()
+        {
+            WebInspector.Revealer.reveal(uiSourceCode);
+        }
+        if (uiSourceCode)
+            contextMenu.appendItem("Open", open);
+
         // Add resource-related actions.
         contextMenu.appendItem(WebInspector.openLinkExternallyLabel(), this._openInNewTab.bind(this, resourceURL));
 
+        /**
+         * @param {string} resourceURL
+         */
         function openInResourcesPanel(resourceURL)
         {
             var resource = WebInspector.resourceForURL(resourceURL);
@@ -193,6 +204,8 @@ WebInspector.HandlerRegistry.prototype = {
         }
         if (WebInspector.resourceForURL(resourceURL))
             contextMenu.appendItem(WebInspector.UIString.capitalize("Open ^link in Resources ^panel"), openInResourcesPanel.bind(null, resourceURL));
+
+
         contextMenu.appendItem(WebInspector.copyLinkAddressLabel(), InspectorFrontendHost.copyText.bind(InspectorFrontendHost, resourceURL));
     },
 

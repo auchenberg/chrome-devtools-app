@@ -35,8 +35,7 @@ WebInspector.UISourceCodeFrame = function(uiSourceCode)
 {
     this._uiSourceCode = uiSourceCode;
     WebInspector.SourceFrame.call(this, this._uiSourceCode);
-    WebInspector.settings.textEditorAutocompletion.addChangeListener(this._enableAutocompletionIfNeeded, this);
-    this._enableAutocompletionIfNeeded();
+    this.textEditor.setAutocompleteDelegate(new WebInspector.SimpleAutocompleteDelegate());
 
     this._uiSourceCode.addEventListener(WebInspector.UISourceCode.Events.WorkingCopyChanged, this._onWorkingCopyChanged, this);
     this._uiSourceCode.addEventListener(WebInspector.UISourceCode.Events.WorkingCopyCommitted, this._onWorkingCopyCommitted, this);
@@ -51,11 +50,6 @@ WebInspector.UISourceCodeFrame.prototype = {
     uiSourceCode: function()
     {
         return this._uiSourceCode;
-    },
-
-    _enableAutocompletionIfNeeded: function()
-    {
-        this.textEditor.setCompletionDictionary(WebInspector.settings.textEditorAutocompletion.get() ? new WebInspector.SampleCompletionDictionary() : null);
     },
 
     wasShown: function()
@@ -202,7 +196,6 @@ WebInspector.UISourceCodeFrame.prototype = {
 
     dispose: function()
     {
-        WebInspector.settings.textEditorAutocompletion.removeChangeListener(this._enableAutocompletionIfNeeded, this);
         this._textEditor.dispose();
         this.detach();
     },

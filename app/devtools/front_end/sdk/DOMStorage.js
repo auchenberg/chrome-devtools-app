@@ -334,8 +334,3 @@ WebInspector.DOMStorageDispatcher.prototype = {
         this._model._domStorageItemUpdated(storageId, key, oldValue, value);
     },
 }
-
-/**
- * @type {!WebInspector.DOMStorageModel}
- */
-WebInspector.domStorageModel;

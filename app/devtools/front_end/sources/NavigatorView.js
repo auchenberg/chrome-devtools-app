@@ -36,8 +36,8 @@ WebInspector.NavigatorView = function()
     this.registerRequiredCSS("sources/navigatorView.css");
 
     this.element.classList.add("navigator-container");
-    var scriptsOutlineElement = this.element.createChild("div", "outline-disclosure navigator");
-    var scriptsTreeElement = scriptsOutlineElement.createChild("ol");
+    var scriptsOutlineElement = this.element.createChild("div", "navigator");
+    var scriptsTreeElement = scriptsOutlineElement.createChild("ol", "outline-disclosure");
     this._scriptsTree = new WebInspector.NavigatorTreeOutline(scriptsTreeElement);
 
     this.setDefaultFocusedElement(this._scriptsTree.element);
@@ -604,7 +604,7 @@ WebInspector.NavigatorTreeOutline = function(element)
     TreeOutline.call(this, element);
     this.element = element;
 
-    this.comparator = WebInspector.NavigatorTreeOutline._treeElementsCompare;
+    this.setComparator(WebInspector.NavigatorTreeOutline._treeElementsCompare);
 }
 
 WebInspector.NavigatorTreeOutline.Types = {
@@ -1307,7 +1307,7 @@ WebInspector.NavigatorUISourceCodeTreeNode.prototype = {
         var editingConfig = new WebInspector.InplaceEditor.Config(commitHandler.bind(this), cancelHandler.bind(this));
         this.updateTitle(true);
         WebInspector.InplaceEditor.startEditing(this._treeElement.titleElement, editingConfig);
-        treeOutlineElement.window().getSelection().setBaseAndExtent(this._treeElement.titleElement, 0, this._treeElement.titleElement, 1);
+        treeOutlineElement.getComponentSelection().setBaseAndExtent(this._treeElement.titleElement, 0, this._treeElement.titleElement, 1);
     },
 
     __proto__: WebInspector.NavigatorTreeNode.prototype

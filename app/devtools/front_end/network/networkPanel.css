@@ -69,14 +69,28 @@
 /* Network timing is shared between popover and network item view pane */
 
 .network-timing-table {
-    width: 328px;
+    width: 380px;
     border-spacing: 0;
-    padding-left: 4px;
-    padding-right: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.network-timing-table-header td {
+    color: #bbb;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+}
+
+.network-timing-table-header td:last-child {
+    text-align: right;
 }
 
 .network-timing-table col.labels {
     width: 120px;
+}
+
+.network-timing-table col.duration {
+    width: 80px;
 }
 
 .network-timing-table td {
@@ -89,8 +103,13 @@
     padding: 2px 0;
 }
 
-.network-timing-table .footnote {
-    border-top: 1px solid #eee;
+.network-timing-footer td {
+    border-top: 8px solid transparent;
+}
+
+.network-timing-footer td:last-child {
+    font-weight: bold;
+    text-align: right;
 }
 
 .network-timing-row {
@@ -106,10 +125,9 @@
 }
 
 .network-timing-bar-title {
-    position: absolute;
     color: #222;
-    padding: 0 3px;
-    line-height: 15px;
+    white-space: nowrap;
+    text-align: right;
 }
 
 .network-timing-bar.total {
@@ -117,34 +135,46 @@
 }
 
 .network-timing-bar.blocking {
-    background-color: hsl(0, 0%, 80%);
+    background-color: #AAAAAA;
 }
 
 .network-timing-bar.proxy {
-    background-color: hsl(60, 80%, 80%);
+    background-color: #A1887F;
 }
 
 .network-timing-bar.dns {
-    background-color: hsl(180, 80%, 80%);
+    background-color: #009688;
 }
 
 .network-timing-bar.connecting,
 .network-timing-bar.serviceworker,
 .network-timing-bar.serviceworker-preparation {
-    background-color: hsl(30, 80%, 80%);
+    background-color: #FF9800;
 }
 
 .network-timing-bar.ssl {
-    background-color: hsl(270, 80%, 80%);
+    background-color: #9C27B0;
 }
 
-.network-timing-bar.sending,
+.network-timing-bar.sending {
+    background-color: #B0BEC5;
+}
+
 .network-timing-bar.waiting {
-    background-color: hsl(120, 80%, 80%);
+    background-color: #00C853;
 }
 
 .network-timing-bar.receiving {
-    background-color: hsl(210, 80%, 80%);
+    background-color: #03A9F4;
+}
+
+.network-timing-bar.proxy,
+.network-timing-bar.dns,
+.network-timing-bar.ssl,
+.network-timing-bar.connecting,
+.network-timing-bar.blocking {
+    height: 10px;
+    margin: auto;
 }
 
 .resource-timing-view.visible {

@@ -577,7 +577,7 @@ WebInspector.CSSStyleModel.prototype = {
      * @param {!CSSAgent.StyleSheetId} styleSheetId
      * @param {string} newText
      * @param {boolean} majorChange
-     * @param {function(?Protocol.Error)} userCallback
+     * @param {?function(?Protocol.Error)} userCallback
      */
     setStyleSheetText: function(styleSheetId, newText, majorChange, userCallback)
     {
@@ -692,15 +692,16 @@ WebInspector.CSSStyleDeclaration = function(cssModel, payload)
 }
 
 /**
+ * @param {!WebInspector.Target} target
  * @return {!WebInspector.CSSStyleDeclaration}
  */
-WebInspector.CSSStyleDeclaration.createDummyStyle = function()
+WebInspector.CSSStyleDeclaration.createDummyStyle = function(target)
 {
     var dummyPayload = {
         shorthandEntries: [],
         cssProperties: []
     };
-    return new WebInspector.CSSStyleDeclaration(WebInspector.cssModel, dummyPayload);
+    return new WebInspector.CSSStyleDeclaration(target.cssModel, dummyPayload);
 }
 
 /**
@@ -1283,6 +1284,14 @@ WebInspector.CSSProperty.prototype = {
         if (!this.ownerStyle.styleSheetId)
             throw "No owner style id";
 
+        if (overwrite && propertyText === this.propertyText) {
+            if (majorChange)
+                this.ownerStyle._cssModel._domModel.markUndoableState();
+            if (userCallback)
+                userCallback(this.ownerStyle);
+            return;
+        }
+
         // An index past all the properties adds a new property to the style.
         var cssModel = this.ownerStyle._cssModel;
         cssModel._pendingCommandsMajorState.push(majorChange);
@@ -1818,8 +1827,3 @@ WebInspector.CSSStyleModel.ComputedStyleLoader.prototype = {
         }
     }
 }
-
-/**
- * @type {!WebInspector.CSSStyleModel}
- */
-WebInspector.cssModel;

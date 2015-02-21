@@ -28,14 +28,14 @@
         {
             "type": "ui-setting",
             "section": "Network",
-            "title": "Show request timing directly in timeline",
-            "settingName": "networkShowRequestTimingInTimeline",
-            "settingType": "checkbox",
-            "experiment": "requestTimingInNetworkTimeline"
+            "title": "Color-code resource types",
+            "settingName": "networkColorCodeResourceTypes",
+            "settingType": "checkbox"
         }
     ],
-    "dependencies": ["source_frame"],
+    "dependencies": ["source_frame", "components_lazy", "ui_lazy"],
     "scripts": [
+        "EventSourceMessagesView.js",
         "FilterSuggestionBuilder.js",
         "HARWriter.js",
         "RequestView.js",
@@ -51,13 +51,16 @@
         "RequestResponseView.js",
         "RequestTimingView.js",
         "ResourceWebSocketFrameView.js",
-        "NetworkPanel.js"
+        "NetworkPanel.js",
+        "XMLView.js"
     ],
     "stylesheets": [
+        "eventSourceMessagesView.css",
         "networkLogView.css",
         "networkPanel.css",
         "requestCookiesView.css",
         "requestHeadersView.css",
-        "webSocketFrameView.css"
+        "webSocketFrameView.css",
+        "xmlView.css"
     ]
 }

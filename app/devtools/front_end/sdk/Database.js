@@ -216,8 +216,3 @@ WebInspector.DatabaseDispatcher.prototype = {
             payload.version));
     }
 }
-
-/**
- * @type {!WebInspector.DatabaseModel}
- */
-WebInspector.databaseModel;

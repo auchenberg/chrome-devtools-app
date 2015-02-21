@@ -5,6 +5,7 @@
         "ui"
     ],
     "scripts": [
+        "EmulatedDevices.js",
         "OverridesUI.js",
         "InspectedPagePlaceholder.js",
         "MediaQueryInspector.js",

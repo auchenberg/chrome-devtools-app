@@ -29,7 +29,6 @@
         "LayerTreeModel.js",
         "NetworkLog.js",
         "OverridesSupport.js",
-        "PowerProfiler.js",
         "TracingManager.js",
         "WorkerManager.js",
         "WorkerTargetManager.js",

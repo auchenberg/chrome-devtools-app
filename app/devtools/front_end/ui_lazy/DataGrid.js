@@ -35,7 +35,7 @@
 WebInspector.DataGrid = function(columnsArray, editCallback, deleteCallback, refreshCallback, contextMenuCallback)
 {
     WebInspector.View.call(this);
-    this.registerRequiredCSS("ui/dataGrid.css");
+    this.registerRequiredCSS("ui_lazy/dataGrid.css");
 
     this.element.className = "data-grid"; // Override
     this.element.tabIndex = 0;
@@ -52,7 +52,7 @@ WebInspector.DataGrid = function(columnsArray, editCallback, deleteCallback, ref
     /** @type {!Element} */
     this._dataTable = this._scrollContainer.createChild("table", "data");
 
-    this._dataTable.addEventListener("mousedown", this._mouseDownInDataTable.bind(this), true);
+    this._dataTable.addEventListener("mousedown", this._mouseDownInDataTable.bind(this));
     this._dataTable.addEventListener("click", this._clickInDataTable.bind(this), true);
 
     this._dataTable.addEventListener("contextmenu", this._contextMenuInDataTable.bind(this), true);
@@ -284,7 +284,7 @@ WebInspector.DataGrid.prototype = {
 
         var element = this._editingNode._element.children[cellIndex];
         WebInspector.InplaceEditor.startEditing(element, this._startEditingConfig(element));
-        element.window().getSelection().setBaseAndExtent(element, 0, element, 1);
+        element.getComponentSelection().setBaseAndExtent(element, 0, element, 1);
     },
 
     _startEditing: function(target)
@@ -307,7 +307,7 @@ WebInspector.DataGrid.prototype = {
         this._editing = true;
         WebInspector.InplaceEditor.startEditing(element, this._startEditingConfig(element));
 
-        element.window().getSelection().setBaseAndExtent(element, 0, element, 1);
+        element.getComponentSelection().setBaseAndExtent(element, 0, element, 1);
     },
 
     renderInline: function()
@@ -1246,11 +1246,7 @@ WebInspector.DataGridNode.prototype = {
 
     get leftPadding()
     {
-        if (typeof this._leftPadding === "number")
-            return this._leftPadding;
-
-        this._leftPadding = this.depth * this.dataGrid.indentWidth;
-        return this._leftPadding;
+        return this.depth * this.dataGrid.indentWidth;
     },
 
     get shouldRefreshChildren()
@@ -1692,7 +1688,7 @@ WebInspector.DataGridNode.prototype = {
         if (!this.hasChildren)
             return false;
         var cell = event.target.enclosingNodeOrSelfWithNodeName("td");
-        if (!cell.classList.contains("disclosure"))
+        if (!cell || !cell.classList.contains("disclosure"))
             return false;
 
         var left = cell.totalOffsetLeft() + this.leftPadding;

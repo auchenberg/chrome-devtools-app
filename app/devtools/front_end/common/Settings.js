@@ -45,7 +45,6 @@ WebInspector.Settings = function()
     this.hideNetworkMessages = this.createSetting("hideNetworkMessages", false);
     this.preserveConsoleLog = this.createSetting("preserveConsoleLog", false);
     this.consoleTimestampsEnabled = this.createSetting("consoleTimestampsEnabled", false);
-    this.resourcesLargeRows = this.createSetting("resourcesLargeRows", true);
     this.resourceViewTab = this.createSetting("resourceViewTab", "preview");
     this.showInheritedComputedStyleProperties = this.createSetting("showInheritedComputedStyleProperties", false);
     this.showUserAgentStyles = this.createSetting("showUserAgentStyles", true);
@@ -75,10 +74,11 @@ WebInspector.Settings = function()
     this.workerInspectorHeight = this.createSetting("workerInspectorHeight", 600);
     this.messageURLFilters = this.createSetting("messageURLFilters", {});
     this.networkLogHideColumns = this.createSetting("networkLogHideColumns", false);
+    this.networkLogLargeRows = this.createSetting("networkLogLargeRows", false);
     this.networkHideDataURL = this.createSetting("networkHideDataURL", false);
     this.networkResourceTypeFilters = this.createSetting("networkResourceTypeFilters", {});
     this.networkShowPrimaryLoadWaterfall = this.createSetting("networkShowPrimaryLoadWaterfall", false);
-    this.networkShowRequestTimingInTimeline = this.createSetting("networkShowRequestTimingInTimeline", false);
+    this.networkColorCodeResourceTypes = this.createSetting("networkColorCodeResourceTypes", false);
     this.messageLevelFilters = this.createSetting("messageLevelFilters", {});
     this.splitVerticallyWhenDockedToRight = this.createSetting("splitVerticallyWhenDockedToRight", true);
     this.visiblePanels = this.createSetting("visiblePanels", {});
@@ -326,7 +326,7 @@ WebInspector.VersionController = function()
 {
 }
 
-WebInspector.VersionController.currentVersion = 10;
+WebInspector.VersionController.currentVersion = 11;
 
 WebInspector.VersionController.prototype = {
     updateVersion: function()
@@ -550,6 +550,45 @@ WebInspector.VersionController.prototype = {
         for (var key in window.localStorage) {
             if (key.startsWith("revision-history"))
                 window.localStorage.removeItem(key);
+        }
+    },
+
+    _updateVersionFrom10To11: function()
+    {
+        var setting = "customDevicePresets";
+        var newSetting = "customEmulatedDeviceList";
+        if (!window.localStorage)
+            return;
+        if (!(setting in window.localStorage))
+            return;
+        try {
+            var list = JSON.parse(window.localStorage[setting]);
+            if (!Array.isArray(list))
+                return;
+            var newList = [];
+            for (var i = 0; i < list.length; ++i) {
+                var value = list[i];
+                var device = {};
+                device["title"] = value["title"];
+                device["type"] = "unknown";
+                device["user-agent"] = value["userAgent"];
+                device["capabilities"] = [];
+                if (value["touch"])
+                    device["capabilities"].push("touch");
+                if (value["mobile"])
+                    device["capabilities"].push("mobile");
+                device["screen"] = {};
+                device["screen"]["vertical"] = {width: value["width"], height: value["height"]};
+                device["screen"]["horizontal"] = {width: value["height"], height: value["width"]};
+                device["screen"]["device-pixel-ratio"] = value["deviceScaleFactor"];
+                device["modes"] = [];
+                device["show-by-default"] = true;
+                device["show"] = "Default";
+                newList.push(device);
+            }
+            window.localStorage[newSetting] = JSON.stringify(newList);
+            delete window.localStorage[setting];
+        } catch(e) {
         }
     },
 

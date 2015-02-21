@@ -16,6 +16,7 @@
     min-height: 2em;
     padding-left: 10px;
     padding-right: 10px;
+    -webkit-user-select: none;
 }
 
 :host-context(body.inactive),

@@ -177,7 +177,7 @@ WebInspector.PresentationConsoleMessageHelper.prototype = {
         var lineNumber = message.stackTrace ? message.stackTrace[0].lineNumber - 1 : message.line - 1;
         var columnNumber = message.stackTrace && message.stackTrace[0].columnNumber ? message.stackTrace[0].columnNumber - 1 : 0;
         if (message.scriptId)
-            return message.target().debuggerModel.createRawLocationByScriptId(message.scriptId, message.url || "", lineNumber, columnNumber);
+            return message.target().debuggerModel.createRawLocationByScriptId(message.scriptId, lineNumber, columnNumber);
         return message.target().debuggerModel.createRawLocationByURL(message.url || "", lineNumber, columnNumber);
     },
 

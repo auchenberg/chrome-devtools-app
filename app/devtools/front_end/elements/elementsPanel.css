@@ -178,24 +178,24 @@
     background-color: #eee;
 }
 
-.styles-section .properties li.not-parsed-ok {
+.styles-section .style-properties li.not-parsed-ok {
     margin-left: 0;
 }
 
-.styles-section.computed-style .properties li.not-parsed-ok {
+.styles-section.computed-style .style-properties li.not-parsed-ok {
     margin-left: -6px;
 }
 
-.styles-section .properties li.filter-match,
+.styles-section .style-properties li.filter-match,
 .styles-section .simple-selector.filter-match {
     background-color: rgba(255, 255, 0, 0.5);
 }
 
-.styles-section .properties li.overloaded.filter-match {
+.styles-section .style-properties li.overloaded.filter-match {
     background-color: rgba(255, 255, 0, 0.25);
 }
 
-.styles-section .properties li.not-parsed-ok .exclamation-mark {
+.styles-section .style-properties li.not-parsed-ok .exclamation-mark {
     display: inline-block;
     position: relative;
     width: 11px;
@@ -208,31 +208,32 @@
     z-index: 1;
 }
 
-.styles-section .header {
-    white-space: nowrap;
+.styles-section-title {
     background-origin: padding;
     background-clip: padding;
-}
-
-.styles-section .header .title {
     word-wrap: break-word;
     white-space: normal;
 }
 
-.styles-section .header .title .media-list {
+.styles-section-title .media-list {
     color: #888;
 }
 
-.styles-section .header .title .media-list.media-matches .media.editable-media {
+.styles-section-title .media-list.media-matches .media.editable-media {
     color: #222;
 }
 
-.styles-section .header .title .media:not(.editing-media),
-.styles-section .header .title .media:not(.editing-media) .subtitle {
+.styles-section-title .media:not(.editing-media),
+.styles-section-title .media:not(.editing-media) .subtitle {
     overflow: hidden;
 }
 
-.styles-section .header .subtitle {
+.styles-section-title .media .subtitle {
+    float: right;
+    color: rgb(85, 85, 85);
+}
+
+.styles-section-subtitle {
     color: rgb(85, 85, 85);
     float: right;
     margin-left: 5px;
@@ -242,7 +243,7 @@
     white-space: nowrap;
 }
 
-.styles-section .header .subtitle a {
+.styles-section .styles-section-subtitle a {
     color: inherit;
 }
 
@@ -263,31 +264,26 @@
     text-decoration: underline;
 }
 
-.styles-section .properties {
-    display: none;
+.styles-section .style-properties {
     margin: 0;
     padding: 2px 4px 0 0;
     list-style: none;
     clear: both;
 }
 
-.styles-section.matched-styles .properties {
+.styles-section.matched-styles .style-properties {
     padding-left: 0;
 }
 
-.styles-section.no-affect .properties li {
+.styles-section.no-affect .style-properties li {
     opacity: 0.5;
 }
 
-.styles-section.no-affect .properties li.editing {
+.styles-section.no-affect .style-properties li.editing {
     opacity: 1.0;
 }
 
-.styles-section.expanded .properties {
-    display: block;
-}
-
-.styles-section .properties li {
+.styles-section .style-properties li {
     margin-left: 12px;
     padding-left: 22px;
     white-space: normal;
@@ -296,56 +292,56 @@
     cursor: auto;
 }
 
-.styles-section.computed-style.expanded .properties > li {
+.styles-section.computed-style .style-properties > li {
     padding-left: 0;
 }
 
-.styles-section.computed-style.expanded .properties > li .webkit-css-property {
+.styles-section.computed-style .style-properties > li .webkit-css-property {
     margin-left: 0;
 }
 
-.styles-section .properties li .webkit-css-property {
-    margin-left: -22px; /* outdent the first line of longhand properties (in an expanded shorthand) to compensate for the "padding-left" shift in .styles-section .properties li */
+.styles-section .style-properties li .webkit-css-property {
+    margin-left: -22px; /* outdent the first line of longhand properties (in an expanded shorthand) to compensate for the "padding-left" shift in .styles-section .style-properties li */
 }
 
-.styles-section.expanded .properties > li {
+.styles-section .style-properties > li {
     padding-left: 38px;
 }
 
-.styles-section .properties > li .webkit-css-property {
-    margin-left: -38px; /* outdent the first line of the top-level properties to compensate for the "padding-left" shift in .styles-section .properties > li */
+.styles-section .style-properties > li .webkit-css-property {
+    margin-left: -38px; /* outdent the first line of the top-level properties to compensate for the "padding-left" shift in .styles-section .style-properties > li */
 }
 
-.styles-section .properties > li.child-editing {
+.styles-section .style-properties > li.child-editing {
     padding-left: 8px;
 }
 
-.styles-section .properties > li.child-editing .webkit-css-property {
+.styles-section .style-properties > li.child-editing .webkit-css-property {
     margin-left: 0;
 }
 
-.styles-section.matched-styles .properties li {
+.styles-section.matched-styles .style-properties li {
     margin-left: 0 !important;
 }
 
-.styles-section .properties li.child-editing {
+.styles-section .style-properties li.child-editing {
     word-wrap: break-word !important;
     white-space: normal !important;
     padding-left: 0;
 }
 
-.styles-section .properties ol {
+.styles-section .style-properties ol {
     display: none;
     margin: 0;
     -webkit-padding-start: 12px;
     list-style: none;
 }
 
-.styles-section .properties ol.expanded {
+.styles-section .style-properties ol.expanded {
     display: block;
 }
 
-.styles-section.matched-styles .properties li.parent .expand-element {
+.styles-section.matched-styles .style-properties li.parent .expand-element {
     -webkit-user-select: none;
     background-image: url(Images/statusbarButtonGlyphs.png);
     background-size: 320px 144px;
@@ -358,33 +354,33 @@
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
-.styles-section.matched-styles .properties li.parent .expand-element {
+.styles-section.matched-styles .style-properties li.parent .expand-element {
     background-image: url(Images/statusbarButtonGlyphs_2x.png);
 }
 } /* media */
 
-.styles-section.matched-styles .properties li.parent .expand-element {
+.styles-section.matched-styles .style-properties li.parent .expand-element {
     background-position: -4px -96px;
 }
 
-.styles-section.matched-styles .properties li.parent.expanded .expand-element {
+.styles-section.matched-styles .style-properties li.parent.expanded .expand-element {
     background-position: -20px -96px;
 }
 
-.styles-section .properties li .info {
+.styles-section .style-properties li .info {
     padding-top: 4px;
     padding-bottom: 3px;
 }
 
-.styles-section.matched-styles:not(.read-only):hover .properties .enabled-button {
+.styles-section.matched-styles:not(.read-only):hover .style-properties .enabled-button {
     visibility: visible;
 }
 
-.styles-section.matched-styles:not(.read-only) .properties li.disabled .enabled-button {
+.styles-section.matched-styles:not(.read-only) .style-properties li.disabled .enabled-button {
     visibility: visible;
 }
 
-.styles-section .properties .enabled-button {
+.styles-section .style-properties .enabled-button {
     visibility: hidden;
     float: left;
     font-size: 10px;
@@ -397,32 +393,32 @@
     top: 1px;
 }
 
-.styles-section.matched-styles .properties ol.expanded {
+.styles-section.matched-styles .style-properties ol.expanded {
     margin-left: 16px;
 }
 
-.styles-section .properties .overloaded:not(.has-ignorable-error),
-.styles-section .properties .inactive,
-.styles-section .properties .disabled,
-.styles-section .properties .not-parsed-ok:not(.has-ignorable-error) {
+.styles-section .style-properties .overloaded:not(.has-ignorable-error),
+.styles-section .style-properties .inactive,
+.styles-section .style-properties .disabled,
+.styles-section .style-properties .not-parsed-ok:not(.has-ignorable-error) {
     text-decoration: line-through;
 }
 
-.styles-section .properties .has-ignorable-error .webkit-css-property {
+.styles-section .style-properties .has-ignorable-error .webkit-css-property {
     color: inherit;
 }
 
-.styles-section.computed-style .properties .disabled {
+.styles-section.computed-style .style-properties .disabled {
     text-decoration: none;
     opacity: 0.5;
 }
 
-.styles-section .properties .implicit,
-.styles-section .properties .inherited {
+.styles-section .style-properties .implicit,
+.styles-section .style-properties .inherited {
     opacity: 0.5;
 }
 
-.styles-section .properties .has-ignorable-error {
+.styles-section .style-properties .has-ignorable-error {
     color: gray;
 }
 
@@ -489,67 +485,42 @@
     cursor: text;
 }
 
-.section .event-bars {
-    display: none;
+.events-pane > .properties {
+    padding-left: 0;
+    padding-right: 0;
 }
 
-.section.expanded .event-bars {
-    display: block;
+.events-pane > ol > li {
+    padding: 2px 0 0 4px;
+    margin: 2px 0 0 !important;
 }
 
-.events-pane .section.event-bar {
-    position: relative;
-    margin-left: 10px;
+.events-pane > ol > ol > li {
+    padding-left: 0;
+    padding-top: 2px;
+    margin-left: 12px !important;
 }
 
-.events-pane .section.event-bar:first-child {
-    margin-top: 1px;
+.events-pane > ol > li,
+.events-pane > ol > ol > li {
+    border-top: 1px solid rgb(231, 231, 231);
 }
 
-.event-bars .event-bar .header {
-    padding: 0 8px 0 6px;
-    min-height: 16px;
-    opacity: 1.0;
-    white-space: nowrap;
-    background-origin: padding;
-    background-clip: padding;
+.events-pane > ol > li:first-of-type,
+.events-pane > ol > ol > li:first-of-type {
+    border-top: none;
 }
 
-.event-bars .event-bar .header .title {
-    font-weight: normal;
-    text-shadow: white 0 1px 0;
+.events-pane > ol > ol {
+    padding-left: 0;
 }
 
-.event-bars .event-bar .header .subtitle {
+.event-bar > .header {
+    padding-left: 0 !important;
+}
+
+.event-bar .header .subtitle {
     color: rgba(90, 90, 90, 0.75);
-}
-
-.event-bars .event-bar .header::before {
-    -webkit-user-select: none;
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
-    opacity: 0.5;
-    content: "a";
-    color: transparent;
-    text-shadow: none;
-    float: left;
-    width: 8px;
-    margin-right: 4px;
-    margin-top: 2px;
-}
-
-@media (-webkit-min-device-pixel-ratio: 1.5) {
-.event-bars .event-bar .header::before {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
-}
-} /* media */
-
-.event-bars .event-bar .header::before {
-    background-position: -4px -96px;
-}
-
-.event-bars .event-bar.expanded .header::before {
-    background-position: -20px -96px;
 }
 
 .image-preview-container {
@@ -689,9 +660,9 @@
     color: black;
 }
 
-.styles-section:not(.read-only) .properties .webkit-css-property.styles-panel-hovered,
-.styles-section:not(.read-only) .properties .value .styles-panel-hovered,
-.styles-section:not(.read-only) .properties .value.styles-panel-hovered,
+.styles-section:not(.read-only) .style-properties .webkit-css-property.styles-panel-hovered,
+.styles-section:not(.read-only) .style-properties .value .styles-panel-hovered,
+.styles-section:not(.read-only) .style-properties .value.styles-panel-hovered,
 .styles-section:not(.read-only) span.simple-selector.styles-panel-hovered {
     text-decoration: underline;
     cursor: default;
@@ -703,6 +674,34 @@
     opacity: 0;
     pointer-events: none;
     white-space: pre;
+}
+
+.popover-icon {
+    margin-left: 1px;
+    margin-right: 2px;
+    width: 10px;
+    height: 10px;
+    position: relative;
+    top: 1px;
+    display: inline-block;
+    line-height: 1px;
+    -webkit-user-select: none;
+}
+
+.bezier-icon {
+    background-color: #9C27B0;
+    border-radius: 2px;
+}
+
+.bezier-icon path {
+    stroke: white;
+    stroke-width: 1.5;
+    stroke-linecap: square;
+    fill: none;
+}
+
+.swatch {
+    background-image: url(Images/checker.png);
 }
 
 li.child-editing .styles-clipboard-only {
@@ -770,17 +769,29 @@ label.checkbox-with-label {
     border-top: 1px solid rgb(231, 231, 231);
 }
 
-.event-bar .header .title {
-    font-weight: normal;
-    word-wrap: break-word;
-    white-space: normal;
-    line-height: 18px;
-}
-
 .events-pane .section {
     margin: 0;
 }
 
 .event-bar .event-properties {
-    padding-left: 16px;
+    padding-left: 0 !important;
+}
+
+.style-properties li.editing {
+    margin-left: 10px;
+    text-overflow: clip;
+}
+
+.style-properties li.editing-sub-part {
+    padding: 3px 6px 8px 18px;
+    margin: -1px -6px -8px -6px;
+    text-overflow: clip;
+}
+
+.event-listener-tree {
+    padding-left: 0 !important;
+}
+
+.event-listener-tree li.parent::before {
+    top: 0 !important;
 }

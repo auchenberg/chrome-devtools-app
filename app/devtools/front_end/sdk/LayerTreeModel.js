@@ -194,6 +194,14 @@ WebInspector.LayerTreeBase.prototype = {
     },
 
     /**
+     * @return {?WebInspector.Target}
+     */
+    target: function()
+    {
+        return this._target;
+    },
+
+    /**
      * @return {?WebInspector.Layer}
      */
     root: function()
@@ -583,12 +591,7 @@ WebInspector.Layer.prototype = {
     /**
      * @param {function(!Array.<string>)} callback
      */
-    requestCompositingReasons: function(callback) { },
-
-    /**
-     * @param {function(!WebInspector.PaintProfilerSnapshot=)} callback
-     */
-    requestSnapshot: function(callback) { },
+    requestCompositingReasons: function(callback) { }
 }
 
 /**
@@ -810,7 +813,6 @@ WebInspector.AgentLayer.prototype = {
     },
 
     /**
-     * @override
      * @param {function(!WebInspector.PaintProfilerSnapshot=)} callback
      */
     requestSnapshot: function(callback)
@@ -1164,16 +1166,6 @@ WebInspector.TracingLayer.prototype = {
     requestCompositingReasons: function(callback)
     {
         callback(this._compositingReasons);
-    },
-
-    /**
-     * @override
-     * @param {function(!WebInspector.PaintProfilerSnapshot=)} callback
-     */
-    requestSnapshot: function(callback)
-    {
-        var wrappedCallback = InspectorBackend.wrapClientCallback(callback, "LayerTreeAgent.makeSnapshot(): ", WebInspector.PaintProfilerSnapshot);
-        LayerTreeAgent.makeSnapshot(this.id(), wrappedCallback);
     }
 }
 

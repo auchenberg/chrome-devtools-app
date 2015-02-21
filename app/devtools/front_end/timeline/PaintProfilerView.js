@@ -184,6 +184,8 @@ WebInspector.PaintProfilerView.prototype = {
 
     _updatePieChart: function()
     {
+        if (!this._profiles || !this._profiles.length)
+            return;
         var window = this.windowBoundaries();
         var totalTime = 0;
         var timeByCategory = {};
@@ -254,12 +256,14 @@ WebInspector.PaintProfilerCommandLogView = function()
 {
     WebInspector.VBox.call(this);
     this.setMinimumSize(100, 25);
-    this.element.classList.add("outline-disclosure", "profiler-log-view", "section");
-    var sidebarTreeElement = this.element.createChild("ol", "sidebar-tree properties monospace");
-    sidebarTreeElement.addEventListener("mousemove", this._onMouseMove.bind(this), false);
-    sidebarTreeElement.addEventListener("mouseout", this._onMouseMove.bind(this), false);
-    sidebarTreeElement.addEventListener("contextmenu", this._onContextMenu.bind(this), true);
-    this.sidebarTree = new TreeOutline(sidebarTreeElement);
+    this.element.classList.add("profiler-log-view");
+
+    this._treeOutline = new TreeOutlineInShadow();
+    this.element.appendChild(this._treeOutline.element);
+
+    this._treeOutline.element.addEventListener("mousemove", this._onMouseMove.bind(this), false);
+    this._treeOutline.element.addEventListener("mouseout", this._onMouseMove.bind(this), false);
+    this._treeOutline.element.addEventListener("contextmenu", this._onContextMenu.bind(this), true);
 
     this._reset();
 }
@@ -292,13 +296,13 @@ WebInspector.PaintProfilerCommandLogView.prototype = {
      */
     updateWindow: function(stepLeft, stepRight)
     {
-        this.sidebarTree.removeChildren();
+        this._treeOutline.removeChildren();
         if (!this._log)
             return;
         stepLeft = stepLeft || 0;
         stepRight = stepRight || this._log.length;
         for (var i = stepLeft; i < stepRight; ++i)
-            this._appendLogItem(this.sidebarTree, this._log[i]);
+            this._appendLogItem(this._treeOutline, this._log[i]);
     },
 
     _reset: function()
@@ -311,7 +315,7 @@ WebInspector.PaintProfilerCommandLogView.prototype = {
      */
     _onMouseMove: function(event)
     {
-        var node = this.sidebarTree.treeElementFromEvent(event);
+        var node = this._treeOutline.treeElementFromEvent(event);
         if (node === this._lastHoveredNode || !(node instanceof WebInspector.LogTreeElement))
             return;
         if (this._lastHoveredNode)
@@ -328,7 +332,7 @@ WebInspector.PaintProfilerCommandLogView.prototype = {
     {
         if (!this._target)
             return;
-        var node = this.sidebarTree.treeElementFromEvent(event);
+        var node = this._treeOutline.treeElementFromEvent(event);
         if (!node || !node.representedObject || !(node instanceof WebInspector.LogTreeElement))
             return;
         var logItem = /** @type {!WebInspector.PaintProfilerLogItem} */ (node.representedObject);
@@ -412,7 +416,6 @@ WebInspector.LogTreeElement.prototype = {
     {
         var logItem = this.representedObject;
         var title = createDocumentFragment();
-        title.createChild("div", "selection");
         title.createTextChild(logItem.method + "(" + this._paramsToString(logItem.params) + ")");
         this.title = title;
     },
@@ -480,7 +483,6 @@ WebInspector.LogPropertyTreeElement.prototype = {
     {
         var property = this.representedObject;
         var title = createDocumentFragment();
-        title.createChild("div", "selection");
         var nameElement = title.createChild("span", "name");
         nameElement.textContent = property.name;
         var separatorElement = title.createChild("span", "separator");
@@ -488,7 +490,7 @@ WebInspector.LogPropertyTreeElement.prototype = {
         if (property.value === null || typeof property.value !== "object") {
             var valueElement = title.createChild("span", "value");
             valueElement.textContent = JSON.stringify(property.value);
-            valueElement.classList.add("console-formatted-" + property.value === null ? "null" : typeof property.value);
+            valueElement.classList.add("cm-js-" + (property.value === null ? "null" : typeof property.value));
         }
         this.title = title;
     },

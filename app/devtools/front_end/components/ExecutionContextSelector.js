@@ -138,8 +138,14 @@ WebInspector.ExecutionContextSelector.completionsForTextPromptInCurrentContext =
     }
 
     // Pass less stop characters to rangeOfWord so the range will be a more complete expression.
-    var expressionRange = wordRange.startContainer.rangeOfWord(wordRange.startOffset, " =:[({;,!+-*/&|^<>", proxyElement, "backward");
+    var expressionRange = wordRange.startContainer.rangeOfWord(wordRange.startOffset, " =:({;,!+-*/&|^<>", proxyElement, "backward");
     var expressionString = expressionRange.toString();
+
+    // The "[" is also a stop character, except when it's the last character of the expression.
+    var pos = expressionString.lastIndexOf("[", expressionString.length - 2);
+    if (pos !== -1)
+        expressionString = expressionString.substr(pos + 1);
+
     var prefix = wordRange.toString();
     executionContext.completionsForExpression(expressionString, prefix, force, completionsReadyCallback);
 }

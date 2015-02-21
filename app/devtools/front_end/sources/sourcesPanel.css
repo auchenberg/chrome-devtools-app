@@ -228,14 +228,24 @@ li.editing-sub-part .delete-button {
     -webkit-user-modify: read-write;
 }
 
-li.editing .delete-button {
-    display: none !important;
-}
-
 .cursor-pointer {
     cursor: pointer;
 }
 
 .cursor-auto {
     cursor: auto;
+}
+
+.callstack-info {
+    text-align: center;
+    font-style: italic;
+    font-size: 90%;
+    padding: 6px;
+    color: #888;
+    pointer-events: none;
+}
+
+.callstack-info.status {
+    border-top: 1px solid rgb(189, 189, 189);
+    background-color: rgb(255, 255, 194);
 }

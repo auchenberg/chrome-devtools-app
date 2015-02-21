@@ -37,7 +37,7 @@
 WebInspector.ElementsTreeElement = function(node, elementCloseTag)
 {
     // The title will be updated in onattach.
-    TreeElement.call(this, "", node);
+    TreeElement.call(this, "", elementCloseTag ? null : node);
     this._node = node;
 
     this._elementCloseTag = elementCloseTag;
@@ -264,7 +264,7 @@ WebInspector.ElementsTreeElement.prototype = {
     },
 
     /**
-     * @param {?WebInspector.ElementsTreeUpdater.UpdateInfo} updateInfo
+     * @param {?WebInspector.ElementsTreeOutline.UpdateInfo} updateInfo
      */
     setUpdateInfo: function(updateInfo)
     {
@@ -659,7 +659,7 @@ WebInspector.ElementsTreeElement.prototype = {
 
         this._editing = WebInspector.InplaceEditor.startEditing(attribute, config);
 
-        this.listItemElement.window().getSelection().setBaseAndExtent(elementForSelection, 0, elementForSelection, 1);
+        this.listItemElement.getComponentSelection().setBaseAndExtent(elementForSelection, 0, elementForSelection, 1);
 
         return true;
     },
@@ -683,7 +683,7 @@ WebInspector.ElementsTreeElement.prototype = {
             container.textContent = textNode.nodeValue(); // Strip the CSS or JS highlighting if present.
         var config = new WebInspector.InplaceEditor.Config(this._textNodeEditingCommitted.bind(this, textNode), this._editingCancelled.bind(this));
         this._editing = WebInspector.InplaceEditor.startEditing(textNodeElement, config);
-        this.listItemElement.window().getSelection().setBaseAndExtent(textNodeElement, 0, textNodeElement, 1);
+        this.listItemElement.getComponentSelection().setBaseAndExtent(textNodeElement, 0, textNodeElement, 1);
 
         return true;
     },
@@ -741,7 +741,7 @@ WebInspector.ElementsTreeElement.prototype = {
 
         var config = new WebInspector.InplaceEditor.Config(editingComitted.bind(this), editingCancelled.bind(this), tagName);
         this._editing = WebInspector.InplaceEditor.startEditing(tagNameElement, config);
-        this.listItemElement.window().getSelection().setBaseAndExtent(tagNameElement, 0, tagNameElement, 1);
+        this.listItemElement.getComponentSelection().setBaseAndExtent(tagNameElement, 0, tagNameElement, 1);
         return true;
     },
 
@@ -1393,14 +1393,24 @@ WebInspector.ElementsTreeElement.prototype = {
 
             case Node.DOCUMENT_FRAGMENT_NODE:
                 var fragmentElement = info.titleDOM.createChild("span", "webkit-html-fragment");
+                fragmentElement.textContent = node.nodeNameInCorrectCase().collapseWhitespace();
+                delete this.shadowHostToolbar;
                 if (node.isInShadowTree()) {
                     var shadowRootType = node.shadowRootType();
                     if (shadowRootType) {
                         info.shadowRoot = true;
                         fragmentElement.classList.add("shadow-root");
+
+                        if (Runtime.experiments.isEnabled("composedShadowDOM")) {
+                            var isYoungestShadowRoot = node === node.parentNode.shadowRoots()[0];
+                            if (isYoungestShadowRoot) {
+                                var toolbarElement = info.titleDOM.createChild("span", "webkit-html-fragment");
+                                this.shadowHostToolbar = this._createShadowHostToolbar();
+                                toolbarElement.appendChild(this.shadowHostToolbar);
+                            }
+                        }
                     }
                 }
-                fragmentElement.textContent = node.nodeNameInCorrectCase().collapseWhitespace();
                 break;
             default:
                 info.titleDOM.createTextChild(node.nodeNameInCorrectCase().collapseWhitespace());
@@ -1418,6 +1428,67 @@ WebInspector.ElementsTreeElement.prototype = {
         return info;
     },
 
+    /**
+     * @param {?WebInspector.ElementsTreeOutline.ShadowHostDisplayMode} mode
+     */
+    setShadowHostToolbarMode: function(mode)
+    {
+        this._shadowHostToolbarMode = mode;
+    },
+
+    /**
+     * @return {!Element}
+     */
+    _createShadowHostToolbar: function()
+    {
+        /**
+         * @this {WebInspector.ElementsTreeElement}
+         * @param {string} label
+         * @param {string} tooltip
+         * @param {?WebInspector.ElementsTreeOutline.ShadowHostDisplayMode} mode
+         */
+        function createButton(label, tooltip, mode)
+        {
+            var button = createElement("button");
+            button.className = "shadow-host-display-mode-toolbar-button";
+            button.textContent = label;
+            button.title = tooltip;
+            button.tabIndex = -1;
+            button.mode = mode;
+            if (mode)
+                button.classList.add("custom-mode")
+            button.addEventListener("click", buttonClicked.bind(this), true);
+            toolbar.appendChild(button);
+            return button;
+        }
+
+        /**
+         * @this {WebInspector.ElementsTreeElement}
+         * @param {!Event} event
+         */
+        function buttonClicked(event)
+        {
+            var button = event.target;
+            if (button.disabled)
+                return;
+            this.treeOutline.setShadowHostDisplayMode(this._node.parentNode, button.mode);
+            event.consume();
+        }
+
+        var toolbar = createElementWithClass("span", "shadow-host-display-mode-toolbar");
+
+        var buttons = [];
+        buttons.push(createButton.call(this, "Logical", WebInspector.UIString("Logical view \n(Light and Shadow DOM are shown separately)."), null));
+        buttons.push(createButton.call(this, "Composed", WebInspector.UIString("Composed view\n(Light DOM is shown as distributed into Shadow DOM)."), WebInspector.ElementsTreeOutline.ShadowHostDisplayMode.Composed));
+        var mode = this._shadowHostToolbarMode || null;
+        for (var i = 0; i < buttons.length; ++i) {
+            var currentModeButton = mode === buttons[i].mode;
+            buttons[i].classList.toggle("toggled", currentModeButton);
+            buttons[i].disabled = currentModeButton;
+        }
+        return toolbar;
+    },
+
     remove: function()
     {
         if (this._node.pseudoType())
@@ -1432,7 +1503,7 @@ WebInspector.ElementsTreeElement.prototype = {
     },
 
     /**
-     * @param {function(boolean)} callback
+     * @param {function(boolean)=} callback
      */
     toggleEditAsHTML: function(callback)
     {
@@ -1446,7 +1517,8 @@ WebInspector.ElementsTreeElement.prototype = {
          */
         function selectNode(error)
         {
-            callback(!error);
+            if (callback)
+                callback(!error);
         }
 
         /**

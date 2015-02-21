@@ -146,10 +146,6 @@
     height: 20px;
 }
 
-.custom-device-title-dialog {
-    padding: 10px;
-}
-
 /* Media tab */
 
 .overrides-media > label {
@@ -236,10 +232,6 @@
     background-image: url(Images/statusbarButtonGlyphs_2x.png);
 }
 } /* media */
-
-.overrides-view {
-    padding-top: 12px;
-}
 
 .overrides-view .overrides-footer .warning-icon-small {
     margin-right: 3px;

@@ -43,7 +43,7 @@ WebInspector.DatabaseQueryView = function(database)
     this.element.appendChild(this._promptElement);
 
     this._prompt = new WebInspector.TextPromptWithHistory(this.completions.bind(this), " ");
-    this._prompt.attach(this._promptElement);
+    this._proxyElement = this._prompt.attach(this._promptElement);
 
     this.element.addEventListener("click", this._messagesClicked.bind(this), true);
 }
@@ -63,7 +63,7 @@ WebInspector.DatabaseQueryView.prototype = {
 
     _messagesClicked: function()
     {
-        if (!this._prompt.isCaretInsidePrompt() && this.element.window().getSelection().isCollapsed)
+        if (!this._prompt.isCaretInsidePrompt() && this.element.isComponentSelectionCollapsed())
             this._prompt.moveCaretToEndOfPrompt();
     },
 
@@ -115,7 +115,7 @@ WebInspector.DatabaseQueryView.prototype = {
         function moveBackIfOutside()
         {
             delete this._selectionTimeout;
-            if (!this._prompt.isCaretInsidePrompt() && this.element.window().getSelection().isCollapsed)
+            if (!this._prompt.isCaretInsidePrompt() && this.element.isComponentSelectionCollapsed())
                 this._prompt.moveCaretToEndOfPrompt();
             this._prompt.autoCompleteSoon();
         }
@@ -137,12 +137,12 @@ WebInspector.DatabaseQueryView.prototype = {
 
         this._prompt.clearAutoComplete(true);
 
-        var query = this._prompt.text;
+        var query = this._prompt.text();
         if (!query.length)
             return;
 
         this._prompt.pushHistoryItem(query);
-        this._prompt.text = "";
+        this._prompt.setText("");
 
         this.database.executeSql(query, this._queryFinished.bind(this, query), this._queryError.bind(this, query));
     },
@@ -196,7 +196,7 @@ WebInspector.DatabaseQueryView.prototype = {
     {
         var element = createElement("div");
         element.className = "database-user-query";
-        this.element.insertBefore(element, this._prompt.proxyElement);
+        this.element.insertBefore(element, this._proxyElement);
 
         var commandTextElement = createElement("span");
         commandTextElement.className = "database-query-text";

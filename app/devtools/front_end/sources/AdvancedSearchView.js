@@ -361,7 +361,7 @@ WebInspector.AdvancedSearchView.ToggleDrawerViewActionDelegate.prototype = {
     {
         var searchView = WebInspector.AdvancedSearchView._instance;
         if (!searchView || !searchView.isShowing() || searchView._search !== document.activeElement) {
-            var selection = window.getSelection();
+            var selection = WebInspector.inspectorView.element.getDeepSelection();
             var queryCandidate = "";
             if (selection.rangeCount)
                 queryCandidate = selection.toString().replace(/\r?\n.*/, "");

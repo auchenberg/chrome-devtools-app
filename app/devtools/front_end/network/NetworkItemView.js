@@ -47,6 +47,8 @@ WebInspector.NetworkItemView = function(request, calculator)
     if (request.resourceType() === WebInspector.resourceTypes.WebSocket) {
         var frameView = new WebInspector.ResourceWebSocketFrameView(request);
         this.appendTab("webSocketFrames", WebInspector.UIString("Frames"), frameView);
+    } else if (request.mimeType ===  "text/event-stream") {
+        this.appendTab("eventSource", WebInspector.UIString("EventStream"), new WebInspector.EventSourceMessagesView(request));
     } else {
         var responseView = new WebInspector.RequestResponseView(request);
         var previewView = new WebInspector.RequestPreviewView(request, responseView);

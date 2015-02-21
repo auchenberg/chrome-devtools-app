@@ -171,7 +171,7 @@ WebInspector.OverviewGrid.Window = function(parentElement, dividersLabelBarEleme
     this._parentElement.addEventListener("dblclick", this._resizeWindowMaximum.bind(this), true);
 
     this._overviewWindowElement = parentElement.createChild("div", "overview-grid-window");
-    this._overviewWindowElement.appendChild(WebInspector.View.createStyleElement("ui/overviewGrid.css"));
+    this._overviewWindowElement.appendChild(WebInspector.View.createStyleElement("ui_lazy/overviewGrid.css"));
     this._overviewWindowBordersElement = parentElement.createChild("div", "overview-grid-window-rulers");
     parentElement.createChild("div", "overview-grid-dividers-background");
 

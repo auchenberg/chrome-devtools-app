@@ -154,8 +154,12 @@ WebInspector.Linkifier.prototype = {
      */
     linkifyScriptLocation: function(target, scriptId, sourceURL, lineNumber, columnNumber, classes)
     {
-        var rawLocation = target && !target.isDetached() ? target.debuggerModel.createRawLocationByScriptId(scriptId, sourceURL, lineNumber, columnNumber || 0) : null;
         var fallbackAnchor = WebInspector.linkifyResourceAsNode(sourceURL, lineNumber, classes);
+        if (!target || target.isDetached())
+            return fallbackAnchor;
+
+        var rawLocation = scriptId ? target.debuggerModel.createRawLocationByScriptId(scriptId, lineNumber, columnNumber || 0) :
+                                     target.debuggerModel.createRawLocationByURL(sourceURL, lineNumber, columnNumber || 0);
         if (!rawLocation)
             return fallbackAnchor;
 

@@ -915,9 +915,14 @@ WebInspector.HeapSnapshotView.prototype = {
             this._dataGrid.revealObjectByHeapSnapshotId(snapshotObjectId, didRevealObject);
         }
 
-        function didRevealObject(parentNode, node)
+        /**
+         * @param {?WebInspector.HeapSnapshotGridNode} node
+         */
+        function didRevealObject(node)
         {
-            if (!node)
+            if (node)
+                node.select();
+            else
                 WebInspector.console.error("Cannot find corresponding heap snapshot node");
         }
     },

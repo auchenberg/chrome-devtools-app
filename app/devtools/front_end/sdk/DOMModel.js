@@ -1725,6 +1725,14 @@ WebInspector.DOMModel.prototype = {
     },
 
     /**
+     * @param {!PageAgent.FrameId} frameId
+     */
+    highlightFrame: function(frameId)
+    {
+        this._highlighter.highlightFrame(frameId);
+    },
+
+    /**
      * @param {boolean} enabled
      * @param {boolean} inspectUAShadowDOM
      * @param {function(?Protocol.Error)=} callback
@@ -1814,10 +1822,10 @@ WebInspector.DOMModel.prototype = {
 
         if (emulationEnabled && !this._addTouchEventsScriptInjecting) {
             this._addTouchEventsScriptInjecting = true;
-            PageAgent.addScriptToEvaluateOnLoad("(" + injectedFunction.toString() + ")()", scriptAddedCallback.bind(this));
+            this.target().pageAgent().addScriptToEvaluateOnLoad("(" + injectedFunction.toString() + ")()", scriptAddedCallback.bind(this));
         } else {
             if (typeof this._addTouchEventsScriptId !== "undefined") {
-                PageAgent.removeScriptToEvaluateOnLoad(this._addTouchEventsScriptId);
+                this.target().pageAgent().removeScriptToEvaluateOnLoad(this._addTouchEventsScriptId);
                 delete this._addTouchEventsScriptId;
             }
         }
@@ -1835,7 +1843,7 @@ WebInspector.DOMModel.prototype = {
             this._addTouchEventsScriptId = scriptId;
         }
 
-        PageAgent.setTouchEmulationEnabled(emulationEnabled, configuration);
+        this.target().pageAgent().setTouchEmulationEnabled(emulationEnabled, configuration);
     },
 
     markUndoableState: function()
@@ -2085,11 +2093,8 @@ WebInspector.DOMModel.EventListener = function(target, payload)
 {
     WebInspector.SDKObject.call(this, target);
     this._payload = payload;
-    var sourceName = this._payload.sourceName;
-    if (!sourceName) {
-        var script = target.debuggerModel.scriptForId(payload.location.scriptId);
-        sourceName = script ? script.contentURL() : "";
-    }
+    var script = target.debuggerModel.scriptForId(payload.location.scriptId);
+    var sourceName = script ? script.contentURL() : "";
     this._sourceName = sourceName;
 }
 
@@ -2157,7 +2162,12 @@ WebInspector.DOMNodeHighlighter.prototype = {
      * @param {!DOMAgent.HighlightConfig} config
      * @param {function(?Protocol.Error)=} callback
      */
-    setInspectModeEnabled: function(enabled, inspectUAShadowDOM, config, callback) {}
+    setInspectModeEnabled: function(enabled, inspectUAShadowDOM, config, callback) {},
+
+    /**
+     * @param {!PageAgent.FrameId} frameId
+     */
+    highlightFrame: function(frameId) {}
 }
 
 /**
@@ -2196,5 +2206,14 @@ WebInspector.DefaultDOMNodeHighlighter.prototype = {
     {
         WebInspector.overridesSupport.setTouchEmulationSuspended(enabled);
         this._agent.setInspectModeEnabled(enabled, inspectUAShadowDOM, config, callback);
+    },
+
+    /**
+     * @override
+     * @param {!PageAgent.FrameId} frameId
+     */
+    highlightFrame: function(frameId)
+    {
+        this._agent.highlightFrame(frameId, WebInspector.Color.PageHighlight.Content.toProtocolRGBA(), WebInspector.Color.PageHighlight.ContentOutline.toProtocolRGBA());
     }
 }

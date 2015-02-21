@@ -54,7 +54,8 @@ WebInspector.UserMetrics._ActionCodes = {
     ConsoleEvaluated: 8,
     FileSavedInWorkspace: 9,
     DeviceModeEnabled: 10,
-    AnimationsPlaybackRateChanged: 11
+    AnimationsPlaybackRateChanged: 11,
+    RevisionApplied: 12
 }
 
 WebInspector.UserMetrics._PanelCodes = {

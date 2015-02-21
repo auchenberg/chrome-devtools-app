@@ -112,6 +112,8 @@ WebInspector.NetworkProject = function(workspace, networkMapping)
     this._networkMapping = networkMapping;
     this._projectDelegates = {};
 
+    this._sourceCodeContentType = new WeakMap();
+
     this._processedURLs = {};
     WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.ResourceAdded, this._resourceAdded, this);
     WebInspector.targetManager.addModelListener(WebInspector.ResourceTreeModel, WebInspector.ResourceTreeModel.EventTypes.MainFrameNavigated, this._mainFrameNavigated, this);
@@ -277,7 +279,17 @@ WebInspector.NetworkProject.prototype = {
         if (this._processedURLs[url])
             return;
         this._processedURLs[url] = true;
-        this.addFileForURL(url, contentProvider, isContentScript);
+        var uiSourceCode = this.addFileForURL(url, contentProvider, isContentScript);
+        this._sourceCodeContentType.set(uiSourceCode, type);
+    },
+
+    /**
+     * @param {!WebInspector.UISourceCode} uiSourceCode
+     * @return {(!WebInspector.ResourceType|undefined)}
+     */
+    uiSourceCodeContentType: function(uiSourceCode)
+    {
+        return this._sourceCodeContentType.get(uiSourceCode);
     },
 
     /**

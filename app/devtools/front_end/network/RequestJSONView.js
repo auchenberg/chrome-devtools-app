@@ -42,7 +42,7 @@ WebInspector.RequestJSONView = function(request, parsedJSON)
 }
 
 // "false", "true", "null", ",", "{", "}", "[", "]", number, double-quoted string.
-WebInspector.RequestJSONView._jsonToken = new RegExp('(?:false|true|null|[,\\{\\}\\[\\]]|(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)|(?:\"(?:[^\\0-\\x08\\x0a-\\x1f\"\\\\]|\\\\(?:[\"/\\\\bfnrt]|u[0-9A-Fa-f]{4}))*\"))', 'g');
+WebInspector.RequestJSONView._jsonToken = new RegExp('(?:false|true|null|[/*&\\|;=\\(\\),\\{\\}\\[\\]]|(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)|(?:\"(?:[^\\0-\\x08\\x0a-\\x1f\"\\\\]|\\\\(?:[\"/\\\\bfnrt]|u[0-9A-Fa-f]{4}))*\"))', 'g');
 
 // Escaped unicode char.
 WebInspector.RequestJSONView._escapedUnicode = new RegExp('\\\\(?:([^u])|u(.{4}))', 'g');
@@ -119,6 +119,9 @@ WebInspector.RequestJSONView._buildObjectFromJSON = function(text)
             tip[key || tip.length] = null;
         } else if (code === 0x74) { // t
             tip[key || tip.length] = true;
+        } else if (code === 0x2f || code === 0x2a || code === 0x26 || code === 0x7c || code === 0x3b || code === 0x3d || code === 0x28 || code === 0x29) { // /*&|;=()
+            // Looks like JavaScript
+            throw "Invalid JSON";
         } else { // sign or digit
             tip[key || tip.length] = +(token);
         }

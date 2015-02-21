@@ -269,7 +269,7 @@ WebInspector.ExtensionSidebarPane.prototype = {
      * @param {string} title
      * @param {function(?string=)} callback
      * @param {?Protocol.Error} error
-     * @param {!RuntimeAgent.RemoteObject} result
+     * @param {?WebInspector.RemoteObject} result
      * @param {boolean=} wasThrown
      */
     _onEvaluate: function(title, callback, error, result, wasThrown)
@@ -277,7 +277,7 @@ WebInspector.ExtensionSidebarPane.prototype = {
         if (error)
             callback(error.toString());
         else
-            this._setObject(WebInspector.runtimeModel.createRemoteObject(result), title, callback);
+            this._setObject(/** @type {!WebInspector.RemoteObject} */ (result), title, callback);
     },
 
     _createObjectPropertiesView: function()

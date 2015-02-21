@@ -112,6 +112,20 @@ WebInspector.NetworkManager.hasDevToolsRequestHeader = function(request)
     return !!request && !!request.requestHeaderValue(WebInspector.NetworkManager._devToolsRequestHeader);
 }
 
+/**
+ * @param {string} url
+ * @param {!NetworkAgent.Headers|undefined} headers
+ * @param {function(?Protocol.Error, number, !NetworkAgent.Headers, string)} callback
+ */
+WebInspector.NetworkManager.loadResourceForFrontend = function(url, headers, callback)
+{
+    var target = WebInspector.targetManager.mainTarget();
+    if (target)
+        target.networkAgent().loadResourceForFrontend(url, headers, callback);
+    else
+        callback("No target to load resource available", 0, {}, "");
+}
+
 WebInspector.NetworkManager.prototype = {
     /**
      * @param {string} url
@@ -134,6 +148,16 @@ WebInspector.NetworkManager.prototype = {
     dispose: function()
     {
         WebInspector.settings.cacheDisabled.removeChangeListener(this._cacheDisabledSettingChanged, this);
+    },
+
+    clearBrowserCache: function()
+    {
+        this._networkAgent.clearBrowserCache();
+    },
+
+    clearBrowserCookies: function()
+    {
+        this._networkAgent.clearBrowserCookies();
     },
 
     __proto__: WebInspector.SDKModel.prototype
@@ -515,6 +539,22 @@ WebInspector.NetworkDispatcher.prototype = {
     },
 
     /**
+     * @override
+     * @param {!NetworkAgent.RequestId} requestId
+     * @param {!NetworkAgent.Timestamp} time
+     * @param {string} eventName
+     * @param {string} eventId
+     * @param {string} data
+     */
+    eventSourceMessageReceived: function(requestId, time, eventName, eventId, data)
+    {
+        var networkRequest = this._inflightRequestsById[requestId];
+        if (!networkRequest)
+            return;
+        networkRequest.addEventSourceMessage(time, eventName, eventId, data);
+    },
+
+    /**
      * @param {!NetworkAgent.RequestId} requestId
      * @param {!NetworkAgent.Timestamp} time
      * @param {string} redirectURL
@@ -591,3 +631,79 @@ WebInspector.NetworkDispatcher.prototype = {
         return new WebInspector.NetworkRequest(this._manager._target, requestId, url, documentURL, frameId, loaderId, initiator);
     }
 }
+
+
+/**
+ * @constructor
+ * @implements {WebInspector.TargetManager.Observer}
+ */
+WebInspector.MultitargetNetworkManager = function()
+{
+    WebInspector.targetManager.observeTargets(this);
+}
+
+WebInspector.MultitargetNetworkManager.prototype = {
+    /**
+     * @override
+     * @param {!WebInspector.Target} target
+     */
+    targetAdded: function(target)
+    {
+        var networkAgent = target.networkAgent();
+        if (this._extraHeaders)
+            networkAgent.setExtraHTTPHeaders(this._extraHeaders);
+        if (typeof this._userAgent !== "undefined")
+            networkAgent.setUserAgentOverride(this._userAgent);
+        if (this._networkConditions) {
+            networkAgent.emulateNetworkConditions(this._networkConditions.offline, this._networkConditions.latency,
+                this._networkConditions.throughput, this._networkConditions.throughput);
+        }
+    },
+
+    /**
+     * @override
+     * @param {!WebInspector.Target} target
+     */
+    targetRemoved: function(target)
+    {
+    },
+
+    /**
+     * @param {!NetworkAgent.Headers} headers
+     */
+    setExtraHTTPHeaders: function(headers)
+    {
+        this._extraHeaders = headers;
+        for (var target of WebInspector.targetManager.targets())
+            target.networkAgent().setExtraHTTPHeaders(this._extraHeaders);
+    },
+
+    /**
+     * @param {string} userAgent
+     */
+    setUserAgentOverride: function(userAgent)
+    {
+        this._userAgent = userAgent;
+        for (var target of WebInspector.targetManager.targets())
+            target.networkAgent().setUserAgentOverride(this._userAgent);
+    },
+
+    /**
+     * @param {boolean} offline
+     * @param {number} latency
+     * @param {number} throughput
+     */
+    emulateNetworkConditions: function(offline, latency, throughput)
+    {
+        this._networkConditions = { offline: offline, latency: latency, throughput: throughput };
+        for (var target of WebInspector.targetManager.targets()) {
+            target.networkAgent().emulateNetworkConditions(this._networkConditions.offline, this._networkConditions.latency,
+                this._networkConditions.throughput, this._networkConditions.throughput);
+        }
+    }
+}
+
+/**
+ * @type {!WebInspector.MultitargetNetworkManager}
+ */
+WebInspector.multitargetNetworkManager;

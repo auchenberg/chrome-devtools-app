@@ -242,7 +242,7 @@ WebInspector.ScriptSnippetModel.prototype = {
         var evaluationUrl = mapping._evaluationSourceURL(uiSourceCode);
         var expression = uiSourceCode.workingCopy();
         WebInspector.console.show();
-        target.debuggerAgent().compileScript(expression, evaluationUrl, executionContext.id, compileCallback.bind(this, target));
+        target.debuggerAgent().compileScript(expression, evaluationUrl, true, executionContext.id, compileCallback.bind(this, target));
 
         /**
          * @param {!WebInspector.Target} target
