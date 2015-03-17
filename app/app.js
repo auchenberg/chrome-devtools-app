@@ -132,7 +132,9 @@ function setupMenubars() {
     var nativeMenuBar = new gui.Menu({
         type: "menubar"
     });
-    nativeMenuBar.createMacBuiltin('Chrome DevTools');
+    if(nativeMenuBar.createMacBuiltin){
+        nativeMenuBar.createMacBuiltin('Chrome DevTools');
+    }
     win.menu = nativeMenuBar;
 
     var debugMenuBar = new gui.Menu();
