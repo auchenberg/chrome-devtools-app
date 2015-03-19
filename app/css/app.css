@@ -130,6 +130,7 @@ section.devtool.ng-hide-remove {
 section.devtool .toolbar {
     height: 48px;
     min-height: 48px;
+    padding: 0 10px;
 }
 
 section.devtool .toolbar .back {
@@ -138,6 +139,13 @@ section.devtool .toolbar .back {
 
     width: 30px;
     height: 30px;
+    margin-right: 10px;
+}
+
+section.devtool .toolbar .title {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 section.devtool .devtools-wrapper {

@@ -63,6 +63,7 @@ app.controller('home', function ($scope, $http, $location, localStorageService, 
 
         var webSocketUrl = target.webSocketDebuggerUrl.replace(/(ws|wss)\:\/\//, '');
 
+        $scope.currentTarget = target;
         $scope.devtoolsUrl = 'devtools/front_end/inspector.html?ws=' + webSocketUrl;
     }
 
