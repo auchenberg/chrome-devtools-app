@@ -45,7 +45,7 @@ app.directive('devtools', function() {
 
 app.controller('home', function ($scope, $http, $location, localStorageService, $timeout) {
 
-    $scope.REDISCOVERY_DELAY = 500; // Half a second
+    $scope.REDISCOVERY_DELAY = 5000; // Half a second
     $scope.filter = '^page$';
     $scope.targetsFilterSelectedIndex = 1;
     $scope.devtoolsUrl = '';
