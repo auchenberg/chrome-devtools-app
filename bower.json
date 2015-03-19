@@ -22,6 +22,7 @@
     "angular-animate": "#1.3.8",
     "hammerjs": "~2.0.4",
     "angular-material": "~0.6.1",
-    "angular-local-storage": "~0.1.5"
+    "angular-local-storage": "~0.1.5",
+    "ng-group": "~0.9.0"
   }
 }

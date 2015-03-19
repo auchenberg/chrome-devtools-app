@@ -13,6 +13,7 @@
     <script src="lib/bower_components/angular-aria/angular-aria.js"></script>
     <script src="lib/bower_components/angular-material/angular-material.js"></script>
     <script src="lib/bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
+    <script src="lib/bower_components/ng-group/src/ngGroup.js"></script>
 
     <script src="app.js"></script>
 </head>
@@ -28,23 +29,29 @@
         </md-tabs>
 
         <md-list class="target-list">
-          <md-item ng-repeat="target in targets.toArray() | regex:'type': filter | orderBy:'type':true">
-            <md-item-content ng-click="connect(target)">
-              <div class="md-tile-left icon">
-                  <img ng-src="{{target.faviconUrl}}" class="face" alt="{{item.who}}">
-              </div>
-              <div class="md-tile-content">
-                <h3>{{target.title}}</h3>
-                <h4>{{target.type}} - {{target.url}}</h4>
-                <p>{{target.description}}</p>
-                
-              </div>
-              <div class="md-tile-right">
-                <md-button class="md-fab md-default-theme connect" ng-click="connect(target)">Go</md-button>
-              </div>                  
-            </md-item-content>
-            <md-divider ng-if="!$last"></md-divider>
-          </md-item>
+
+            <md-item ng-repeat="targetGroup in targets.toArray() | regex:'type': filter | orderBy:'type':true | groupBy:'group':'peopleByHome' ">
+              <h3>{{targetGroup.group}}</h3>
+            
+                <md-item ng-repeat="target in targetGroup.items">
+                    <md-item-content ng-click="connect(target)">
+                      <div class="md-tile-left icon">
+                          <img ng-src="{{target.faviconUrl}}" class="face" alt="{{item.who}}">
+                      </div>
+                      <div class="md-tile-content">
+                        <h3>{{target.title}}</h3>
+                        <h4>{{target.type}} - {{target.url}}</h4>
+                        <p>{{target.description}}</p>
+                        
+                      </div>                
+                    </md-item-content>
+
+                    <md-divider ng-if="!$last"></md-divider>
+                </md-item>
+
+                <md-divider></md-divider>
+            </md-item>
+
         </md-list>
 
 

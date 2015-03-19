@@ -1,7 +1,7 @@
 var TargetsCollection = require('./TargetsCollection');
 var ADBDeviceBrowser = require('./ADBDeviceBrowser');
 
-var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule']);
+var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule', 'ng.group']);
 
 app.config(function (localStorageServiceProvider) {
   localStorageServiceProvider
