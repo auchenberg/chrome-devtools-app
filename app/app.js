@@ -1,4 +1,5 @@
 var TargetsCollection = require('./TargetsCollection');
+var ADBDeviceBrowser = require('./ADBDeviceBrowser');
 
 var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule']);
 
@@ -50,6 +51,7 @@ app.controller('home', function ($scope, $http, $location, localStorageService, 
     $scope.devtoolsUrl = '';
 
     $scope.targets = new TargetsCollection();
+    $scope.adbDeviceBrowser = new ADBDeviceBrowser($scope.targets);
 
     setupMenubars();
 
@@ -86,21 +88,21 @@ app.controller('home', function ($scope, $http, $location, localStorageService, 
     }
 
     $scope.discover = function() {
-        var req = $http.get('http://localhost:9222/json');
-        // var req = $http.get('/json.json');
 
-        req.success(function(data, status, headers, config) {
-            $scope.targets.clear();
+        // $scope.targets.clear();
 
+        // Local chrome devices
+        $http.get('http://localhost:9222/json').success(function(data, status, headers, config) {
             data.forEach(function(item) {
+                item.group = 'Chrome (desktop)';
+
                 $scope.targets.add(item.id, item);
             });
-
         });
 
-        req.catch(function() {
+        // ADB / Android devices
+        $scope.adbDeviceBrowser.discover();
 
-        });
     }
 
     $scope.showTargets = function() {
