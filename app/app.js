@@ -1,6 +1,7 @@
 var TargetsCollection = require('./TargetsCollection');
 
 var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule']);
+var discoverUrl = 'http://localhost:9222/json'
 
 app.config(function (localStorageServiceProvider) {
   localStorageServiceProvider
@@ -23,7 +24,7 @@ app.filter('regex', function() {
 
         return out;
     };
-    
+
 });
 
 app.directive('devtools', function() {
@@ -61,7 +62,7 @@ app.controller('home', function ($scope, $http, $location, localStorageService, 
 
         var webSocketUrl = target.webSocketDebuggerUrl.replace(/(ws|wss)\:\/\//, '');
 
-        $scope.devtoolsUrl = 'devtools/front_end/inspector.html?ws=' + webSocketUrl;
+        $scope.devtoolsUrl = 'devtools/front_end/inspector.html?ws=' + webSocketUrl + '&remoteFrontend=true';
     }
 
     $scope.setTargetFilter = function(filter) {
@@ -86,7 +87,7 @@ app.controller('home', function ($scope, $http, $location, localStorageService, 
     }
 
     $scope.discover = function() {
-        var req = $http.get('http://localhost:9222/json');
+        var req = $http.get(discoverUrl);
         // var req = $http.get('/json.json');
 
         req.success(function(data, status, headers, config) {
@@ -142,6 +143,15 @@ function setupMenubars() {
             win.showDevTools();
         }
     }));
+
+    debugMenuBar.append(new gui.MenuItem({
+        label: 'Connect',
+        click: function() {
+            var url = prompt('Enter new discover url')
+            discoverUrl = url;
+        }
+    }));
+
 
     nativeMenuBar.append(new gui.MenuItem({
         label: 'Debug',
