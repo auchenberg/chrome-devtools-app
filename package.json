@@ -1,24 +1,25 @@
 {
   "name": "chrome-devtools",
-  "version": "0.0.1",
-  "description": "Chrome DevTools packaged as an app via node-webkit",
+  "version": "0.0.2",
+  "description": "Chrome DevTools packaged as an desktop app",
   "author": "Kenneth Auchenberg",
   "license": "MIT",
   "dependencies": {
     "angular": "~1.3.2",
     "bower": "~1.3.12",
-    "nw": "^0.12.0-alpha2"
+    "titlebar": "^1.3.0"
   },
   "devDependencies": {
+    "electron-packager": "^4.1.3",
+    "electron-prebuilt": "^0.28.2",
     "es6-promise": "~2.0.1",
     "grunt": "~0.4.5",
-    "grunt-node-webkit-builder": "^1.0.0",
-    "grunt-shell": "~1.1.1",
+    "grunt-electron": "^1.0.0",
     "load-grunt-tasks": "~2.0.0"
   },
   "main": "index.js",
   "scripts": {
-    "start": "nw app",
+    "start": "electron index.js",
     "install": "bower install"
   },
   "repository": {

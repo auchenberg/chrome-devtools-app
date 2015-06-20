@@ -4,7 +4,7 @@
         "platform"
     ],
     "scripts": [
-        "NwjsInspectorFrontendHost.js",
+        "CustomInspectorFrontendHost.js",
         "InspectorFrontendHost.js",
         "Platform.js",
         "UserMetrics.js"

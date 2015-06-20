@@ -1,0 +1,17 @@
+<md-dialog>
+  <form>
+  <md-dialog-content>
+  	<p>Please enter the url of the HTTP discover endpoint.</p>
+		<input type="text" class="url" ng-model="url" style="width: 100%; height: 20px;" />
+  </md-dialog-content>
+  <div class="md-actions" layout="row">
+    <span flex></span>
+    <md-button ng-click="cancel()" class="md-primary">
+     Cancel
+    </md-button>
+    <md-button ng-click="connect(url)" class="md-primary">
+      Connect
+    </md-button>
+  </div>
+  </form>
+</md-dialog>

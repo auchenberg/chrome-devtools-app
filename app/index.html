@@ -1,80 +1,68 @@
 <!doctype html>
 <html lang="en" ng-app="app" ng-controller="home">
 <head>
-    <meta charset="utf-8">
-    <title>Chrome DevTools</title>
-    <link rel="shortcut icon" href="icon/logo.png">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="lib/bower_components/angular-material/angular-material.css">
+  <meta charset="utf-8">
+  <title>Chrome DevTools</title>
+  <link rel="shortcut icon" href="icon/logo.png">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="lib/bower_components/angular-material/angular-material.css">
 
-    <script src="lib/bower_components/angular/angular.js"></script>
-    <script src="lib/bower_components/hammerjs/hammer.js"></script>
-    <script src="lib/bower_components/angular-animate/angular-animate.js"></script>
-    <script src="lib/bower_components/angular-aria/angular-aria.js"></script>
-    <script src="lib/bower_components/angular-material/angular-material.js"></script>
-    <script src="lib/bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
+  <script src="lib/bower_components/angular/angular.js"></script>
+  <script src="lib/bower_components/angular-animate/angular-animate.js"></script>
+  <script src="lib/bower_components/angular-aria/angular-aria.js"></script>
+  <script src="lib/bower_components/angular-material/angular-material.js"></script>
+  <script src="lib/bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
 
-    <script src="app.js"></script>
+  <script src="app.js"></script>
 </head>
 
 <body ng-controller="home">
-    
-    <section class="targets" ng-show="!devtoolsUrl">
 
-        <md-tabs class="md-accent" md-selected="targetsFilterSelectedIndex">
-            <md-tab id="tab1" ng-click="setTargetFilter('apps')" aria-controls="tab1-content">Apps</md-tab>
-            <md-tab id="tab2" ng-click="setTargetFilter('pages')"aria-controls="tab2-content" >Pages</md-tab>
-            <md-tab id="tab3" ng-click="setTargetFilter('background_page')" aria-controls="tab3-content">Extensions</md-tab>
-        </md-tabs>
+  <section class="targets" ng-show="!devtoolsUrl">
 
-        <md-list class="target-list">
-          <md-item ng-repeat="target in targets.toArray() | regex:'type': filter | orderBy:'type':true">
-            <md-item-content ng-click="connect(target)">
-              <div class="md-tile-left icon">
-                  <img ng-src="{{target.faviconUrl}}" class="face" alt="{{item.who}}">
-              </div>
-              <div class="md-tile-content">
-                <h3>{{target.title}}</h3>
-                <h4>{{target.type}} - {{target.url}}</h4>
-                <p>{{target.description}}</p>
-                
-              </div>
-              <div class="md-tile-right">
-                <md-button class="md-fab md-default-theme connect" ng-click="connect(target)">Go</md-button>
-              </div>                  
-            </md-item-content>
-            <md-divider ng-if="!$last"></md-divider>
-          </md-item>
-        </md-list>
+    <md-tabs class="md-primary" md-selected="targetsFilterSelectedIndex" md-stretch-tabs="always">
+      <md-tab id="tab1" md-on-select="setTargetFilter('apps')" aria-controls="tab1-content">Apps</md-tab>
+      <md-tab id="tab2" md-on-select="setTargetFilter('pages')"aria-controls="tab2-content" >Pages</md-tab>
+      <md-tab id="tab3" md-on-select="setTargetFilter('background_page')" aria-controls="tab3-content">Extensions</md-tab>
+    </md-tabs>
 
+    <md-list class="target-list">
+      <div class="no-targets" ng-if="targets.toArray().length === 0">
+        <div class="inner">
+          <h2>We couldn't find any targets.</h2>
+          <img src="img/ghost.svg" width="300"/>
+          <p>Are you sure you are running Chrome or any other browser?</p>
+        </div>
+      </div>
 
-        <div class="floating-nav">
-            <md-button class="md-fab refresh" md-theme="cyan" aria-label="Profile"  ng-click="discover()">
-               <img src="img/ic_refresh_24px.svg" />
-            </md-button>
-        </div>  
+      <md-list-item class="md-3-line" ng-repeat="target in targets.toArray() | regex:'type': filter | orderBy:'type':true">
+        <img ng-src="{{target.faviconUrl}}" class="md-avatar face">
+        <div class="md-tile-content" ng-click="connect(target)">
+          <h3>{{target.title}}</h3>
+          <h4>{{target.type}} - {{target.url}}</h4>
+          <p>{{target.description}}</p>
+        </div>
+        <md-icon md-svg-icon="communication:messenger" ng-click="connect(target)" aria-label="Connect" class="md-secondary md-hue-3"></md-icon>
+        <md-divider ng-if="!$last"></md-divider>
+      </md-item>
+    </md-list>
+  </section>
 
-    </section>
+  <section class="devtool" ng-show="devtoolsUrl">
+    <md-toolbar class="toolbar md-accent md-default-theme">
+      <div class="container" layout="row" layout-align="start center">
+        <div>
+          <md-button class="md-fab md-default-theme back" aria-label="Profile" ng-click="showTargets()">
+            <img src="img/ic_arrow_back_24px.svg" width="20" />
+          </md-button>
+        </div>
 
-    <section class="devtool" ng-show="devtoolsUrl">
+        <div flex></div>
+      </div>
+    </md-toolbar>
 
-        <md-toolbar class="toolbar md-accent md-default-theme">
-            <div class="container" layout="row" layout-align="start center">
-                <div>
-                    <md-button class="md-fab md-default-theme back" md-theme="cyan" aria-label="Profile" ng-click="showTargets()">
-                        <img src="img/ic_arrow_back_24px.svg" width="20" />
-                    </md-button>
-                </div>
-
-                <div flex></div>
-
-            </div>
-        </md-toolbar>
-
-        <devtools src="{{devtoolsUrl}}">  
-
-    </section>
-
+    <devtools src="{{devtoolsUrl}}">
+  </section>
 
 </body>
 </html>

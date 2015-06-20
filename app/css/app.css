@@ -4,7 +4,7 @@ body {
     font-size: 13px;
     margin: 0;
     min-width: 47em;
-    padding: 20px 0 65px 0;  
+    padding: 20px 0 65px 0;
     overflow: hidden;
 }
 
@@ -14,7 +14,7 @@ body > section {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 20;    
+    z-index: 20;
 }
 
 .media {
@@ -37,7 +37,7 @@ body > section {
 h1 {
     border-bottom: 1px solid #EEE;
     font-size: 150%;
-    padding-bottom: 10px;    
+    padding-bottom: 10px;
 }
 
 .toolbar {
@@ -58,7 +58,7 @@ section.targets .toolbar .refresh {
 
 
     background: #DB4437;
-    box-shadow: none;    
+    box-shadow: none;
 }
 
 .toolbar .refresh img {
@@ -72,7 +72,7 @@ section.targets .toolbar .refresh {
     font-weight: normal;
 }
 
-section.targets .floating-nav{ 
+section.targets .floating-nav{
     position: absolute;
     bottom: 30px;
     right: 30px;
@@ -149,4 +149,20 @@ section.devtool .devtools-wrapper iframe {
     border: 0;
     width: 100%;
     height: 100%;
+}
+
+
+.no-targets {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.no-targets .inner {
+    text-align: center;
+}
+
+.no-targets .inner img {
+    margin: 20px 0;
 }

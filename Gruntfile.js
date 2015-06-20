@@ -1,31 +1,32 @@
 module.exports = function(grunt) {
 
-    grunt.initConfig({
-
-        nodewebkit: {
-            options: {
-                platforms: ['osx'],
-                buildDir: './build',
-                macIcns: './app/icon/logo.icns'
-            },
-            src: ['./app/**/*']
-        },
-
-        shell: {
-            runApp: {
-                command: '/Applications/nwjs.app/Contents/MacOS/nwjs ./app'
-            },
-            runAppDebug: {
-                command: '/Applications/nwjs.app/Contents/MacOS/nwjs ./app --remote-debugging-port=9222'
-            }
+  grunt.initConfig({
+    electron: {
+      osx: {
+        options: {
+          name: 'Chrome DevTools',
+          dir: 'app',
+          out: 'build',
+          version: '0.28.2',
+          platform: 'darwin',
+          arch: 'x64'
         }
+      },
+      windows: {
+        options: {
+          name: 'Chrome DevTools',
+          dir: 'app',
+          out: 'build',
+          version: '0.28.2',
+          platform: 'win32',
+          arch: 'x64'
+        }
+      }
+    }
+  })
 
-    });
+  require('load-grunt-tasks')(grunt)
 
-    require('load-grunt-tasks')(grunt);
-
-    grunt.registerTask('build', ['nodewebkit']);
-    grunt.registerTask('run', ['shell:runApp']);
-    grunt.registerTask('runDebug', ['shell:runAppDebug']);
+  grunt.registerTask('build', ['electron'])
 
 }
