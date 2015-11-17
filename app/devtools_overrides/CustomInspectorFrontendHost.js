@@ -1,6 +1,6 @@
 (function(){
 
-  var clipboard = require('clipboard');
+  //var clipboard = require('clipboard');
 
   function CustomInspectorFrontendHost(){
 
@@ -9,7 +9,7 @@
   CustomInspectorFrontendHost.prototype = {
 
     copyText: function(text) {
-      clipboard.writeText(text)
+      //clipboard.writeText(text)
     }
 
   }

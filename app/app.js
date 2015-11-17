@@ -1,6 +1,6 @@
 var ipc = require('ipc')
 
-var TargetsCollection = require('./TargetsCollection');
+var TargetsCollection = require('./lib/TargetsCollection');
 var app = angular.module('app', ['ngAnimate', 'ngMaterial', 'LocalStorageModule']);
 var discoverUrl = 'http://localhost:9222/json'
 
@@ -134,72 +134,10 @@ app.controller('home', function ($scope, $http, $location, localStorageService, 
     }, $scope.REDISCOVERY_DELAY)
   }
 
-  $scope.setupMenubars = function() {
-
-    var remote = require('remote')
-    var Menu = remote.require('menu')
-
-    var template = [
-      {
-        label: 'Chrome DevTools',
-        submenu: [
-          {
-            label: 'About Chrome DevTools',
-            selector: 'orderFrontStandardAboutPanel:'
-          },
-          {
-            type: 'separator'
-          },
-          {
-            label: 'Quit',
-            accelerator: 'Command+Q',
-            selector: 'terminate:'
-          },
-        ]
-      },
-      {
-        label: 'View',
-        submenu: [
-          {
-            label: 'Reload',
-            accelerator: 'Command+R',
-            click: function() {
-              remote.getCurrentWindow().reload();
-            }
-          },
-          {
-            label: 'Toggle DevTools',
-            accelerator: 'Alt+Command+I',
-            click: function() {
-              remote.getCurrentWindow().toggleDevTools();
-            }
-          },
-        ]
-      },
-      {
-        label: 'Targets',
-        submenu: [
-          {
-            label: 'Connect to',
-            accelerator: 'Alt+Command+C',
-            click: function() {
-              $scope.showConnectPrompt();
-            }
-          }
-        ]
-      }
-    ];
-
-    menu = Menu.buildFromTemplate(template)
-    Menu.setApplicationMenu(menu)
-
-  }
-
   // Initialize
   $scope.discover();
   // $scope.startDiscoveryChecks()
   $scope.setTargetFilter(localStorageService.get('currentFilter') || 'pages')
-  $scope.setupMenubars();
 
 });
 

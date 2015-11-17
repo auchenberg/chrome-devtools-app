@@ -3,3 +3,5 @@ bower_components
 npm-debug.log
 cache
 .DS_Store
+releases
+build
