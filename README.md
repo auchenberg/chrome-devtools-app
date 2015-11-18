@@ -1,4 +1,4 @@
-![Logo](https://github.com/auchenberg/chrome-devtools-app/raw/master/app/icon/logo.png)
+![Icon](https://github.com/auchenberg/chrome-devtools-app/raw/master/readme/icon.png)
 
 Chrome DevTools App.
 ===================
