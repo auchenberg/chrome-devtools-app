@@ -11,9 +11,9 @@ module.exports.setMenu = function (mainWindow, devMenu) {
         {
             label: "Application",
             submenu: [
-                { label: "About Opbeat", selector: "orderFrontStandardAboutPanel:" },
+                { label: "About Chrome DevTools", selector: "orderFrontStandardAboutPanel:" },
                 { type: "separator" },
-                { label: 'Hide Opbeat', selector: 'hide:', accelerator: 'Command+H' },
+                { label: 'Hide Chrome DevTools', selector: 'hide:', accelerator: 'Command+H' },
                 { label: "Quit", accelerator: "CmdOrCtrl+Q", click: function() { app.quit(); }}
             ]
         },
