@@ -4,7 +4,7 @@ var execSync = require('child_process').execSync,
     appBasePath = path.resolve(__dirname, '..', 'app');
 
 function patchHostModuleDeclaration(){
-    var customFrontEndHostFileName = 'NwjsInspectorFrontendHost.js',
+    var customFrontEndHostFileName = 'CustomInspectorFrontendHost.js',
         frontEndModuleConfigFilePath = appBasePath + '/devtools/front_end/host/module.json',
         frontEndModuleConfig = require(frontEndModuleConfigFilePath);
 
@@ -20,8 +20,8 @@ function patchHostModuleDeclaration(){
 }
 
 function addCustomFrontendHostSymlink(){
-  var overrideFilePath = '../../../devtools_overrides/NwjsInspectorFrontendHost.js',
-      linkPath = appBasePath + '/devtools/front_end/host/NwjsInspectorFrontendHost.js',
+  var overrideFilePath = '../../../devtools_overrides/CustomInspectorFrontendHost.js',
+      linkPath = appBasePath + '/devtools/front_end/host/CustomInspectorFrontendHost.js',
       symlinkCommand = 'ln -s ' +  overrideFilePath + ' ' + linkPath;
 
   if(!fs.existsSync(linkPath)){

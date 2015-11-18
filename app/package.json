@@ -1,0 +1,15 @@
+{
+  "name": "chrome-devtools-app",
+  "productName": "Chrome DevTools App",
+  "identifier": "com.auchenberg.chrome-devtools-app",
+  "description": "Chrome DevTools packaged as an app using Electron.",
+  "version": "0.0.2",
+  "author": "Kenneth Auchenberg",
+  "main": "background.js",
+  "config": {
+    "target": "development"
+  },
+  "dependencies": {
+    "fs-jetpack": "^0.7.0"
+  }
+}
