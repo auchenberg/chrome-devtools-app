@@ -3,7 +3,7 @@
   "productName": "Chrome DevTools App",
   "identifier": "com.auchenberg.chrome-devtools-app",
   "description": "Chrome DevTools packaged as an app using Electron.",
-  "version": "0.0.2",
+  "version": "1.1.0",
   "author": "Kenneth Auchenberg",
   "main": "background.js",
   "config": {
