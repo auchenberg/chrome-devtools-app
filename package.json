@@ -29,7 +29,8 @@
     "build": "gulp build",
     "release": "gulp release --env=production",
     "start": "node ./tasks/start",
-    "test": "node ./tasks/start --env=test"
+    "test": "node ./tasks/start --env=test",
+    "postinstall": "bower cache clean && bower install"
   },
   "repository": {
     "type": "git",
