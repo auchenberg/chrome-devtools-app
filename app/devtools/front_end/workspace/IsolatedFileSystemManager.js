@@ -141,10 +141,10 @@ WebInspector.IsolatedFileSystemManager.prototype = {
     _onFileSystemAdded: function(event)
     {
         var errorMessage = /** @type {string} */ (event.data["errorMessage"]);
-        var fileSystem = /** @type {!WebInspector.IsolatedFileSystemManager.FileSystem} */ (event.data["fileSystem"]);
+        var fileSystem = /** @type {?WebInspector.IsolatedFileSystemManager.FileSystem} */ (event.data["fileSystem"]);
         if (errorMessage)
             WebInspector.console.error(errorMessage, true);
-        else
+        else if (fileSystem)
             this._innerAddFileSystem(fileSystem);
     },
 

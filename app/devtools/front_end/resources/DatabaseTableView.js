@@ -38,10 +38,10 @@ WebInspector.DatabaseTableView = function(database, tableName)
 
     this._visibleColumnsSetting = WebInspector.settings.createSetting("databaseTableViewVisibleColumns", {});
 
-    this.refreshButton = new WebInspector.StatusBarButton(WebInspector.UIString("Refresh"), "refresh-status-bar-item");
+    this.refreshButton = new WebInspector.ToolbarButton(WebInspector.UIString("Refresh"), "refresh-toolbar-item");
     this.refreshButton.addEventListener("click", this._refreshButtonClicked, this);
-    this._visibleColumnsInput = new WebInspector.StatusBarInput(WebInspector.UIString("Visible columns"), 1);
-    this._visibleColumnsInput.addEventListener(WebInspector.StatusBarInput.Event.TextChanged, this._onVisibleColumnsChanged, this);
+    this._visibleColumnsInput = new WebInspector.ToolbarInput(WebInspector.UIString("Visible columns"), 1);
+    this._visibleColumnsInput.addEventListener(WebInspector.ToolbarInput.Event.TextChanged, this._onVisibleColumnsChanged, this);
 }
 
 WebInspector.DatabaseTableView.prototype = {
@@ -51,9 +51,9 @@ WebInspector.DatabaseTableView.prototype = {
     },
 
     /**
-     * @return {!Array.<!WebInspector.StatusBarItem>}
+     * @return {!Array.<!WebInspector.ToolbarItem>}
      */
-    statusBarItems: function()
+    toolbarItems: function()
     {
         return [this.refreshButton, this._visibleColumnsInput];
     },
@@ -74,14 +74,14 @@ WebInspector.DatabaseTableView.prototype = {
 
     _queryFinished: function(columnNames, values)
     {
-        this.detachChildViews();
+        this.detachChildWidgets();
         this.element.removeChildren();
 
         this._dataGrid = WebInspector.SortableDataGrid.create(columnNames, values);
         this._visibleColumnsInput.setVisible(!!this._dataGrid);
         if (!this._dataGrid) {
-            this._emptyView = new WebInspector.EmptyView(WebInspector.UIString("The “%s”\ntable is empty.", this.tableName));
-            this._emptyView.show(this.element);
+            this._emptyWidget = new WebInspector.EmptyWidget(WebInspector.UIString("The “%s”\ntable is empty.", this.tableName));
+            this._emptyWidget.show(this.element);
             return;
         }
         this._dataGrid.show(this.element);
@@ -128,7 +128,7 @@ WebInspector.DatabaseTableView.prototype = {
 
     _queryError: function(error)
     {
-        this.detachChildViews();
+        this.detachChildWidgets();
         this.element.removeChildren();
 
         var errorMsgElement = createElement("div");

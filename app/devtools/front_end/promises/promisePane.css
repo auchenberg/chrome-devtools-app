@@ -9,6 +9,10 @@
     flex: 1 1;
 }
 
+.promises > .toolbar {
+    border-bottom: 1px solid #dadada;
+}
+
 .promises .promise-gc {
     opacity: 0.6;
 }
@@ -23,7 +27,6 @@
 
 .promises .data-grid .header-container {
     height: 30px;
-    border-top: 1px solid rgb(205, 205, 205);
 }
 
 .promises .data-grid .data-container {
@@ -51,13 +54,19 @@
 }
 
 .promises .status {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-    -webkit-mask-size: 320px 144px;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
     -webkit-mask-position: -294px -26px;
     background-color: #bbb;
     height: 20px;
     width: 20px;
 }
+
+@media (-webkit-min-device-pixel-ratio: 1.5) {
+.promises .status {
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
+}
+} /* media */
 
 .promises .status.rejected {
     background-color: rgb(216, 0, 0);

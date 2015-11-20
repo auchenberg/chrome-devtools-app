@@ -506,7 +506,7 @@ WebInspector.ViewportControl.prototype = {
 
         var textLines = [];
         for (var i = startSelection.item; i <= endSelection.item; ++i)
-            textLines.push(this._providerElement(i).element().textContent);
+            textLines.push(this._providerElement(i).element().deepTextContent());
 
         var endSelectionElement = this._providerElement(endSelection.item).element();
         if (endSelection.node && endSelection.node.isSelfOrDescendant(endSelectionElement)) {

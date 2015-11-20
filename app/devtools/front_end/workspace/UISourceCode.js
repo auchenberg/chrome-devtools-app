@@ -123,11 +123,11 @@ WebInspector.UISourceCode.prototype = {
     uri: function()
     {
         var path = this.path();
-        if (!this._project.id())
+        if (!this._project.url())
             return path;
         if (!path)
-            return this._project.id();
-        return this._project.id() + "/" + path;
+            return this._project.url();
+        return this._project.url() + "/" + path;
     },
 
     /**
@@ -297,13 +297,14 @@ WebInspector.UISourceCode.prototype = {
                 this._terminateContentCheck();
                 return;
             }
+
             if (this._content === updatedContent) {
                 delete this._lastAcceptedContent;
                 this._terminateContentCheck();
                 return;
             }
 
-            if (!this.isDirty()) {
+            if (!this.isDirty() || this._workingCopy === updatedContent) {
                 this._commitContent(updatedContent, false);
                 this._terminateContentCheck();
                 return;
@@ -485,12 +486,14 @@ WebInspector.UISourceCode.prototype = {
         this._workingCopy = newWorkingCopy;
         delete this._workingCopyGetter;
         this.dispatchEventToListeners(WebInspector.UISourceCode.Events.WorkingCopyChanged);
+        this._project.workspace().dispatchEventToListeners(WebInspector.Workspace.Events.UISourceCodeWorkingCopyChanged, { uiSourceCode: this });
     },
 
     setWorkingCopyGetter: function(workingCopyGetter)
     {
         this._workingCopyGetter = workingCopyGetter;
         this.dispatchEventToListeners(WebInspector.UISourceCode.Events.WorkingCopyChanged);
+        this._project.workspace().dispatchEventToListeners(WebInspector.Workspace.Events.UISourceCodeWorkingCopyChanged, { uiSourceCode: this  });
     },
 
     removeWorkingCopyGetter: function()
@@ -621,7 +624,7 @@ WebInspector.UILocation.prototype = {
      */
     id: function()
     {
-        return this.uiSourceCode.uri() + ":" + this.lineNumber + ":" + this.columnNumber;
+        return this.uiSourceCode.project().id() + ":" + this.uiSourceCode.uri() + ":" + this.lineNumber + ":" + this.columnNumber;
     },
 
     /**

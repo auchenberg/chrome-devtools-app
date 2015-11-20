@@ -53,8 +53,10 @@
 }
 
 .navigator > ol {
+    min-width: 100%;
     min-height: 100%;
     display: inline-block;
+    position: relative
 }
 
 .navigator li {
@@ -75,6 +77,9 @@
     background-color: rgb(56, 121, 217);
 }
 
+.navigator > ol.being-edited li.selected {
+    overflow: visible;
+}
 
 .navigator .icon {
     width: 16px;

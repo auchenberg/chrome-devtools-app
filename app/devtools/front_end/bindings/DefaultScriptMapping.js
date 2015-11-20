@@ -173,16 +173,24 @@ WebInspector.DebuggerProjectDelegate.prototype = {
     },
 
     /**
+     * @override
+     * @return {string}
+     */
+    url: function()
+    {
+        return "debugger:";
+    },
+
+    /**
      * @param {!WebInspector.Script} script
      * @return {string}
      */
     addScript: function(script)
     {
-        var contentProvider = script.isInlineScript() && !script.hasSourceURL ? new WebInspector.ConcatenatedScriptsContentProvider([script]) : script;
         var splitURL = WebInspector.ParsedURL.splitURLIntoPathComponents(script.sourceURL);
         var name = splitURL[splitURL.length - 1];
         name = "VM" + script.scriptId + (name ? " " + name : "");
-        return this.addContentProvider("", name, script.sourceURL, script.sourceURL, contentProvider);
+        return this.addContentProvider("", name, script.sourceURL, script.sourceURL, script);
     },
 
     __proto__: WebInspector.ContentProviderBasedProjectDelegate.prototype

@@ -30,12 +30,6 @@
 
 WebInspector.Geometry = {};
 
-/** @typedef {!{top: number, left: number, width: number, height: number}} */
-WebInspector.Geometry.Rect;
-
-/** @typedef {!{top: number, left: number}} */
-WebInspector.Geometry.Insets;
-
 /**
  * @type {number}
  */
@@ -101,7 +95,7 @@ WebInspector.Geometry.Point.prototype = {
      */
     toString: function()
     {
-       return this.x.toFixed(2) + "," + this.y.toFixed(2);
+       return Math.round(this.x * 100) / 100 + ", " + Math.round(this.y * 100) / 100;
     }
 }
 
@@ -171,7 +165,13 @@ WebInspector.Geometry.CubicBezier.prototype = {
      */
     asCSSText: function()
     {
-        return "cubic-bezier(" + this.controlPoints.toString() + ")";
+        var raw = "cubic-bezier(" + this.controlPoints.join(", ") + ")";
+        var keywordValues = WebInspector.Geometry.CubicBezier.KeywordValues;
+        for (var keyword in keywordValues) {
+            if (raw === keywordValues[keyword])
+                return keyword;
+        }
+        return raw;
     }
 }
 
@@ -354,6 +354,33 @@ Size.prototype.addHeight = function(size)
 {
     return new Size(this.width, this.height + (typeof size === "number" ? size : size.height));
 };
+
+
+/**
+ * @constructor
+ * @param {number} left
+ * @param {number} top
+ * @param {number} right
+ * @param {number} bottom
+ */
+function Insets(left, top, right, bottom)
+{
+    this.left = left;
+    this.top = top;
+    this.right = right;
+    this.bottom = bottom;
+}
+
+Insets.prototype = {
+    /**
+     * @param {?Insets} insets
+     * @return {boolean}
+     */
+    isEqual: function(insets)
+    {
+        return !!insets && this.left === insets.left && this.top === insets.top && this.right == insets.right && this.bottom == insets.bottom;
+    }
+}
 
 
 /**

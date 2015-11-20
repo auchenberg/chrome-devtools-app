@@ -65,13 +65,12 @@ WebInspector.AuditExtensionCategory.prototype = {
      * @override
      * @param {!WebInspector.Target} target
      * @param {!Array.<!WebInspector.NetworkRequest>} requests
-            * @param {function(!WebInspector.AuditRuleResult)} ruleResultCallback
-     * @param {function()} categoryDoneCallback
+     * @param {function(!WebInspector.AuditRuleResult)} ruleResultCallback
      * @param {!WebInspector.Progress} progress
      */
-    run: function(target, requests, ruleResultCallback, categoryDoneCallback, progress)
+    run: function(target, requests, ruleResultCallback, progress)
     {
-        var results = new WebInspector.AuditExtensionCategoryResults(this, target, ruleResultCallback, categoryDoneCallback, progress);
+        var results = new WebInspector.AuditExtensionCategoryResults(this, target, ruleResultCallback, progress);
         WebInspector.extensionServer.startAuditRun(this.id, results);
     }
 }
@@ -82,15 +81,13 @@ WebInspector.AuditExtensionCategory.prototype = {
  * @param {!WebInspector.AuditExtensionCategory} category
  * @param {!WebInspector.Target} target
  * @param {function(!WebInspector.AuditRuleResult)} ruleResultCallback
- * @param {function()} categoryDoneCallback
  * @param {!WebInspector.Progress} progress
  */
-WebInspector.AuditExtensionCategoryResults = function(category, target, ruleResultCallback, categoryDoneCallback, progress)
+WebInspector.AuditExtensionCategoryResults = function(category, target, ruleResultCallback, progress)
 {
     this._target = target;
     this._category = category;
     this._ruleResultCallback = ruleResultCallback;
-    this._categoryDoneCallback = categoryDoneCallback;
     this._progress = progress;
     this._progress.setTotalWork(1);
     this._expectedResults = category._ruleCount;
@@ -116,7 +113,6 @@ WebInspector.AuditExtensionCategoryResults.prototype = {
     {
         WebInspector.extensionServer.stopAuditRun(this);
         this._progress.done();
-        this._categoryDoneCallback();
     },
 
     /**
@@ -129,7 +125,8 @@ WebInspector.AuditExtensionCategoryResults.prototype = {
     addResult: function(displayName, description, severity, details)
     {
         var result = new WebInspector.AuditRuleResult(displayName);
-        result.addChild(description);
+        if (description)
+            result.addChild(description);
         result.severity = severity;
         if (details)
             this._addNode(result, details);

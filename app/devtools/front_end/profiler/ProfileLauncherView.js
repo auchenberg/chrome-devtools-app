@@ -87,7 +87,7 @@ WebInspector.ProfileLauncherView.prototype = {
 
     _updateLoadButtonLayout: function()
     {
-        this._loadButton.classList.toggle("multi-target", WebInspector.targetManager.targets().length > 1);
+        this._loadButton.classList.toggle("multi-target", WebInspector.targetManager.targetsWithJSContext().length > 1);
     },
 
     /**
@@ -102,7 +102,6 @@ WebInspector.ProfileLauncherView.prototype = {
             this._innerContentElement.appendChild(decorationElement);
         this._isInstantProfile = profileType.isInstantProfile();
         this._isEnabled = profileType.isEnabled();
-        this._profileTypeId = profileType.id;
     },
 
     _controlButtonClicked: function()
@@ -155,7 +154,6 @@ WebInspector.ProfileLauncherView.prototype = {
         this._isInstantProfile = profileType.isInstantProfile();
         this._recordButtonEnabled = recordButtonEnabled;
         this._isEnabled = profileType.isEnabled();
-        this._profileTypeId = profileType.id;
         this._updateControls();
     },
 
@@ -172,7 +170,7 @@ WebInspector.MultiProfileLauncherView = function(profilesPanel)
 {
     WebInspector.ProfileLauncherView.call(this, profilesPanel);
 
-    WebInspector.settings.selectedProfileType = WebInspector.settings.createSetting("selectedProfileType", "CPU");
+    this._selectedProfileTypeSetting = WebInspector.settings.createSetting("selectedProfileType", "CPU");
 
     var header = this._innerContentElement.createChild("h1");
     header.textContent = WebInspector.UIString("Select profiling type");
@@ -211,7 +209,7 @@ WebInspector.MultiProfileLauncherView.prototype = {
 
     restoreSelectedProfileType: function()
     {
-        var typeId = WebInspector.settings.selectedProfileType.get();
+        var typeId = this._selectedProfileTypeSetting.get();
         if (!(typeId in this._typeIdToOptionElement))
             typeId = Object.keys(this._typeIdToOptionElement)[0];
         this._typeIdToOptionElement[typeId].checked = true;
@@ -242,9 +240,8 @@ WebInspector.MultiProfileLauncherView.prototype = {
         this.dispatchEventToListeners(WebInspector.MultiProfileLauncherView.EventTypes.ProfileTypeSelected, profileType);
         this._isInstantProfile = profileType.isInstantProfile();
         this._isEnabled = profileType.isEnabled();
-        this._profileTypeId = profileType.id;
         this._updateControls();
-        WebInspector.settings.selectedProfileType.set(profileType.id);
+        this._selectedProfileTypeSetting.set(profileType.id);
     },
 
     profileStarted: function()

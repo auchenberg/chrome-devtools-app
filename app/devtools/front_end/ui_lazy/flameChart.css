@@ -23,22 +23,19 @@
     position: absolute;
     pointer-events: none;
     border-color: rgb(56, 121, 217);
-    border-width: 2px;
+    border-width: 1px;
     border-style: solid;
     background-color: rgba(56, 121, 217, 0.2);
 }
 
 .flame-chart-v-scroll {
-    flex: 0 0 14px;
-    overflow-x: hidden;
-}
-
-.platform-mac .flame-chart-v-scroll {
     position: absolute;
     width: 14px;
     top: 0;
     right: 0;
     bottom: 0;
+    overflow-x: hidden;
+    z-index: 200;
 }
 
 .flame-chart-selection-overlay {
@@ -46,19 +43,31 @@
     z-index: 100;
     background-color: rgba(56, 121, 217, 0.3);
     border-color: rgb(16, 81, 177);
-    border-width: 1px;
+    border-width: 0 1px;
     border-style: solid;
-    pointer-events:none;
+    pointer-events: none;
+    top: 0;
+    bottom: 0;
+    text-align: center;
 }
 
 .flame-chart-selection-overlay .time-span {
     white-space: nowrap;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .flame-chart-entry-info {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 6px;
+    left: 12px;
     background-color: rgba(255, 255, 255, 0.7);
     pointer-events: none;
+}
+
+.flame-chart-entry-info table tr td:first-child {
+    font-weight: bold;
+    padding-right: 8px;
 }

@@ -67,7 +67,7 @@ function defineCommonExtensionSymbols(apiPrivate)
         ApplyStyleSheet: "applyStyleSheet",
         CreatePanel: "createPanel",
         CreateSidebarPane: "createSidebarPane",
-        CreateStatusBarButton: "createStatusBarButton",
+        CreateToolbarButton: "createToolbarButton",
         EvaluateOnInspectedPage: "evaluateOnInspectedPage",
         ForwardKeyboardEvent: "_forwardKeyboardEvent",
         GetHAR: "getHAR",
@@ -448,7 +448,7 @@ ExtensionPanelImpl.prototype = {
     {
         var id = "button-" + extensionServer.nextObjectId();
         var request = {
-            command: commands.CreateStatusBarButton,
+            command: commands.CreateToolbarButton,
             panel: this._id,
             id: id,
             icon: iconPath,
@@ -889,7 +889,7 @@ ExtensionServerClient.prototype = {
      */
     nextObjectId: function()
     {
-        return injectedScriptId + "_" + ++this._lastObjectId;
+        return injectedScriptId.toString() + "_" + ++this._lastObjectId;
     },
 
     _registerCallback: function(callback)

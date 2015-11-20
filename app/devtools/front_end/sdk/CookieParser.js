@@ -260,6 +260,14 @@ WebInspector.Cookie.prototype = {
     /**
      * @return {boolean}
      */
+    firstPartyOnly: function ()
+    {
+        return "first-party-only" in this._attributes;
+    },
+
+    /**
+     * @return {boolean}
+     */
     session: function()
     {
         // RFC 2965 suggests using Discard attribute to mark session cookies, but this does not seem to be widely used.
@@ -362,7 +370,7 @@ WebInspector.Cookie.prototype = {
      */
     remove: function(callback)
     {
-        this._target.pageAgent().deleteCookie(this.name(), (this.secure() ? "https://" : "http://") + this.domain() + this.path(), callback);
+        this._target.networkAgent().deleteCookie(this.name(), (this.secure() ? "https://" : "http://") + this.domain() + this.path(), callback);
     }
 }
 
@@ -385,7 +393,7 @@ WebInspector.Cookies.getCookiesAsync = function(callback)
     /**
      * @param {!WebInspector.Target} target
      * @param {?Protocol.Error} error
-     * @param {!Array.<!PageAgent.Cookie>} cookies
+     * @param {!Array.<!NetworkAgent.Cookie>} cookies
      */
     function mycallback(target, error, cookies)
     {
@@ -398,14 +406,14 @@ WebInspector.Cookies.getCookiesAsync = function(callback)
     }
 
     var barrier = new CallbackBarrier();
-    for (var target of WebInspector.targetManager.targets())
-        target.pageAgent().getCookies(barrier.createCallback(mycallback.bind(null, target)));
+    for (var target of WebInspector.targetManager.targets(WebInspector.Target.Type.Page))
+        target.networkAgent().getCookies(barrier.createCallback(mycallback.bind(null, target)));
     barrier.callWhenDone(callback.bind(null, allCookies));
 }
 
 /**
  * @param {!WebInspector.Target} target
- * @param {!PageAgent.Cookie} protocolCookie
+ * @param {!NetworkAgent.Cookie} protocolCookie
  * @return {!WebInspector.Cookie}
  */
 WebInspector.Cookies._parseProtocolCookie = function(target, protocolCookie)
@@ -420,6 +428,8 @@ WebInspector.Cookies._parseProtocolCookie = function(target, protocolCookie)
         cookie.addAttribute("httpOnly");
     if (protocolCookie["secure"])
         cookie.addAttribute("secure");
+    if (protocolCookie["firstPartyOnly"])
+        cookie.addAttribute("first-party-only");
     cookie.setSize(protocolCookie["size"]);
     return cookie;
 }

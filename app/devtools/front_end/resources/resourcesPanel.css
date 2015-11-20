@@ -73,7 +73,7 @@ body.inactive .resources.panel .sidebar li.selected .selection {
     top: 1px;
 }
 
-.resources-status-bar {
+.resources-toolbar {
     border-top: 1px solid #ccc;
     background-color: #eee;
 }
@@ -103,12 +103,8 @@ li.selected .base-storage-tree-element-subtitle {
 }
 
 .storage-view {
-    display: none;
-    overflow: hidden;
-}
-
-.storage-view.visible {
     display: flex;
+    overflow: hidden;
 }
 
 .storage-view {
@@ -157,15 +153,15 @@ li.selected .base-storage-tree-element-subtitle {
     height: 10px;
     margin-top: -7px;
     -webkit-user-select: none;
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
+    background-image: url(Images/toolbarButtonGlyphs.png);
+    background-size: 352px 168px;
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .database-user-query::before,
 .database-query-prompt::before,
 .database-query-result::before {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
+    background-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 
@@ -334,6 +330,10 @@ li.selected .base-storage-tree-element-subtitle {
     content: url(Images/indexedDB.png);
 }
 
+.service-workers-tree-item .icon {
+    content: url(Images/serviceWorker.svg);
+}
+
 .domstorage-storage-tree-item.local-storage .icon {
     content: url(Images/localStorage.png);
 }
@@ -352,16 +352,4 @@ li.selected .base-storage-tree-element-subtitle {
 
 .file-system-storage-tree-item .icon {
     content: url(Images/fileSystem.png);
-}
-
-.storage-application-cache-status-icon,
-.storage-application-cache-connectivity-icon {
-    margin: 0 5px;
-}
-
-.storage-application-cache-connectivity {
-    padding-right: 5px;
-    border-right: 1px solid #CCC;
-    height: 23px;
-    line-height: 23px
 }

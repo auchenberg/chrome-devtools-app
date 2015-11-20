@@ -46,19 +46,21 @@ WebInspector.JavaScriptCompiler.prototype = {
         var target = this._findTarget();
         if (!target)
             return;
+        var debuggerModel = WebInspector.DebuggerModel.fromTarget(target);
+        if (!debuggerModel)
+            return;
 
         this._compiling = true;
         var code = this._sourceFrame.textEditor.text();
-        target.debuggerAgent().compileScript(code, "", false, undefined, compileCallback.bind(this, target));
+        debuggerModel.compileScript(code, "", false, undefined, compileCallback.bind(this, target));
 
         /**
          * @param {!WebInspector.Target} target
-         * @param {?string} error
          * @param {!DebuggerAgent.ScriptId=} scriptId
          * @param {?DebuggerAgent.ExceptionDetails=} exceptionDetails
          * @this {WebInspector.JavaScriptCompiler}
          */
-        function compileCallback(target, error, scriptId, exceptionDetails)
+        function compileCallback(target, scriptId, exceptionDetails)
         {
             this._compiling = false;
             if (this._recompileScheduled) {
@@ -68,7 +70,7 @@ WebInspector.JavaScriptCompiler.prototype = {
             }
             if (!exceptionDetails)
                 return;
-            var message = new WebInspector.SourceFrameMessage(exceptionDetails.text, WebInspector.SourceFrameMessage.Level.Error, exceptionDetails.line - 1, exceptionDetails.column);
+            var message = new WebInspector.SourceFrameMessage(exceptionDetails.text, WebInspector.SourceFrameMessage.Level.Error, exceptionDetails.line - 1, exceptionDetails.column + 1);
             this._sourceFrame.addMessageToSource(message);
             this._compilationFinishedForTest();
         }

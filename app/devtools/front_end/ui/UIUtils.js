@@ -131,6 +131,11 @@ WebInspector._unregisterDragEvents = function()
  */
 WebInspector._elementDragMove = function(event)
 {
+    if (event.buttons !== 1) {
+        WebInspector._elementDragEnd(event);
+        return;
+    }
+
     if (WebInspector._elementDraggingEventListener(/** @type {!MouseEvent} */ (event)))
         WebInspector._cancelDragEvents(event);
 }
@@ -175,7 +180,7 @@ WebInspector._elementDragEnd = function(event)
 WebInspector.GlassPane = function(document)
 {
     this.element = createElement("div");
-    this.element.style.cssText = "position:absolute;top:0;bottom:0;left:0;right:0;background-color:transparent;z-index:1000;";
+    this.element.style.cssText = "position:absolute;top:0;bottom:0;left:0;right:0;background-color:transparent;z-index:1000;overflow:hidden;";
     this.element.id = "glass-pane";
     document.body.appendChild(this.element);
     WebInspector._glassPane = this;
@@ -192,7 +197,7 @@ WebInspector.GlassPane.prototype = {
 }
 
 /**
- * @type {!Array.<!WebInspector.View|!WebInspector.Dialog>}
+ * @type {!Array.<!WebInspector.Widget|!WebInspector.Dialog>}
  */
 WebInspector.GlassPane.DefaultFocusedViewStack = [];
 
@@ -356,6 +361,42 @@ WebInspector._modifiedFloatNumber = function(number, event)
 }
 
 /**
+ * @param {string} wordString
+ * @param {!Event} event
+ * @param {function(string, number, string):string=} customNumberHandler
+ * @return {?string}
+ */
+WebInspector.createReplacementString = function(wordString, event, customNumberHandler)
+{
+    var replacementString;
+    var prefix, suffix, number;
+
+    var matches;
+    matches = /(.*#)([\da-fA-F]+)(.*)/.exec(wordString);
+    if (matches && matches.length) {
+        prefix = matches[1];
+        suffix = matches[3];
+        number = WebInspector._modifiedHexValue(matches[2], event);
+
+        replacementString = customNumberHandler ? customNumberHandler(prefix, number, suffix) : prefix + number + suffix;
+    } else {
+        matches = /(.*?)(-?(?:\d+(?:\.\d+)?|\.\d+))(.*)/.exec(wordString);
+        if (matches && matches.length) {
+            prefix = matches[1];
+            suffix = matches[3];
+            number = WebInspector._modifiedFloatNumber(parseFloat(matches[2]), event);
+
+            // Need to check for null explicitly.
+            if (number === null)
+                return null;
+
+            replacementString = customNumberHandler ? customNumberHandler(prefix, number, suffix) : prefix + number + suffix;
+        }
+    }
+    return replacementString || null;
+}
+
+/**
  * @param {!Event} event
  * @param {!Element} element
  * @param {function(string,string)=} finishHandler
@@ -394,31 +435,7 @@ WebInspector.handleElementValueModifications = function(event, element, finishHa
     if (suggestionHandler && suggestionHandler(wordString))
         return false;
 
-    var replacementString;
-    var prefix, suffix, number;
-
-    var matches;
-    matches = /(.*#)([\da-fA-F]+)(.*)/.exec(wordString);
-    if (matches && matches.length) {
-        prefix = matches[1];
-        suffix = matches[3];
-        number = WebInspector._modifiedHexValue(matches[2], event);
-
-        replacementString = customNumberHandler ? customNumberHandler(prefix, number, suffix) : prefix + number + suffix;
-    } else {
-        matches = /(.*?)(-?(?:\d+(?:\.\d+)?|\.\d+))(.*)/.exec(wordString);
-        if (matches && matches.length) {
-            prefix = matches[1];
-            suffix = matches[3];
-            number = WebInspector._modifiedFloatNumber(parseFloat(matches[2]), event);
-
-            // Need to check for null explicitly.
-            if (number === null)
-                return false;
-
-            replacementString = customNumberHandler ? customNumberHandler(prefix, number, suffix) : prefix + number + suffix;
-        }
-    }
+    var replacementString = WebInspector.createReplacementString(wordString, event, customNumberHandler);
 
     if (replacementString) {
         var replacementTextNode = createTextNode(replacementString);
@@ -457,7 +474,7 @@ Number.preciseMillisToString = function(ms, precision)
 }
 
 /** @type {!WebInspector.UIStringFormat} */
-WebInspector._subMillisFormat = new WebInspector.UIStringFormat("%.3f\u2009ms");
+WebInspector._subMillisFormat = new WebInspector.UIStringFormat("%.2f\u2009ms");
 
 /** @type {!WebInspector.UIStringFormat} */
 WebInspector._millisFormat = new WebInspector.UIStringFormat("%.0f\u2009ms");
@@ -558,14 +575,28 @@ Number.withThousandsSeparator = function(num)
 /**
  * @param {string} format
  * @param {?ArrayLike} substitutions
- * @param {!Object.<string, function(string, ...):*>} formatters
- * @param {string} initialValue
- * @param {function(string, string): ?} append
- * @return {!{formattedResult: string, unusedSubstitutions: ?ArrayLike}};
+ * @param {?string} initialValue
+ * @return {!Element}
  */
-WebInspector.formatLocalized = function(format, substitutions, formatters, initialValue, append)
+WebInspector.formatLocalized = function(format, substitutions, initialValue)
 {
-    return String.format(WebInspector.UIString(format), substitutions, formatters, initialValue, append);
+    var element = createElement("span");
+    var formatters = {
+        s: function(substitution)
+        {
+            return substitution;
+        }
+    };
+    function append(a, b)
+    {
+        if (typeof b === "string")
+            b = createTextNode(b);
+        else if (b.shadowRoot)
+            b = createTextNode(b.shadowRoot.lastChild.textContent);
+        element.appendChild(b);
+    }
+    String.format(WebInspector.UIString(format), substitutions, formatters, initialValue, append);
+    return element;
 }
 
 /**
@@ -613,23 +644,27 @@ WebInspector.manageBlackboxingButtonLabel = function()
 
 /**
  * @param {!Element} element
- * @return {boolean}
  */
 WebInspector.installComponentRootStyles = function(element)
 {
-    var wasInstalled = element.classList.contains("component-root");
-    if (wasInstalled)
-        return false;
-    element.classList.add("component-root", "platform-" + WebInspector.platform());
-    return true;
+    element.appendChild(WebInspector.Widget.createStyleElement("ui/inspectorCommon.css"));
+    element.appendChild(WebInspector.Widget.createStyleElement("ui/inspectorSyntaxHighlight.css"));
+    element.classList.add("platform-" + WebInspector.platform());
+    if (Runtime.experiments.isEnabled("materialDesign"))
+        element.classList.add("material");
 }
 
 /**
  * @param {!Element} element
+ * @return {!DocumentFragment}
  */
-WebInspector.uninstallComponentRootStyles = function(element)
+WebInspector.createShadowRootWithCoreStyles = function(element)
 {
-    element.classList.remove("component-root", "platform-" + WebInspector.platform());
+    var shadowRoot = element.createShadowRoot();
+    shadowRoot.appendChild(WebInspector.Widget.createStyleElement("ui/inspectorCommon.css"));
+    shadowRoot.appendChild(WebInspector.Widget.createStyleElement("ui/inspectorSyntaxHighlight.css"));
+    shadowRoot.addEventListener("focus", WebInspector._focusChanged.bind(WebInspector), true);
+    return shadowRoot;
 }
 
 /**
@@ -669,14 +704,11 @@ WebInspector.currentFocusElement = function()
 }
 
 /**
- * @param {!Document} document
  * @param {!Event} event
  */
-WebInspector._focusChanged = function(document, event)
+WebInspector._focusChanged = function(event)
 {
-    var node = document.activeElement;
-    while (node && node.shadowRoot)
-        node = node.shadowRoot.activeElement;
+    var node = event.deepActiveElement();
     WebInspector.setCurrentFocusElement(node);
 }
 
@@ -742,46 +774,6 @@ WebInspector.restoreFocusFromElement = function(element)
 }
 
 /**
- * @param {!Document} document
- * @param {string} backgroundColor
- * @param {string} color
- */
-WebInspector.setToolbarColors = function(document, backgroundColor, color)
-{
-    if (!WebInspector._themeStyleElement) {
-        WebInspector._themeStyleElement = createElement("style");
-        document.head.appendChild(WebInspector._themeStyleElement);
-    }
-    var colorWithAlpha = WebInspector.Color.parse(color).setAlpha(0.8).asString(WebInspector.Color.Format.RGBA);
-    var prefix = WebInspector.isMac() ? "body:not(.undocked)" : "body";
-    WebInspector._themeStyleElement.textContent =
-        String.sprintf(
-            "%s .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {" +
-            "    background-image: none !important;" +
-            "    background-color: %s !important;" +
-            "    color: %s !important;" +
-            "}", prefix, backgroundColor, colorWithAlpha) +
-        String.sprintf(
-            "%s .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header-tab:hover {" +
-             "   color: %s;" +
-             "}", prefix, color) +
-        String.sprintf(
-             "%s .inspector-view-toolbar.status-bar::shadow .status-bar-item {" +
-             "   color: %s;" +
-             "}", prefix, colorWithAlpha) +
-        String.sprintf(
-             "%s .inspector-view-toolbar.status-bar::shadow .status-bar-button-theme {" +
-             "   background-color: %s;" +
-             "}", prefix, colorWithAlpha);
-}
-
-WebInspector.resetToolbarColors = function()
-{
-    if (WebInspector._themeStyleElement)
-        WebInspector._themeStyleElement.textContent = "";
-}
-
-/**
  * @param {!Element} element
  * @param {number} offset
  * @param {number} length
@@ -803,19 +795,6 @@ WebInspector.highlightSearchResult = function(element, offset, length, domChange
 WebInspector.highlightSearchResults = function(element, resultRanges, changes)
 {
     return WebInspector.highlightRangesWithStyleClass(element, resultRanges, WebInspector.highlightedSearchResultClassName, changes);
-}
-
-/**
- * @param {!Element} element
- * @param {string} styleClass
- */
-WebInspector.removeSearchResultsHighlight = function(element, styleClass)
-{
-    var highlightBits = element.querySelectorAll("." + styleClass);
-    for (var i = 0; i < highlightBits.length; ++i) {
-        var span = highlightBits[i];
-        span.parentElement.replaceChild(createTextNode(span.textContent), span);
-    }
 }
 
 /**
@@ -1109,8 +1088,7 @@ WebInspector.LongClickController = function(element)
  * @enum {string}
  */
 WebInspector.LongClickController.Events = {
-    LongClick: "LongClick",
-    LongPress: "LongPress"
+    LongClick: "LongClick"
 };
 
 WebInspector.LongClickController.prototype = {
@@ -1135,8 +1113,6 @@ WebInspector.LongClickController.prototype = {
         this._element.addEventListener("mouseup", boundMouseUp, false);
         this._element.addEventListener("click", boundReset, true);
 
-        var longClicks = 0;
-
         this._longClickData = { mouseUp: boundMouseUp, mouseDown: boundMouseDown, reset: boundReset };
 
         /**
@@ -1147,8 +1123,7 @@ WebInspector.LongClickController.prototype = {
         {
             if (e.which !== 1)
                 return;
-            longClicks = 0;
-            this._longClickInterval = setInterval(longClicked.bind(this, e), 200);
+            this._longClickInterval = setTimeout(longClicked.bind(this, e), 200);
         }
 
         /**
@@ -1168,8 +1143,7 @@ WebInspector.LongClickController.prototype = {
          */
         function longClicked(e)
         {
-            ++longClicks;
-            this.dispatchEventToListeners(longClicks === 1 ? WebInspector.LongClickController.Events.LongClick : WebInspector.LongClickController.Events.LongPress, e);
+            this.dispatchEventToListeners(WebInspector.LongClickController.Events.LongClick, e);
         }
     },
 
@@ -1188,59 +1162,13 @@ WebInspector.LongClickController.prototype = {
 }
 
 /**
- * @param {string} url
- * @param {string=} linkText
- * @param {string=} classes
- * @return {!Element}
- */
-WebInspector.createExternalAnchor = function(url, linkText, classes)
-{
-    var anchor = createElementWithClass("a", "link");
-    var href = sanitizeHref(url);
-
-    if (href)
-        anchor.href = href;
-    anchor.title = url;
-
-    if (!linkText)
-        linkText = url;
-
-    anchor.className = classes;
-    anchor.textContent = linkText;
-    anchor.setAttribute("target", "_blank");
-
-    /**
-     * @param {!Event} event
-     */
-    function clickHandler(event)
-    {
-        event.consume(true);
-        InspectorFrontendHost.openInNewTab(anchor.href);
-    }
-
-    anchor.addEventListener("click", clickHandler, false);
-
-    return anchor;
-}
-
-/**
- * @param {string} article
- * @param {string} title
- * @return {!Element}
- */
-WebInspector.createDocumentationAnchor = function(article, title)
-{
-    return WebInspector.createExternalAnchor("https://developer.chrome.com/devtools/docs/" + article, title);
-}
-
-/**
  * @param {!Window} window
  */
 WebInspector.initializeUIUtils = function(window)
 {
     window.addEventListener("focus", WebInspector._windowFocused.bind(WebInspector, window.document), false);
     window.addEventListener("blur", WebInspector._windowBlurred.bind(WebInspector, window.document), false);
-    window.document.addEventListener("focus", WebInspector._focusChanged.bind(WebInspector, window.document), true);
+    window.document.addEventListener("focus", WebInspector._focusChanged.bind(WebInspector), true);
     window.document.addEventListener("blur", WebInspector._documentBlurred.bind(WebInspector, window.document), true);
 }
 
@@ -1256,31 +1184,15 @@ WebInspector.beautifyFunctionName = function(name)
 /**
  * @param {string} localName
  * @param {string} typeExtension
- * @param {function(new:T)} extendedType
- * @param {!Object.<string, function(...*)>} protoTemplate
- * @param {string=} styleSheet
+ * @param {!Object} prototype
+ * @return {function()}
  * @suppressGlobalPropertiesCheck
  * @template T
  */
-function registerCustomElement(localName, typeExtension, extendedType, protoTemplate, styleSheet)
+function registerCustomElement(localName, typeExtension, prototype)
 {
-    var proto = Object.create(extendedType.prototype);
-    for (var p in protoTemplate)
-        proto[p] = protoTemplate[p];
-
-    if (!protoTemplate["createdCallback"]) {
-        /**
-         * @this {Element}
-         */
-        proto.createdCallback = function() {
-            var root = this.createShadowRoot();
-            root.appendChild(createElement("content"));
-            if (styleSheet)
-                root.appendChild(WebInspector.View.createStyleElement(styleSheet));
-        };
-    }
-    document.registerElement(typeExtension, {
-        prototype: proto,
+    return document.registerElement(typeExtension, {
+        prototype: Object.create(prototype),
         extends: localName
     });
 }
@@ -1335,20 +1247,22 @@ function createCheckboxLabel(title, checked)
 }
 
 ;(function() {
-    registerCustomElement("button", "text-button", HTMLButtonElement, {
+    registerCustomElement("button", "text-button", {
         /**
          * @this {Element}
          */
         createdCallback: function()
         {
             this.type = "button";
-            var root = this.createShadowRoot();
-            root.appendChild(WebInspector.View.createStyleElement("ui/textButton.css"));
+            var root = WebInspector.createShadowRootWithCoreStyles(this);
+            root.appendChild(WebInspector.Widget.createStyleElement("ui/textButton.css"));
             root.createChild("content");
-        }
-    }, "ui/textButton.css");
+        },
 
-    registerCustomElement("label", "dt-radio", HTMLLabelElement, {
+        __proto__: HTMLButtonElement.prototype
+    });
+
+    registerCustomElement("label", "dt-radio", {
         /**
          * @this {Element}
          */
@@ -1356,13 +1270,14 @@ function createCheckboxLabel(title, checked)
         {
             this.radioElement = this.createChild("input", "dt-radio-button");
             this.radioElement.type = "radio";
-
-            var root = this.createShadowRoot();
-            root.appendChild(WebInspector.View.createStyleElement("ui/radioButton.css"));
+            var root = WebInspector.createShadowRootWithCoreStyles(this);
+            root.appendChild(WebInspector.Widget.createStyleElement("ui/radioButton.css"));
             root.createChild("content").select = ".dt-radio-button";
             root.createChild("content");
             this.addEventListener("click", radioClickHandler, false);
-        }
+        },
+
+        __proto__: HTMLLabelElement.prototype
     });
 
     /**
@@ -1378,19 +1293,114 @@ function createCheckboxLabel(title, checked)
         this.radioElement.dispatchEvent(new Event("change"));
     }
 
-    registerCustomElement("label", "dt-checkbox", HTMLLabelElement, {
+    registerCustomElement("label", "dt-checkbox", {
         /**
          * @this {Element}
          */
         createdCallback: function()
         {
-            var root = this.createShadowRoot();
-            root.appendChild(WebInspector.View.createStyleElement("ui/checkboxTextLabel.css"));
-            this.checkboxElement = this.createChild("input", "dt-checkbox-button");
-            this.checkboxElement.type = "checkbox";
-            root.createChild("content").select = ".dt-checkbox-button";
+            this._root = WebInspector.createShadowRootWithCoreStyles(this);
+            this._root.appendChild(WebInspector.Widget.createStyleElement("ui/checkboxTextLabel.css"));
+            var checkboxElement = createElementWithClass("input", "dt-checkbox-button");
+            checkboxElement.type = "checkbox";
+            this._root.appendChild(checkboxElement);
+            this.checkboxElement = checkboxElement;
+
+            this.addEventListener("click", toggleCheckbox.bind(this));
+
+            /**
+             * @param {!Event} event
+             * @this {Node}
+             */
+            function toggleCheckbox(event)
+            {
+                if (event.target !== checkboxElement && event.target !== this)
+                    checkboxElement.click();
+            }
+
+            this._root.createChild("content");
+        },
+
+        /**
+         * @param {string} color
+         * @this {Element}
+         */
+        set backgroundColor(color)
+        {
+            this.checkboxElement.classList.add("dt-checkbox-themed");
+            this.checkboxElement.style.backgroundColor = color;
+        },
+
+        /**
+         * @param {string} color
+         * @this {Element}
+         */
+        set checkColor(color)
+        {
+            this.checkboxElement.classList.add("dt-checkbox-themed");
+            var stylesheet = createElement("style");
+            stylesheet.textContent = "input.dt-checkbox-themed:checked:after { background-color: " + color + "}";
+            this._root.appendChild(stylesheet);
+        },
+
+        /**
+         * @param {string} color
+         * @this {Element}
+         */
+        set borderColor(color)
+        {
+            this.checkboxElement.classList.add("dt-checkbox-themed");
+            this.checkboxElement.style.borderColor = color;
+        },
+
+        __proto__: HTMLLabelElement.prototype
+    });
+
+    registerCustomElement("label", "dt-icon-label", {
+        /**
+         * @this {Element}
+         */
+        createdCallback: function()
+        {
+            var root = WebInspector.createShadowRootWithCoreStyles(this);
+            root.appendChild(WebInspector.Widget.createStyleElement("ui/smallIcon.css"));
+            this._iconElement = root.createChild("div");
             root.createChild("content");
-        }
+        },
+
+        /**
+         * @param {string} type
+         * @this {Element}
+         */
+        set type(type)
+        {
+            this._iconElement.className = type;
+        },
+
+        __proto__: HTMLLabelElement.prototype
+    });
+
+    registerCustomElement("div", "dt-close-button", {
+        /**
+         * @this {Element}
+         */
+        createdCallback: function()
+        {
+            var root = WebInspector.createShadowRootWithCoreStyles(this);
+            root.appendChild(WebInspector.Widget.createStyleElement("ui/closeButton.css"));
+            this._buttonElement = root.createChild("div", "close-button");
+        },
+
+        /**
+         * @param {boolean} gray
+         * @this {Element}
+         */
+        set gray(gray)
+        {
+            this._buttonElement.className = gray ? "close-button-gray" : "close-button";
+        },
+
+        __proto__: HTMLDivElement.prototype
     });
 })();
 

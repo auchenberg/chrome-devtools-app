@@ -36,15 +36,15 @@
 WebInspector.EditFileSystemDialog = function(fileSystemPath)
 {
     WebInspector.DialogDelegate.call(this);
+    this.element.classList.add("dialog-contents");
     this._fileSystemPath = fileSystemPath;
-
-    this.element = createElementWithClass("div", "dialog-contents");
 
     var header = this.element.createChild("div", "header");
     var headerText = header.createChild("span");
     headerText.textContent = WebInspector.UIString("Edit file system");
 
-    var closeButton = header.createChild("div", "close-button-gray done-button");
+    var closeButton = header.createChild("div", "done-button", "dt-close-button");
+    closeButton.gray = true;
     closeButton.addEventListener("click", this._onDoneClick.bind(this), false);
 
     var contents = this.element.createChild("div", "contents");
@@ -91,10 +91,10 @@ WebInspector.EditFileSystemDialog = function(fileSystemPath)
     this._hasMappingChanges = false;
 }
 
-WebInspector.EditFileSystemDialog.show = function(element, fileSystemPath)
+WebInspector.EditFileSystemDialog.show = function(fileSystemPath)
 {
     var dialog = new WebInspector.EditFileSystemDialog(fileSystemPath);
-    WebInspector.Dialog.show(element, dialog);
+    WebInspector.Dialog.show(dialog);
     var glassPane = dialog.element.ownerDocument.getElementById("glass-pane");
     glassPane.classList.add("settings-glass-pane");
 }
@@ -113,29 +113,29 @@ WebInspector.EditFileSystemDialog.prototype = {
 
     _resize: function()
     {
-        if (!this._dialogElement || !this._relativeToElement)
+        if (!this._dialogElement || !this._container)
             return;
 
         const minWidth = 200;
         const minHeight = 150;
-        var maxHeight = this._relativeToElement.offsetHeight - 10;
+        var maxHeight = this._container.offsetHeight - 10;
         maxHeight = Math.max(minHeight, maxHeight);
-        var maxWidth = Math.min(540, this._relativeToElement.offsetWidth - 10);
+        var maxWidth = Math.min(540, this._container.offsetWidth - 10);
         maxWidth = Math.max(minWidth, maxWidth);
         this._dialogElement.style.maxHeight = maxHeight + "px";
         this._dialogElement.style.width = maxWidth + "px";
 
-        WebInspector.DialogDelegate.prototype.position(this._dialogElement, this._relativeToElement);
+        WebInspector.DialogDelegate.prototype.position(this._dialogElement, this._container);
     },
 
     /**
      * @override
      * @param {!Element} element
-     * @param {!Element} relativeToElement
+     * @param {!Element} container
      */
-    position: function(element, relativeToElement)
+    position: function(element, container)
     {
-        this._relativeToElement = relativeToElement;
+        this._container = container;
         this._resize();
     },
 

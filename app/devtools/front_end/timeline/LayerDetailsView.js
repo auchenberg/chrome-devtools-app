@@ -31,16 +31,16 @@
 /**
  * @constructor
  * @param {!WebInspector.LayerViewHost} layerViewHost
- * @extends {WebInspector.View}
+ * @extends {WebInspector.Widget}
  * @implements {WebInspector.LayerView}
  */
 WebInspector.LayerDetailsView = function(layerViewHost)
 {
-    WebInspector.View.call(this);
+    WebInspector.Widget.call(this);
     this.element.classList.add("layer-details-view");
     this._layerViewHost = layerViewHost;
     this._layerViewHost.registerView(this);
-    this._emptyView = new WebInspector.EmptyView(WebInspector.UIString("Select a layer to see its details"));
+    this._emptyWidget = new WebInspector.EmptyWidget(WebInspector.UIString("Select a layer to see its details"));
     this._buildContent();
 }
 
@@ -88,7 +88,6 @@ WebInspector.LayerDetailsView.CompositingReasonDetail = {
     "layerForBackground": WebInspector.UIString("Layer for background."),
     "layerForMask": WebInspector.UIString("Layer for mask."),
     "layerForVideoOverlay": WebInspector.UIString("Layer for video overlay."),
-    "scrollBlocksOn": WebInspector.UIString("Composition due to association with an element with a CSS \"scroll-blocks-on\" property applied."),
 };
 
 WebInspector.LayerDetailsView.prototype = {
@@ -117,7 +116,7 @@ WebInspector.LayerDetailsView.prototype = {
 
     wasShown: function()
     {
-        WebInspector.View.prototype.wasShown.call(this);
+        WebInspector.Widget.prototype.wasShown.call(this);
         this.update();
     },
 
@@ -134,7 +133,8 @@ WebInspector.LayerDetailsView.prototype = {
 
     _onPaintProfilerButtonClicked: function()
     {
-        this.dispatchEventToListeners(WebInspector.LayerDetailsView.Events.PaintProfilerRequested, this._selection.traceEvent);
+        var traceEvent = this._selection.type() === WebInspector.LayerView.Selection.Type.Tile ? /** @type {!WebInspector.LayerView.TileSelection} */ (this._selection).traceEvent() : null;
+        this.dispatchEventToListeners(WebInspector.LayerDetailsView.Events.PaintProfilerRequested, traceEvent);
     },
 
     /**
@@ -159,21 +159,21 @@ WebInspector.LayerDetailsView.prototype = {
         if (!layer) {
             this._tableElement.remove();
             this._paintProfilerButton.remove();
-            this._emptyView.show(this.element);
+            this._emptyWidget.show(this.element);
             return;
         }
-        this._emptyView.detach();
+        this._emptyWidget.detach();
         this.element.appendChild(this._tableElement);
         this.element.appendChild(this._paintProfilerButton);
         this._sizeCell.textContent = WebInspector.UIString("%d × %d (at %d,%d)", layer.width(), layer.height(), layer.offsetX(), layer.offsetY());
         this._paintCountCell.parentElement.classList.toggle("hidden", !layer.paintCount());
         this._paintCountCell.textContent = layer.paintCount();
-        const bytesPerPixel = 4;
-        this._memoryEstimateCell.textContent = Number.bytesToString(layer.invisible() ? 0 : layer.width() * layer.height() * bytesPerPixel);
+        this._memoryEstimateCell.textContent = Number.bytesToString(layer.gpuMemoryUsage());
         layer.requestCompositingReasons(this._updateCompositingReasons.bind(this));
         this._scrollRectsCell.removeChildren();
         layer.scrollRects().forEach(this._createScrollRectElement.bind(this));
-        this._paintProfilerButton.classList.toggle("hidden", !this._selection.traceEvent);
+        var traceEvent = this._selection.type() === WebInspector.LayerView.Selection.Type.Tile ? /** @type {!WebInspector.LayerView.TileSelection} */ (this._selection).traceEvent() : null;
+        this._paintProfilerButton.classList.toggle("hidden", !traceEvent);
     },
 
     _buildContent: function()
@@ -221,5 +221,5 @@ WebInspector.LayerDetailsView.prototype = {
         }
     },
 
-    __proto__: WebInspector.View.prototype
+    __proto__: WebInspector.Widget.prototype
 }

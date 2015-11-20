@@ -32,7 +32,7 @@ WebInspector.LayerView.prototype = {
 /**
  * @constructor
  * @param {!WebInspector.LayerView.Selection.Type} type
- * @param {?WebInspector.Layer} layer
+ * @param {!WebInspector.Layer} layer
  */
 WebInspector.LayerView.Selection = function(type, layer)
 {
@@ -59,7 +59,7 @@ WebInspector.LayerView.Selection.prototype = {
     },
 
     /**
-     * @return {?WebInspector.Layer}
+     * @return {!WebInspector.Layer}
      */
     layer: function()
     {
@@ -79,9 +79,11 @@ WebInspector.LayerView.Selection.prototype = {
 /**
  * @constructor
  * @extends {WebInspector.LayerView.Selection}
+ * @param {!WebInspector.Layer} layer
  */
 WebInspector.LayerView.LayerSelection = function(layer)
 {
+    console.assert(layer, "LayerSelection with empty layer");
     WebInspector.LayerView.Selection.call(this, WebInspector.LayerView.Selection.Type.Layer, layer);
 }
 
@@ -102,6 +104,8 @@ WebInspector.LayerView.LayerSelection.prototype = {
 /**
  * @constructor
  * @extends {WebInspector.LayerView.Selection}
+ * @param {!WebInspector.Layer} layer
+ * @param {number} scrollRectIndex
  */
 WebInspector.LayerView.ScrollRectSelection = function(layer, scrollRectIndex)
 {
@@ -133,7 +137,7 @@ WebInspector.LayerView.ScrollRectSelection.prototype = {
 WebInspector.LayerView.TileSelection = function(layer, traceEvent)
 {
     WebInspector.LayerView.Selection.call(this, WebInspector.LayerView.Selection.Type.Tile, layer);
-    this.traceEvent = traceEvent;
+    this._traceEvent = traceEvent;
 }
 
 WebInspector.LayerView.TileSelection.prototype = {
@@ -148,6 +152,14 @@ WebInspector.LayerView.TileSelection.prototype = {
             && this.layer().id() === other.layer().id() && this.traceEvent === other.traceEvent;
     },
 
+    /**
+     * @return {!WebInspector.TracingModel.Event}
+     */
+    traceEvent: function()
+    {
+        return this._traceEvent;
+    },
+
     __proto__: WebInspector.LayerView.Selection.prototype
 }
 
@@ -160,6 +172,7 @@ WebInspector.LayerViewHost = function()
     this._views = [];
     this._selectedObject = null;
     this._hoveredObject = null;
+    this._showInternalLayersSetting = WebInspector.settings.createSetting("layersShowInternalLayers", false);
 }
 
 WebInspector.LayerViewHost.prototype = {
@@ -222,6 +235,32 @@ WebInspector.LayerViewHost.prototype = {
     },
 
     /**
+     * @param {!WebInspector.ContextMenu} contextMenu
+     * @param {?WebInspector.LayerView.Selection} selection
+     */
+    showContextMenu: function(contextMenu, selection)
+    {
+        contextMenu.appendCheckboxItem(WebInspector.UIString("Show internal layers"), this._toggleShowInternalLayers.bind(this), this._showInternalLayersSetting.get());
+        var node = selection && selection.layer() && selection.layer().nodeForSelfOrAncestor();
+        if (node)
+            contextMenu.appendApplicableItems(node);
+        contextMenu.show();
+    },
+
+    /**
+     * @return {!WebInspector.Setting}
+     */
+    showInternalLayersSetting: function()
+    {
+        return this._showInternalLayersSetting;
+    },
+
+    _toggleShowInternalLayers: function()
+    {
+        this._showInternalLayersSetting.set(!this._showInternalLayersSetting.get());
+    },
+
+    /**
      * @param {?WebInspector.DOMNode} node
      */
     _toggleNodeHighlight: function(node)
@@ -230,8 +269,7 @@ WebInspector.LayerViewHost.prototype = {
             node.highlightForTwoSeconds();
             return;
         }
-        if (this._target)
-            this._target.domModel.hideDOMNodeHighlight();
+        WebInspector.DOMModel.hideDOMNodeHighlight();
     }
 }
 

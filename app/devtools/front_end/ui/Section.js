@@ -82,18 +82,6 @@ WebInspector.Section.prototype = {
         return this._subtitle;
     },
 
-    get subtitleAsTextForTest()
-    {
-        var result = this.subtitleElement.textContent;
-        var child = this.subtitleElement.querySelector("[data-uncopyable]");
-        if (child) {
-            var linkData = child.getAttribute("data-uncopyable");
-            if (linkData)
-                result += linkData;
-        }
-        return result;
-    },
-
     get expanded()
     {
         return this._expanded;
@@ -142,7 +130,7 @@ WebInspector.Section.prototype = {
      */
     registerRequiredCSS: function(cssFile)
     {
-        this.element.appendChild(WebInspector.View.createStyleElement(cssFile));
+        this.element.insertBefore(WebInspector.Widget.createStyleElement(cssFile), this.headerElement);
     },
 
     /**
@@ -151,11 +139,19 @@ WebInspector.Section.prototype = {
      */
     handleClick: function(event)
     {
+        if (this._doNotExpandOnTitleClick)
+            return;
+
         if (this._expanded)
             this.collapse();
         else
             this.expand();
         event.consume();
+    },
+
+    doNotExpandOnTitleClick: function()
+    {
+        this._doNotExpandOnTitleClick = true;
     }
 }
 
@@ -170,8 +166,9 @@ WebInspector.PropertiesSection = function(title, subtitle)
     WebInspector.Section.call(this, title, subtitle);
     this.registerRequiredCSS("ui/propertiesSection.css");
 
-    this.propertiesElement = createElementWithClass("ol", "properties properties-tree monospace");
-    this.propertiesTreeOutline = new TreeOutline(this.propertiesElement, true);
+    this.propertiesTreeOutline = new TreeOutline(true);
+    this.propertiesElement = this.propertiesTreeOutline.element;
+    this.propertiesElement.classList.add("properties", "properties-tree", "monospace");
     this.propertiesTreeOutline.setFocusable(false);
     this.propertiesTreeOutline.section = this;
 

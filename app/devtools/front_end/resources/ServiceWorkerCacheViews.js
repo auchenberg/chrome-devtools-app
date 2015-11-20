@@ -6,23 +6,21 @@
  * @constructor
  * @extends {WebInspector.VBox}
  * @param {!WebInspector.ServiceWorkerCacheModel} model
- * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
  * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
  */
-WebInspector.ServiceWorkerCacheView = function(model, cacheId, cache)
+WebInspector.ServiceWorkerCacheView = function(model, cache)
 {
     WebInspector.VBox.call(this);
     this.registerRequiredCSS("resources/serviceWorkerCacheViews.css");
 
     this._model = model;
-    this._cacheId = cacheId;
 
     this.element.classList.add("service-worker-cache-data-view");
     this.element.classList.add("storage-view");
 
     this._createEditorToolbar();
 
-    this._refreshButton = new WebInspector.StatusBarButton(WebInspector.UIString("Refresh"), "refresh-status-bar-item");
+    this._refreshButton = new WebInspector.ToolbarButton(WebInspector.UIString("Refresh"), "refresh-toolbar-item");
     this._refreshButton.addEventListener("click", this._refreshButtonClicked, this);
 
     this._pageSize = 50;
@@ -43,23 +41,23 @@ WebInspector.ServiceWorkerCacheView.prototype = {
         columns.push({id: "request", title: WebInspector.UIString("Request")});
         columns.push({id: "response", title: WebInspector.UIString("Response")});
 
-        var dataGrid = new WebInspector.DataGrid(columns);
+        var dataGrid = new WebInspector.DataGrid(columns, undefined, this._deleteButtonClicked.bind(this), this._updateData.bind(this, true));
         return dataGrid;
     },
 
     _createEditorToolbar: function()
     {
-        var editorToolbar = new WebInspector.StatusBar(this.element);
+        var editorToolbar = new WebInspector.Toolbar(this.element);
         editorToolbar.element.classList.add("data-view-toolbar");
 
-        this._pageBackButton = new WebInspector.StatusBarButton(WebInspector.UIString("Show previous page."), "play-backwards-status-bar-item");
+        this._pageBackButton = new WebInspector.ToolbarButton(WebInspector.UIString("Show previous page"), "play-backwards-toolbar-item");
         this._pageBackButton.addEventListener("click", this._pageBackButtonClicked, this);
-        editorToolbar.appendStatusBarItem(this._pageBackButton);
+        editorToolbar.appendToolbarItem(this._pageBackButton);
 
-        this._pageForwardButton = new WebInspector.StatusBarButton(WebInspector.UIString("Show next page."), "play-status-bar-item");
+        this._pageForwardButton = new WebInspector.ToolbarButton(WebInspector.UIString("Show next page"), "play-toolbar-item");
         this._pageForwardButton.setEnabled(false);
         this._pageForwardButton.addEventListener("click", this._pageForwardButtonClicked, this);
-        editorToolbar.appendStatusBarItem(this._pageForwardButton);
+        editorToolbar.appendToolbarItem(this._pageForwardButton);
     },
 
     _pageBackButtonClicked: function()
@@ -72,6 +70,14 @@ WebInspector.ServiceWorkerCacheView.prototype = {
     {
         this._skipCount = this._skipCount + this._pageSize;
         this._updateData(false);
+    },
+
+    /**
+     * @param {!WebInspector.DataGridNode} node
+     */
+    _deleteButtonClicked: function(node)
+    {
+        this._model.deleteCacheEntry(this._cache, node.data["request"], node.remove.bind(node));
     },
 
     /**
@@ -91,17 +97,27 @@ WebInspector.ServiceWorkerCacheView.prototype = {
     },
 
     /**
-     * @param {string} keyString
+     * @param {number} skipCount
+     * @param {!Array.<!WebInspector.ServiceWorkerCacheModel.Entry>} entries
+     * @param {boolean} hasMore
+     * @this {WebInspector.ServiceWorkerCacheView}
      */
-    _parseKey: function(keyString)
+    _updateDataCallback(skipCount, entries, hasMore)
     {
-        var result;
-        try {
-            result = JSON.parse(keyString);
-        } catch (e) {
-            result = keyString;
+        this._refreshButton.setEnabled(true);
+        this.clear();
+        this._entries = entries;
+        for (var i = 0; i < entries.length; ++i) {
+            var data = {};
+            data["number"] = i + skipCount;
+            data["request"] = entries[i].request;
+            data["response"] = entries[i].response;
+            var node = new WebInspector.DataGridNode(data);
+            node.selectable = true;
+            this._dataGrid.rootNode().appendChild(node);
         }
-        return result;
+        this._pageBackButton.setEnabled(!!skipCount);
+        this._pageForwardButton.setEnabled(hasMore);
     },
 
     /**
@@ -122,32 +138,7 @@ WebInspector.ServiceWorkerCacheView.prototype = {
         }
         this._lastPageSize = pageSize;
         this._lastSkipCount = skipCount;
-
-        /**
-         * @param {!Array.<!WebInspector.ServiceWorkerCacheModel.Entry>} entries
-         * @param {boolean} hasMore
-         * @this {WebInspector.ServiceWorkerCacheView}
-         */
-        function callback(entries, hasMore)
-        {
-            this._refreshButton.setEnabled(true);
-            this.clear();
-            this._entries = entries;
-            for (var i = 0; i < entries.length; ++i) {
-                var data = {};
-                data["number"] = i + skipCount;
-                data["request"] = entries[i].request;
-                data["response"] = entries[i].response;
-
-                var node = new WebInspector.SWCacheDataGridNode(data);
-                this._dataGrid.rootNode().appendChild(node);
-            }
-
-            this._pageBackButton.setEnabled(!!skipCount);
-            this._pageForwardButton.setEnabled(hasMore);
-        }
-
-        this._model.loadCacheData(this._cacheId, skipCount, pageSize, callback.bind(this));
+        this._model.loadCacheData(this._cache, skipCount, pageSize, this._updateDataCallback.bind(this, skipCount));
     },
 
     _refreshButtonClicked: function(event)
@@ -156,9 +147,9 @@ WebInspector.ServiceWorkerCacheView.prototype = {
     },
 
     /**
-     * @return {!Array.<!WebInspector.StatusBarItem>}
+     * @return {!Array.<!WebInspector.ToolbarItem>}
      */
-    statusBarItems: function()
+    toolbarItems: function()
     {
         return [this._refreshButton];
     },
@@ -170,63 +161,4 @@ WebInspector.ServiceWorkerCacheView.prototype = {
     },
 
     __proto__: WebInspector.VBox.prototype
-}
-
-/**
- * @constructor
- * @extends {WebInspector.DataGridNode}
- * @param {!Object.<string, *>} data
- */
-WebInspector.SWCacheDataGridNode = function(data)
-{
-    WebInspector.DataGridNode.call(this, data, false);
-    this.selectable = false;
-}
-
-WebInspector.SWCacheDataGridNode.prototype = {
-    /**
-     * @override
-     * @return {!Element}
-     */
-    createCell: function(columnIdentifier)
-    {
-        var cell = WebInspector.DataGridNode.prototype.createCell.call(this, columnIdentifier);
-        var value = this.data[columnIdentifier];
-
-        switch (columnIdentifier) {
-        case "request":
-        case "response":
-            cell.removeChildren();
-            this._formatValue(cell, value);
-            break;
-        default:
-        }
-
-        return cell;
-    },
-
-    _formatValue: function(cell, value)
-    {
-        var type = value.subtype || value.type;
-        var contents = cell.createChild("div", "source-code console-formatted-" + type);
-
-        switch (type) {
-        case "object":
-        case "array":
-            var section = new WebInspector.ObjectPropertiesSection(value, value.description);
-            section.editable = false;
-            section.skipProto = true;
-            contents.appendChild(section.element);
-            break;
-        case "string":
-            contents.classList.add("primitive-value");
-            contents.createTextChildren("\"", value.description, "\"");
-            break;
-        default:
-            contents.classList.add("primitive-value");
-            contents.createTextChild(value.description);
-        }
-    },
-
-    __proto__: WebInspector.DataGridNode.prototype
 }

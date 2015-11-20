@@ -47,7 +47,7 @@ WebInspector.ResourceSourceFrame.prototype = {
     {
         this._messages.push(message);
         if (this.loaded)
-            this.addMessageToSource(WebInspector.SourceFrameMessage.fromConsoleMessage(message, message.line - 1));
+            this.addMessageToSource(WebInspector.SourceFrameMessage.fromConsoleMessage(message, message.line - 1, message.column));
     },
 
     /**
@@ -56,7 +56,7 @@ WebInspector.ResourceSourceFrame.prototype = {
     onTextEditorContentLoaded: function()
     {
         for (var message of this._messages)
-            this.addMessageToSource(WebInspector.SourceFrameMessage.fromConsoleMessage(message, message.line - 1));
+            this.addMessageToSource(WebInspector.SourceFrameMessage.fromConsoleMessage(message, message.line - 1, message.column));
     },
 
     get resource()
@@ -64,7 +64,7 @@ WebInspector.ResourceSourceFrame.prototype = {
         return this._resource;
     },
 
-    populateTextAreaContextMenu: function(contextMenu, lineNumber)
+    populateTextAreaContextMenu: function(contextMenu, lineNumber, columnNumber)
     {
         contextMenu.appendApplicableItems(this._resource);
     },

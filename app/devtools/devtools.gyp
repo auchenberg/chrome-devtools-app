@@ -44,7 +44,6 @@
             'conditions': [
                 ['debug_devtools==0', {
                     'dependencies': [
-                        'concatenated_devtools_css',
                         'concatenated_inspector_css',
                         'concatenated_toolbox_css',
                     ],
@@ -55,6 +54,18 @@
                     'destination': '<(PRODUCT_DIR)/resources/inspector/Images',
                     'files': [
                         '<@(devtools_image_files)',
+                    ],
+                },
+                {
+                    'destination': '<(PRODUCT_DIR)/resources/inspector/emulated_devices',
+                    'files': [
+                        '<@(devtools_emulated_devices_images)',
+                    ],
+                },
+                {
+                    'destination': '<(PRODUCT_DIR)/resources/inspector/',
+                    'files': [
+                        '<@(devtools_compatibility_scripts)',
                     ],
                 },
             ],
@@ -94,19 +105,20 @@
                         ],
                         'devtools_static_files_list': '<|(devtools_static_grd_files.tmp <@(_static_files))',
                         'generated_files': [
-                            '<(PRODUCT_DIR)/resources/inspector/devtools.css',
-                            '<(PRODUCT_DIR)/resources/inspector/devtools.html',
-                            '<(PRODUCT_DIR)/resources/inspector/devtools.js',
+                            # Core and remote modules should not be listed here.
                             '<(PRODUCT_DIR)/resources/inspector/inspector.css',
                             '<(PRODUCT_DIR)/resources/inspector/inspector.html',
                             '<(PRODUCT_DIR)/resources/inspector/inspector.js',
                             '<(PRODUCT_DIR)/resources/inspector/toolbox.css',
                             '<(PRODUCT_DIR)/resources/inspector/toolbox.html',
                             '<(PRODUCT_DIR)/resources/inspector/toolbox.js',
+                            '<(PRODUCT_DIR)/resources/inspector/accessibility_module.js',
+                            '<(PRODUCT_DIR)/resources/inspector/animation_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/audits_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/components_lazy_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/console_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/devices_module.js',
+                            '<(PRODUCT_DIR)/resources/inspector/diff_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/elements_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/heap_snapshot_worker_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/layers_module.js',
@@ -114,8 +126,10 @@
                             '<(PRODUCT_DIR)/resources/inspector/profiler_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/promises_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/resources_module.js',
+                            '<(PRODUCT_DIR)/resources/inspector/security_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/script_formatter_worker_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/settings_module.js',
+                            '<(PRODUCT_DIR)/resources/inspector/snippets_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/source_frame_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/sources_module.js',
                             '<(PRODUCT_DIR)/resources/inspector/temp_storage_shared_worker_module.js',
@@ -126,6 +140,7 @@
                         'inputs': [
                             '<@(_script_name)',
                             '<@(_static_files)',
+                            '<@(devtools_compatibility_scripts)',
                             '<@(_generated_files)',
                             '<@(devtools_image_files)',
                             '<(_devtools_static_files_list)',
@@ -134,7 +149,7 @@
                             'front_end/Images',
                         ],
                         'outputs': ['<(SHARED_INTERMEDIATE_DIR)/devtools/devtools_resources.grd'],
-                        'action': ['python', '<@(_script_name)', '<@(_generated_files)', '--static_files_list', '<(_devtools_static_files_list)', '--relative_path_dirs', '<@(_relative_path_dirs)', '--images', '<@(_images_path)', '--output', '<@(_outputs)'],
+                        'action': ['python', '<@(_script_name)', '<@(_generated_files)', '<@(devtools_compatibility_scripts)', '--static_files_list', '<(_devtools_static_files_list)', '--relative_path_dirs', '<@(_relative_path_dirs)', '--images', '<@(_images_path)', '--output', '<@(_outputs)'],
                     }],
                 },
                 {
@@ -157,13 +172,13 @@
                         'generated_files': [
                             '<(PRODUCT_DIR)/resources/inspector/InspectorBackendCommands.js',
                             '<(PRODUCT_DIR)/resources/inspector/SupportedCSSProperties.js',
-                            '<(PRODUCT_DIR)/resources/inspector/devtools.html',
                             '<(PRODUCT_DIR)/resources/inspector/inspector.html',
                             '<(PRODUCT_DIR)/resources/inspector/toolbox.html',
                         ],
                         'inputs': [
                             '<@(_script_name)',
                             '<@(_static_files)',
+                            '<@(devtools_compatibility_scripts)',
                             '<@(_generated_files)',
                             '<@(devtools_image_files)',
                             '<(_devtools_static_files_list)',
@@ -173,7 +188,7 @@
                         ],
                         # Note that other files are put under /devtools directory, together with declared devtools_resources.grd
                         'outputs': ['<(SHARED_INTERMEDIATE_DIR)/devtools/devtools_resources.grd'],
-                        'action': ['python', '<@(_script_name)', '<@(_generated_files)', '--static_files_list', '<(_devtools_static_files_list)', '--relative_path_dirs', '<@(_relative_path_dirs)', '--images', '<@(_images_path)', '--output', '<@(_outputs)'],
+                        'action': ['python', '<@(_script_name)', '<@(_generated_files)', '<@(devtools_compatibility_scripts)', '--static_files_list', '<(_devtools_static_files_list)', '--relative_path_dirs', '<@(_relative_path_dirs)', '--images', '<@(_images_path)', '--output', '<@(_outputs)'],
                     }],
                 }],
             ],
@@ -248,35 +263,40 @@
                     '<@(_script_name)',
                     '<@(_helper_scripts)',
                     '<@(all_devtools_files)',
-                    'front_end/devtools.html',
                     'front_end/inspector.html',
                     'front_end/toolbox.html',
                     '<(_output_path)/InspectorBackendCommands.js',
                     '<(_output_path)/SupportedCSSProperties.js',
                 ],
-                'action': ['python', '<@(_script_name)', 'devtools', 'inspector', 'toolbox', '--input_path', 'front_end', '--output_path', '<@(_output_path)', '--debug', '<@(debug_devtools)'],
+                'action': ['python', '<@(_script_name)', 'inspector', 'toolbox', '--input_path', 'front_end', '--output_path', '<@(_output_path)', '--debug', '<@(debug_devtools)'],
                 'conditions': [
                     ['debug_devtools==0', { # Release
                         'outputs': [
-                            '<(_output_path)/devtools.html',
-                            '<(_output_path)/devtools.js',
                             '<(_output_path)/inspector.html',
                             '<(_output_path)/inspector.js',
                             '<(_output_path)/toolbox.html',
                             '<(_output_path)/toolbox.js',
+                            '<(_output_path)/accessibility_module.js',
+                            '<(_output_path)/animation_module.js',
                             '<(_output_path)/audits_module.js',
+                            '<(_output_path)/cm_modes_module.js',
                             '<(_output_path)/components_lazy_module.js',
                             '<(_output_path)/console_module.js',
                             '<(_output_path)/devices_module.js',
+                            '<(_output_path)/diff_module.js',
                             '<(_output_path)/elements_module.js',
+                            '<(_output_path)/emulated_devices_module.js',
                             '<(_output_path)/heap_snapshot_worker_module.js',
                             '<(_output_path)/layers_module.js',
                             '<(_output_path)/network_module.js',
                             '<(_output_path)/profiler_module.js',
                             '<(_output_path)/promises_module.js',
                             '<(_output_path)/resources_module.js',
+                            '<(_output_path)/security_module.js',
+                            '<(_output_path)/screencast_module.js',
                             '<(_output_path)/script_formatter_worker_module.js',
                             '<(_output_path)/settings_module.js',
+                            '<(_output_path)/snippets_module.js',
                             '<(_output_path)/source_frame_module.js',
                             '<(_output_path)/sources_module.js',
                             '<(_output_path)/temp_storage_shared_worker_module.js',
@@ -286,7 +306,6 @@
                     },
                     { # Debug
                         'outputs': [
-                            '<(_output_path)/devtools.html',
                             '<(_output_path)/inspector.html',
                             '<(_output_path)/toolbox.html',
                         ]
@@ -307,9 +326,9 @@
                             ],
                         },
                         {
-                            'destination': '<(_output_path)/UglifyJS',
+                            'destination': '<(_output_path)/acorn',
                             'files': [
-                                '<@(devtools_uglify_files)',
+                                '<@(devtools_acorn_files)',
                             ],
                         },
                         {
@@ -327,23 +346,6 @@
     'conditions': [
         ['debug_devtools==0', {
             'targets': [
-                {
-                    'target_name': 'concatenated_devtools_css',
-                    'type': 'none',
-                    'actions': [{
-                        'action_name': 'concatenate_devtools_css',
-                        'script_name': 'scripts/concatenate_css_files.py',
-                        'input_stylesheet': 'front_end/devtools.css',
-                        'inputs': [
-                            '<@(_script_name)',
-                            '<@(_input_stylesheet)',
-                            '<@(devtools_core_css_files)',
-                        ],
-                        'search_path': [ 'front_end' ],
-                        'outputs': ['<(PRODUCT_DIR)/resources/inspector/devtools.css'],
-                        'action': ['python', '<@(_script_name)', '<@(_input_stylesheet)', '<@(_outputs)'],
-                    }],
-                },
                 {
                     'target_name': 'concatenated_inspector_css',
                     'type': 'none',

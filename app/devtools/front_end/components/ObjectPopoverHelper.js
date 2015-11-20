@@ -50,23 +50,6 @@ WebInspector.ObjectPopoverHelper.MaxPopoverTextLength = 10000;
 
 WebInspector.ObjectPopoverHelper.prototype = {
     /**
-     * @param {function(!WebInspector.RemoteObject):string} formatter
-     */
-    setRemoteObjectFormatter: function(formatter)
-    {
-        this._remoteObjectFormatter = formatter;
-    },
-
-    /**
-     * @param {!WebInspector.RemoteObject} object
-     */
-    _formattedObjectDescription: function(object)
-    {
-        var description = (this._remoteObjectFormatter && this._remoteObjectFormatter(object)) || object.description;
-        return description.trimEnd(WebInspector.ObjectPopoverHelper.MaxPopoverTextLength);
-    },
-
-    /**
      * @param {!Element} element
      * @param {!WebInspector.Popover} popover
      */
@@ -90,7 +73,6 @@ WebInspector.ObjectPopoverHelper.prototype = {
                     }
                 }
             }
-            popoverContentElement.textContent = this._formattedObjectDescription(funcObject);
             funcObject.functionDetails(didGetFunctionDetails.bind(this, popoverContentElement, anchorElement));
         }
 
@@ -122,12 +104,10 @@ WebInspector.ObjectPopoverHelper.prototype = {
         }
 
         /**
-         * @param {!Element} popoverContentElement
-         * @param {!Element} anchorElement
          * @param {?WebInspector.DebuggerModel.GeneratorObjectDetails} response
          * @this {WebInspector.ObjectPopoverHelper}
          */
-        function didGetGeneratorObjectDetails(popoverContentElement, anchorElement, response)
+        function didGetGeneratorObjectDetails(response)
         {
             if (!response || popover.disposed)
                 return;
@@ -156,44 +136,48 @@ WebInspector.ObjectPopoverHelper.prototype = {
             }
             this._objectTarget = result.target();
             var anchorElement = anchorOverride || element;
-            var description = this._formattedObjectDescription(result);
+            var description = result.description.trimEnd(WebInspector.ObjectPopoverHelper.MaxPopoverTextLength);
             var popoverContentElement = null;
             if (result.type !== "object") {
-                popoverContentElement = createElementWithClass("span", "monospace console-formatted-" + result.type);
-                popoverContentElement.style.whiteSpace = "pre";
+                popoverContentElement =  createElement("span");
+                popoverContentElement.appendChild(WebInspector.Widget.createStyleElement("components/objectValue.css"));
+                var valueElement = popoverContentElement.createChild("span", "monospace object-value-" + result.type);
+                valueElement.style.whiteSpace = "pre";
+
+                if (result.type === "string")
+                    valueElement.createTextChildren("\"", description, "\"");
+                else if (result.type === "function")
+                    WebInspector.ObjectPropertiesSection.formatObjectAsFunction(result, valueElement, true);
+                else
+                    valueElement.textContent = description;
+
                 if (result.type === "function") {
                     result.getOwnProperties(didGetFunctionProperties.bind(this, result, popoverContentElement, anchorElement));
                     return;
                 }
-                if (result.type === "string")
-                    popoverContentElement.createTextChildren("\"", description, "\"");
-                else
-                    popoverContentElement.textContent = description;
                 popover.showForAnchor(popoverContentElement, anchorElement);
             } else {
                 if (result.subtype === "node") {
-                    result.highlightAsDOMNode();
-                    this._resultHighlightedAsDOM = result;
+                    WebInspector.DOMModel.highlightObjectAsDOMNode(result);
+                    this._resultHighlightedAsDOM = true;
                 }
-                popoverContentElement = createElement("div");
 
-                this._titleElement = popoverContentElement.createChild("div", "monospace");
-                this._titleTextElement = this._titleElement.createChild("span", "source-frame-popover-title").textContent = description;
+                if (result.customPreview()) {
+                    var customPreviewComponent = new WebInspector.CustomPreviewComponent(result);
+                    customPreviewComponent.expandIfPossible();
+                    popoverContentElement = customPreviewComponent.element;
+                } else {
+                    popoverContentElement = createElement("div");
+                    this._titleElement = popoverContentElement.createChild("div", "monospace");
+                    this._titleElement.createChild("span", "source-frame-popover-title").textContent = description;
+                    var section = new WebInspector.ObjectPropertiesSection(result, "");
+                    section.element.classList.add("source-frame-popover-tree");
+                    section.titleLessMode();
+                    popoverContentElement.appendChild(section.element);
 
-                var section = new WebInspector.ObjectPropertiesSection(result);
-                // For HTML DOM wrappers, append "#id" to title, if not empty.
-                if (description.substr(0, 4) === "HTML") {
-                    this._sectionUpdateProperties = section.updateProperties.bind(section);
-                    section.updateProperties = this._updateHTMLId.bind(this);
+                    if (result.subtype === "generator")
+                        result.generatorObjectDetails(didGetGeneratorObjectDetails.bind(this));
                 }
-                section.expand();
-                section.element.classList.add("source-frame-popover-tree");
-                section.headerElement.classList.add("hidden");
-                popoverContentElement.appendChild(section.element);
-
-                if (result.subtype === "generator")
-                    result.generatorObjectDetails(didGetGeneratorObjectDetails.bind(this, popoverContentElement, anchorElement));
-
                 var popoverWidth = 300;
                 var popoverHeight = 250;
                 popover.showForAnchor(popoverContentElement, anchorElement, popoverWidth, popoverHeight);
@@ -206,7 +190,7 @@ WebInspector.ObjectPopoverHelper.prototype = {
     _onHideObjectPopover: function()
     {
         if (this._resultHighlightedAsDOM) {
-            this._resultHighlightedAsDOM.target().domModel.hideDOMNodeHighlight();
+            WebInspector.DOMModel.hideDOMNodeHighlight();
             delete this._resultHighlightedAsDOM;
         }
         if (this._linkifier) {
@@ -229,18 +213,6 @@ WebInspector.ObjectPopoverHelper.prototype = {
         if (!this._linkifier)
             this._linkifier = new WebInspector.Linkifier();
         return this._linkifier;
-    },
-
-    _updateHTMLId: function(properties, rootTreeElementConstructor, rootPropertyComparer)
-    {
-        for (var i = 0; i < properties.length; ++i) {
-            if (properties[i].name === "id") {
-                if (properties[i].value.description)
-                    this._titleTextElement.textContent += "#" + properties[i].value.description;
-                break;
-            }
-        }
-        this._sectionUpdateProperties(properties, rootTreeElementConstructor, rootPropertyComparer);
     },
 
     __proto__: WebInspector.PopoverHelper.prototype

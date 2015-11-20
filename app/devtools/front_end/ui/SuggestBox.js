@@ -410,8 +410,8 @@ WebInspector.SuggestBox.prototype = {
 WebInspector.SuggestBox.Overlay = function()
 {
     this.element = createElementWithClass("div", "suggest-box-overlay");
-    var root = this.element.createShadowRoot();
-    root.appendChild(WebInspector.View.createStyleElement("ui/suggestBox.css"));
+    var root = WebInspector.createShadowRootWithCoreStyles(this.element);
+    root.appendChild(WebInspector.Widget.createStyleElement("ui/suggestBox.css"));
     this._leftSpacerElement = root.createChild("div", "suggest-box-left-spacer");
     this._horizontalElement = root.createChild("div", "suggest-box-horizontal");
     this._topSpacerElement = this._horizontalElement.createChild("div", "suggest-box-top-spacer");

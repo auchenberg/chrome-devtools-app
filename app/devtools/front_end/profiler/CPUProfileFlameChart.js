@@ -205,7 +205,7 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
     /**
      * @override
      * @param {number} entryIndex
-     * @return {?Array.<!{title: string, text: string}>}
+     * @return {?Array<!{title: string, value: (string,!Element)}>}
      */
     prepareHighlightedEntryInfo: function(entryIndex)
     {
@@ -215,21 +215,21 @@ WebInspector.CPUFlameChartDataProvider.prototype = {
             return null;
 
         var entryInfo = [];
-        function pushEntryInfoRow(title, text)
+        /**
+         * @param {string} title
+         * @param {string} value
+         */
+        function pushEntryInfoRow(title, value)
         {
-            var row = {};
-            row.title = title;
-            row.text = text;
-            entryInfo.push(row);
+            entryInfo.push({ title: title, value: value });
         }
-
         var name = WebInspector.beautifyFunctionName(node.functionName);
         pushEntryInfoRow(WebInspector.UIString("Name"), name);
         var selfTime = this._millisecondsToString(this._entrySelfTimes[entryIndex]);
         var totalTime = this._millisecondsToString(timelineData.entryTotalTimes[entryIndex]);
         pushEntryInfoRow(WebInspector.UIString("Self time"), selfTime);
         pushEntryInfoRow(WebInspector.UIString("Total time"), totalTime);
-        var text = this._target ? WebInspector.Linkifier.liveLocationText(this._target, node.scriptId, node.lineNumber, node.columnNumber) : node.url;
+        var text = (new WebInspector.Linkifier()).linkifyScriptLocation(this._target, node.scriptId, node.url, node.lineNumber, node.columnNumber).textContent;
         pushEntryInfoRow(WebInspector.UIString("URL"), text);
         pushEntryInfoRow(WebInspector.UIString("Aggregated self time"), Number.secondsToString(node.selfTime / 1000, true));
         pushEntryInfoRow(WebInspector.UIString("Aggregated total time"), Number.secondsToString(node.totalTime / 1000, true));
@@ -545,7 +545,7 @@ WebInspector.CPUProfileFlameChart.OverviewCalculator.prototype = {
      */
     formatTime: function(value, precision)
     {
-        return Number.secondsToString((value - this._minimumBoundaries) / 1000);
+        return Number.secondsToString((value - this._minimumBoundaries) / 1000, !!precision);
     },
 
     /**
@@ -621,7 +621,14 @@ WebInspector.CPUProfileFlameChart.OverviewPane.prototype = {
      * @param {number} startTime
      * @param {number} endTime
      */
-    updateBoxSelection: function(startTime, endTime)
+    updateRangeSelection: function(startTime, endTime)
+    {
+    },
+
+    /**
+     * @override
+     */
+    endRangeSelection: function()
     {
     },
 

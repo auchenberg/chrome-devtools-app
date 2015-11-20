@@ -60,3 +60,25 @@
     margin-left: -3px;
     margin-right: -2px;
 }
+
+.overview-grid-cursor-area {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 20px;
+    bottom: 0;
+    z-index: 500;
+    cursor: text;
+}
+
+.overview-grid-cursor-position {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: hsla(220, 95%, 50%, 0.7);
+    z-index: 500;
+    pointer-events: none;
+    visibility: hidden;
+    overflow: hidden;
+}

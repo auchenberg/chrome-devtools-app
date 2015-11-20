@@ -42,7 +42,7 @@ WebInspector.InplaceFormatterEditorAction.prototype = {
     /**
      * @override
      * @param {!WebInspector.SourcesView} sourcesView
-     * @return {!WebInspector.StatusBarButton}
+     * @return {!WebInspector.ToolbarButton}
      */
     button: function(sourcesView)
     {
@@ -53,7 +53,7 @@ WebInspector.InplaceFormatterEditorAction.prototype = {
         this._sourcesView.addEventListener(WebInspector.SourcesView.Events.EditorSelected, this._editorSelected.bind(this));
         this._sourcesView.addEventListener(WebInspector.SourcesView.Events.EditorClosed, this._editorClosed.bind(this));
 
-        this._button = new WebInspector.StatusBarButton(WebInspector.UIString("Format"), "format-status-bar-item");
+        this._button = new WebInspector.ToolbarButton(WebInspector.UIString("Format"), "format-toolbar-item");
         this._button.setToggled(false);
         this._button.addEventListener("click", this._formatSourceInPlace, this);
         this._updateButton(sourcesView.currentUISourceCode());

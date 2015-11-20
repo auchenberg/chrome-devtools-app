@@ -43,6 +43,8 @@ def validate_injected_script(fileName):
         "push", "reduce", "reduceRight", "reverse", "shift", "slice", "some", "sort", "splice", "toLocaleString", "toString", "unshift",
         # Function.prototype.*
         "apply", "bind", "call", "isGenerator", "toSource",
+        # Object.prototype.*
+        "toString",
     ])
 
     global_functions = "|".join([
@@ -57,10 +59,12 @@ def validate_injected_script(fileName):
     # - Function.prototype.*
     # - Math.*
     # - Global functions
-    black_list_call_regex = re.compile(r"\sinstanceof\s+\w*|\bMath\.\w+\(|\.(toString|" + proto_functions + r")\(|[^\.]\b(" + global_functions + r")\(")
+    black_list_call_regex = re.compile(r"\sinstanceof\s+\w*|\bMath\.\w+\(|(?<!InjectedScriptHost)\.(" + proto_functions + r")\(|[^\.]\b(" + global_functions + r")\(")
 
     errors_found = False
     for i, line in enumerate(lines):
+        if line.find("suppressBlacklist"):
+            continue
         for match in re.finditer(black_list_call_regex, line):
             errors_found = True
             print "ERROR: Black listed expression in %s at line %02d column %02d: %s" % (os.path.basename(fileName), i + 1, match.start(), match.group(0))

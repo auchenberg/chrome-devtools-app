@@ -373,6 +373,13 @@ WebInspector.AuditRules.UnusedCssRule.prototype = {
      */
     doRun: function(target, requests, result, callback, progress)
     {
+        var domModel = WebInspector.DOMModel.fromTarget(target);
+        var cssModel = WebInspector.CSSStyleModel.fromTarget(target);
+        if (!domModel || !cssModel) {
+            callback(null);
+            return;
+        }
+
         /**
          * @param {!Array.<!WebInspector.AuditRules.ParsedStyleSheet>} styleSheets
          */
@@ -400,8 +407,10 @@ WebInspector.AuditRules.UnusedCssRule.prototype = {
              */
             function selectorsCallback(styleSheets)
             {
-                if (progress.isCanceled())
+                if (progress.isCanceled()) {
+                    callback(null);
                     return;
+                }
 
                 var inlineBlockOrdinal = 0;
                 var totalStylesheetSize = 0;
@@ -470,17 +479,19 @@ WebInspector.AuditRules.UnusedCssRule.prototype = {
                     return;
                 }
                 for (var i = 0; i < selectors.length; ++i) {
-                    if (progress.isCanceled())
+                    if (progress.isCanceled()) {
+                        callback(null);
                         return;
+                    }
                     var effectiveSelector = selectors[i].replace(pseudoSelectorRegexp, "");
-                    target.domModel.querySelector(document.id, effectiveSelector, queryCallback.bind(null, i === selectors.length - 1 ? selectorsCallback.bind(null, styleSheets) : null, selectors[i]));
+                    domModel.querySelector(document.id, effectiveSelector, queryCallback.bind(null, i === selectors.length - 1 ? selectorsCallback.bind(null, styleSheets) : null, selectors[i]));
                 }
             }
 
-            target.domModel.requestDocument(documentLoaded.bind(null, selectors));
+            domModel.requestDocument(documentLoaded.bind(null, selectors));
         }
 
-        var styleSheetInfos = target.cssModel.allStyleSheets();
+        var styleSheetInfos = cssModel.allStyleSheets();
         if (!styleSheetInfos || !styleSheetInfos.length) {
             evalCallback([]);
             return;
@@ -548,7 +559,7 @@ WebInspector.AuditRules.StyleSheetProcessor.prototype = {
     _onStyleSheetParsed: function(rules)
     {
         if (this._progress.isCanceled()) {
-            this._terminateWorker();
+            this._finish();
             return;
         }
 
@@ -736,7 +747,7 @@ WebInspector.AuditRules.CacheControlRule.prototype = {
     _isExplicitlyNonCacheable: function(request)
     {
         var hasExplicitExp = this.hasExplicitExpiration(request);
-        return !!this.responseHeaderMatch(request, "Cache-Control", "(no-cache|no-store|must-revalidate)") ||
+        return !!this.responseHeaderMatch(request, "Cache-Control", "(no-cache|no-store)") ||
             !!this.responseHeaderMatch(request, "Pragma", "no-cache") ||
             (hasExplicitExp && !this.freshnessLifetimeGreaterThan(request, 0)) ||
             (!hasExplicitExp && !!request.url && request.url.indexOf("?") >= 0) ||
@@ -826,46 +837,6 @@ WebInspector.AuditRules.BrowserCacheControlRule.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.AuditRules.CacheControlRule}
- */
-WebInspector.AuditRules.ProxyCacheControlRule = function() {
-    WebInspector.AuditRules.CacheControlRule.call(this, "http-proxycache", WebInspector.UIString("Leverage proxy caching"));
-}
-
-WebInspector.AuditRules.ProxyCacheControlRule.prototype = {
-    runChecks: function(requests, result, callback)
-    {
-        this.execCheck(WebInspector.UIString("Resources with a \"?\" in the URL are not cached by most proxy caching servers:"),
-            this._questionMarkCheck, requests, result);
-        this.execCheck(WebInspector.UIString("Consider adding a \"Cache-Control: public\" header to the following resources:"),
-            this._publicCachingCheck, requests, result);
-        this.execCheck(WebInspector.UIString("The following publicly cacheable resources contain a Set-Cookie header. This security vulnerability can cause cookies to be shared by multiple users."),
-            this._setCookieCacheableCheck, requests, result);
-    },
-
-    _questionMarkCheck: function(request)
-    {
-        return request.url.indexOf("?") >= 0 && !this.hasResponseHeader(request, "Set-Cookie") && this.isPubliclyCacheable(request);
-    },
-
-    _publicCachingCheck: function(request)
-    {
-        return this.isCacheableResource(request) &&
-            !this.isCompressible(request) &&
-            !this.responseHeaderMatch(request, "Cache-Control", "public") &&
-            !this.hasResponseHeader(request, "Set-Cookie");
-    },
-
-    _setCookieCacheableCheck: function(request)
-    {
-        return this.hasResponseHeader(request, "Set-Cookie") && this.isPubliclyCacheable(request);
-    },
-
-    __proto__: WebInspector.AuditRules.CacheControlRule.prototype
-}
-
-/**
- * @constructor
  * @extends {WebInspector.AuditRule}
  */
 WebInspector.AuditRules.ImageDimensionsRule = function()
@@ -884,6 +855,13 @@ WebInspector.AuditRules.ImageDimensionsRule.prototype = {
      */
     doRun: function(target, requests, result, callback, progress)
     {
+        var domModel = WebInspector.DOMModel.fromTarget(target);
+        var cssModel = WebInspector.CSSStyleModel.fromTarget(target);
+        if (!domModel || !cssModel) {
+            callback(null);
+            return;
+        }
+
         var urlToNoDimensionCount = {};
 
         function doneCallback()
@@ -899,12 +877,14 @@ WebInspector.AuditRules.ImageDimensionsRule.prototype = {
             callback(entry ? result : null);
         }
 
-        function imageStylesReady(imageId, styles, isLastStyle, computedStyle)
+        function imageStylesReady(imageId, styles)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
-            const node = target.domModel.nodeForId(imageId);
+            const node = domModel.nodeForId(imageId);
             var src = node.getAttribute("src");
             if (!src.asParsedURL()) {
                 for (var frameOwnerCandidate = node; frameOwnerCandidate; frameOwnerCandidate = frameOwnerCandidate.parentNode) {
@@ -917,15 +897,12 @@ WebInspector.AuditRules.ImageDimensionsRule.prototype = {
             if (completeSrc)
                 src = completeSrc;
 
-            if (computedStyle.getPropertyValue("position") === "absolute") {
-                if (isLastStyle)
-                    doneCallback();
+            if (styles.computedStyle.get("position") === "absolute")
                 return;
-            }
 
             if (styles.attributesStyle) {
-                var widthFound = !!styles.attributesStyle.getLiveProperty("width");
-                var heightFound = !!styles.attributesStyle.getLiveProperty("height");
+                var widthFound = !!styles.attributesStyle.getPropertyValue("width");
+                var heightFound = !!styles.attributesStyle.getPropertyValue("height");
             }
 
             var inlineStyle = styles.inlineStyle;
@@ -950,9 +927,6 @@ WebInspector.AuditRules.ImageDimensionsRule.prototype = {
                 else
                     urlToNoDimensionCount[src] = 1;
             }
-
-            if (isLastStyle)
-                doneCallback();
         }
 
         /**
@@ -960,42 +934,63 @@ WebInspector.AuditRules.ImageDimensionsRule.prototype = {
          */
         function getStyles(nodeIds)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
             var targetResult = {};
 
-            function inlineCallback(inlineStyle, attributesStyle)
+            /**
+             * @param {?WebInspector.CSSStyleModel.MatchedStyleResult} matchedStyleResult
+             */
+            function matchedCallback(matchedStyleResult)
             {
-                targetResult.inlineStyle = inlineStyle;
-                targetResult.attributesStyle = attributesStyle;
+                if (!matchedStyleResult)
+                    return;
+                targetResult.matchedCSSRules = matchedStyleResult.matchedCSSRules;
+                targetResult.inlineStyle = matchedStyleResult.inlineStyle;
+                targetResult.attributesStyle = matchedStyleResult.attributesStyle;
             }
 
-            function matchedCallback(result)
+            /**
+             * @param {?Map.<string, string>} computedStyle
+             */
+            function computedCallback(computedStyle)
             {
-                if (result)
-                    targetResult.matchedCSSRules = result.matchedCSSRules;
+                targetResult.computedStyle = computedStyle;
             }
 
             if (!nodeIds || !nodeIds.length)
                 doneCallback();
 
+            var nodePromises = [];
             for (var i = 0; nodeIds && i < nodeIds.length; ++i) {
-                target.cssModel.getMatchedStylesAsync(nodeIds[i], false, false, matchedCallback);
-                target.cssModel.getInlineStylesAsync(nodeIds[i], inlineCallback);
-                target.cssModel.getComputedStyleAsync(nodeIds[i], imageStylesReady.bind(null, nodeIds[i], targetResult, i === nodeIds.length - 1));
+                var stylePromises = [
+                    cssModel.matchedStylesPromise(nodeIds[i]).then(matchedCallback),
+                    cssModel.computedStylePromise(nodeIds[i]).then(computedCallback)
+                ];
+                var nodePromise = Promise.all(stylePromises).then(imageStylesReady.bind(null, nodeIds[i], targetResult));
+                nodePromises.push(nodePromise);
             }
+            Promise.all(nodePromises)
+                .catchException(null)
+                .then(doneCallback);
         }
 
         function onDocumentAvailable(root)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
-            target.domModel.querySelectorAll(root.id, "img[src]", getStyles);
+            }
+            domModel.querySelectorAll(root.id, "img[src]", getStyles);
         }
 
-        if (progress.isCanceled())
+        if (progress.isCanceled()) {
+            callback(null);
             return;
-        target.domModel.requestDocument(onDocumentAvailable);
+        }
+        domModel.requestDocument(onDocumentAvailable);
     },
 
     __proto__: WebInspector.AuditRule.prototype
@@ -1021,10 +1016,18 @@ WebInspector.AuditRules.CssInHeadRule.prototype = {
      */
     doRun: function(target, requests, result, callback, progress)
     {
+        var domModel = WebInspector.DOMModel.fromTarget(target);
+        if (!domModel) {
+            callback(null);
+            return;
+        }
+
         function evalCallback(evalResult)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
             if (!evalResult)
                 return callback(null);
@@ -1052,8 +1055,10 @@ WebInspector.AuditRules.CssInHeadRule.prototype = {
          */
         function externalStylesheetsReceived(root, inlineStyleNodeIds, nodeIds)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
             if (!nodeIds)
                 return;
@@ -1063,7 +1068,7 @@ WebInspector.AuditRules.CssInHeadRule.prototype = {
                 var urlToViolationsArray = {};
                 var externalStylesheetHrefs = [];
                 for (var j = 0; j < externalStylesheetNodeIds.length; ++j) {
-                    var linkNode = target.domModel.nodeForId(externalStylesheetNodeIds[j]);
+                    var linkNode = domModel.nodeForId(externalStylesheetNodeIds[j]);
                     var completeHref = WebInspector.ParsedURL.completeURL(linkNode.ownerDocument.baseURL, linkNode.getAttribute("href"));
                     externalStylesheetHrefs.push(completeHref || "<empty>");
                 }
@@ -1079,12 +1084,14 @@ WebInspector.AuditRules.CssInHeadRule.prototype = {
          */
         function inlineStylesReceived(root, nodeIds)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
             if (!nodeIds)
                 return;
-            target.domModel.querySelectorAll(root.id, "body link[rel~='stylesheet'][href]", externalStylesheetsReceived.bind(null, root, nodeIds));
+            domModel.querySelectorAll(root.id, "body link[rel~='stylesheet'][href]", externalStylesheetsReceived.bind(null, root, nodeIds));
         }
 
         /**
@@ -1092,13 +1099,15 @@ WebInspector.AuditRules.CssInHeadRule.prototype = {
          */
         function onDocumentAvailable(root)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
-            target.domModel.querySelectorAll(root.id, "body style", inlineStylesReceived.bind(null, root));
+            domModel.querySelectorAll(root.id, "body style", inlineStylesReceived.bind(null, root));
         }
 
-        target.domModel.requestDocument(onDocumentAvailable);
+        domModel.requestDocument(onDocumentAvailable);
     },
 
     __proto__: WebInspector.AuditRule.prototype
@@ -1124,10 +1133,18 @@ WebInspector.AuditRules.StylesScriptsOrderRule.prototype = {
      */
     doRun: function(target, requests, result, callback, progress)
     {
+        var domModel = WebInspector.DOMModel.fromTarget(target);
+        if (!domModel) {
+            callback(null);
+            return;
+        }
+
         function evalCallback(resultValue)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
             if (!resultValue)
                 return callback(null);
@@ -1154,8 +1171,10 @@ WebInspector.AuditRules.StylesScriptsOrderRule.prototype = {
          */
         function cssBeforeInlineReceived(lateStyleIds, nodeIds)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
             if (!nodeIds)
                 return;
@@ -1165,7 +1184,7 @@ WebInspector.AuditRules.StylesScriptsOrderRule.prototype = {
             if (lateStyleIds.length || cssBeforeInlineCount) {
                 var lateStyleUrls = [];
                 for (var i = 0; i < lateStyleIds.length; ++i) {
-                    var lateStyleNode = target.domModel.nodeForId(lateStyleIds[i]);
+                    var lateStyleNode = domModel.nodeForId(lateStyleIds[i]);
                     var completeHref = WebInspector.ParsedURL.completeURL(lateStyleNode.ownerDocument.baseURL, lateStyleNode.getAttribute("href"));
                     lateStyleUrls.push(completeHref || "<empty>");
                 }
@@ -1181,13 +1200,15 @@ WebInspector.AuditRules.StylesScriptsOrderRule.prototype = {
          */
         function lateStylesReceived(root, nodeIds)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
             if (!nodeIds)
                 return;
 
-            target.domModel.querySelectorAll(root.id, "head link[rel~='stylesheet'][href] ~ script:not([src])", cssBeforeInlineReceived.bind(null, nodeIds));
+            domModel.querySelectorAll(root.id, "head link[rel~='stylesheet'][href] ~ script:not([src])", cssBeforeInlineReceived.bind(null, nodeIds));
         }
 
         /**
@@ -1195,13 +1216,15 @@ WebInspector.AuditRules.StylesScriptsOrderRule.prototype = {
          */
         function onDocumentAvailable(root)
         {
-            if (progress.isCanceled())
+            if (progress.isCanceled()) {
+                callback(null);
                 return;
+            }
 
-            target.domModel.querySelectorAll(root.id, "head script[src] ~ link[rel~='stylesheet'][href]", lateStylesReceived.bind(null, root));
+            domModel.querySelectorAll(root.id, "head script[src] ~ link[rel~='stylesheet'][href]", lateStylesReceived.bind(null, root));
         }
 
-        target.domModel.requestDocument(onDocumentAvailable);
+        domModel.requestDocument(onDocumentAvailable);
     },
 
     __proto__: WebInspector.AuditRule.prototype
@@ -1227,8 +1250,13 @@ WebInspector.AuditRules.CSSRuleBase.prototype = {
      */
     doRun: function(target, requests, result, callback, progress)
     {
-        var headers = target.cssModel.allStyleSheets();
+        var cssModel = WebInspector.CSSStyleModel.fromTarget(target);
+        if (!cssModel) {
+            callback(null);
+            return;
+        }
 
+        var headers = cssModel.allStyleSheets();
         if (!headers.length) {
             callback(null);
             return;
@@ -1427,9 +1455,12 @@ WebInspector.AuditRules.CookieRuleBase.prototype = {
     doRun: function(target, requests, result, callback, progress)
     {
         var self = this;
-        function resultCallback(receivedCookies) {
-            if (progress.isCanceled())
+        function resultCallback(receivedCookies)
+        {
+            if (progress.isCanceled()) {
+                callback(result);
                 return;
+            }
 
             self.processCookies(receivedCookies, requests, result);
             callback(result);

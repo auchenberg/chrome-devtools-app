@@ -5,19 +5,26 @@
  */
 
 .list-item {
-    padding: 3px 8px 4px 18px;
+    padding: 2px 8px 3px 8px;
     position: relative;
     min-height: 18px;
     white-space: nowrap;
 }
 
 .list-item:nth-of-type(2n) {
-    background-color: rgb(234, 243, 255);
+    background-color: #f8f8f8;
 }
 
 .list-item.selected {
-    background-color: #cfcfcf;
-    background-clip: padding-box;
+    background-color: #dadada;
+}
+
+.list-item.selected > .title {
+    font-weight: bold;
+}
+
+.list-item:hover {
+    background-color: #eee;
 }
 
 .list-item > .title {

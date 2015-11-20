@@ -176,11 +176,9 @@ WebInspector.HandlerRegistry.prototype = {
         if (!anchorElement)
             return;
 
-        var resourceURL = anchorElement.href;
-        if (!resourceURL)
-            return;
-
-        var uiSourceCode = WebInspector.networkMapping.uiSourceCodeForURL(resourceURL);
+        var uiLocation = WebInspector.Linkifier.uiLocationByAnchor(anchorElement);
+        var resourceURL = uiLocation ? uiLocation.uiSourceCode.contentURL() : anchorElement.href;
+        var uiSourceCode = uiLocation ? uiLocation.uiSourceCode : (resourceURL ? WebInspector.networkMapping.uiSourceCodeForURLForAnyTarget(resourceURL) : null);
         function open()
         {
             WebInspector.Revealer.reveal(uiSourceCode);
@@ -188,6 +186,8 @@ WebInspector.HandlerRegistry.prototype = {
         if (uiSourceCode)
             contextMenu.appendItem("Open", open);
 
+        if (!resourceURL)
+            return;
         // Add resource-related actions.
         contextMenu.appendItem(WebInspector.openLinkExternallyLabel(), this._openInNewTab.bind(this, resourceURL));
 
@@ -202,7 +202,7 @@ WebInspector.HandlerRegistry.prototype = {
             else
                 InspectorFrontendHost.openInNewTab(resourceURL);
         }
-        if (WebInspector.resourceForURL(resourceURL))
+        if (!targetNode.enclosingNodeOrSelfWithClassList(["resources", "panel"]) && WebInspector.resourceForURL(resourceURL))
             contextMenu.appendItem(WebInspector.UIString.capitalize("Open ^link in Resources ^panel"), openInResourcesPanel.bind(null, resourceURL));
 
 
@@ -298,14 +298,13 @@ WebInspector.HandlerRegistry.LinkHandler.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.UISettingDelegate}
+ * @implements {WebInspector.SettingUI}
  */
-WebInspector.HandlerRegistry.OpenAnchorLocationSettingDelegate = function()
+WebInspector.HandlerRegistry.OpenAnchorLocationSettingUI = function()
 {
-    WebInspector.UISettingDelegate.call(this);
 }
 
-WebInspector.HandlerRegistry.OpenAnchorLocationSettingDelegate.prototype = {
+WebInspector.HandlerRegistry.OpenAnchorLocationSettingUI.prototype = {
     /**
      * @override
      * @return {?Element}
@@ -316,10 +315,8 @@ WebInspector.HandlerRegistry.OpenAnchorLocationSettingDelegate.prototype = {
             return null;
 
         var handlerSelector = new WebInspector.HandlerSelector(WebInspector.openAnchorLocationRegistry);
-        return WebInspector.SettingsUI.createCustomSetting(WebInspector.UIString("Open links in"), handlerSelector.element);
-    },
-
-    __proto__: WebInspector.UISettingDelegate.prototype
+        return WebInspector.SettingsUI.createCustomSetting(WebInspector.UIString("Link handling:"), handlerSelector.element);
+    }
 }
 
 /**

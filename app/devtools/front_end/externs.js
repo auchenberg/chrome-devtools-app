@@ -39,6 +39,9 @@ Object.observe = function(object, callback) {}
 /** @type {boolean} */
 Event.prototype.isMetaOrCtrlForTest;
 
+/** @type {string} */
+Event.prototype.code;
+
 /**
  * @type {number}
  */
@@ -179,6 +182,11 @@ function DOMFileSystem() {}
  */
 DOMFileSystem.prototype.root = null;
 
+/**
+ * @type {*}
+ */
+window.domAutomationController;
+
 var DevToolsHost = {};
 
 /** @typedef {{type:string, id:(number|undefined),
@@ -268,8 +276,6 @@ function Panel() {}
 /** @constructor */
 function PanelWithSidebar() {}
 /** @constructor */
-function Request() {}
-/** @constructor */
 function Resource() {}
 /** @constructor */
 function Timeline() {}
@@ -294,17 +300,52 @@ function ExtensionReloadOptions() {
 }
 
 var Adb = {};
-/** @typedef {{id: string, adbBrowserChromeVersion: string, compatibleVersion: boolean, adbBrowserName: string, source: string, adbBrowserVersion: string}} */
+/** @typedef {{id: string, name: string, url: string, adbAttachedForeign: boolean}} */
+Adb.Page;
+/** @typedef {{id: string, adbBrowserChromeVersion: string, compatibleVersion: boolean, adbBrowserName: string, source: string, adbBrowserVersion: string, pages: !Array<!Adb.Page>}} */
 Adb.Browser;
 /** @typedef {{id: string, adbModel: string, adbSerial: string, browsers: !Array.<!Adb.Browser>, adbPortStatus: !Array.<number>, adbConnected: boolean}} */
 Adb.Device;
+/** @typedef {!Object.<string, string>} */
+Adb.PortForwardingConfig;
 
-/* jsdifflib API */
-var difflib = {};
-difflib.stringAsLines = function(text) { return []; }
+/**
+ * @constructor
+ */
+function diff_match_patch()
+{
+}
+
+diff_match_patch.prototype = {
+    /**
+     * @param {string} text1
+     * @param {string} text2
+     * @return {!Array.<!{0: number, 1: string}>}
+     */
+    diff_main: function(text1, text2) { }
+}
+
 /** @constructor */
-difflib.SequenceMatcher = function(baseText, newText) { }
-difflib.SequenceMatcher.prototype.get_opcodes = function() { return []; }
+function Path2D() {}
+Path2D.prototype = {
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     */
+    rect: function(x, y, w, h) { },
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
+    moveTo: function(x, y) { },
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
+    lineTo: function(x, y) { }
+}
 
 /** @constructor */
 var Doc = function() { }
@@ -373,6 +414,9 @@ CodeMirror.prototype = {
      */
     getLineHandle: function(line) { },
     getLineNumber: function(line) { },
+    /**
+     * @return {!{token: function(CodeMirror.StringStream, Object):string}}
+     */
     getMode: function() { },
     getOption: function(option) { },
     /** @param {*=} lineSep */
@@ -526,194 +570,6 @@ CodeMirror.doc;
 /** @type {boolean} */
 window.dispatchStandaloneTestRunnerMessages;
 
-// FIXME: Remove once ES6 is supported natively by JS compiler.
-
-/** @typedef {string} */
-var symbol;
-
-/**
- * @param {string} description
- * @return {symbol}
- */
-function Symbol(description) {}
-
-/**
- * @interface
- * @extends $jscomp.Iterable.<T>
- * @template T
- */
-var Iterator = function() { }
-
-Iterator.prototype = {
-    /**
-     * @return {{done: boolean, value: (T|undefined)}}
-     */
-    next: function() { },
-
-    // FIXME: This should be removed once transpilation is not required for closure compiler ES6
-    $$iterator: function() { }
-}
-
-// FIXME: $jscomp.Iterable hack below should be removed once transpilation is not required for closure compiler ES6
-/**
- * @constructor
- * @implements $jscomp.Iterable.<!Array.<K|V>>
- * @param {!Array.<!Array.<K|V>>|!Iterator.<!Array.<K|V>>=} iterable
- * @template K, V
- */
-var Map = function(iterable) { }
-
-Map.prototype = {
-    /**
-     * @param {K} key
-     * @param {V} value
-     */
-    set: function(key, value) { },
-
-    /**
-     * @param {K} key
-     * @return {boolean}
-     */
-    delete: function(key) { },
-
-    /**
-     * @return {!Iterator.<K>}
-     */
-    keys: function() { },
-
-    /**
-     * @return {!Iterator.<V>}
-     */
-    values: function() { },
-
-    /**
-     * @return {!Array.<!Array.<K|V>>}
-     */
-    entries: function() { },
-
-    /**
-     * @param {K} key
-     * @return {V}
-     */
-    get: function(key) { },
-
-    /**
-     * @param {K} key
-     * @return {boolean}
-     */
-    has: function(key) { },
-
-    clear: function() { },
-
-    /**
-     * @return {number}
-     */
-    get size() { },
-
-    // FIXME: This should be removed once transpilation is not required for closure compiler ES6
-    $$iterator: function() { }
-}
-
-// FIXME: $jscomp.Iterable hack below should be removed once transpilation is not required for closure compiler ES6
-/**
- * @constructor
- * @implements $jscomp.Iterable.<V>
- * @param {!Array.<V>|!Iterator.<V>|string=} iterable
- * @template V
- */
-var Set = function(iterable) { }
-
-Set.prototype = {
-    /**
-     * @param {V} value
-     */
-    add: function(value) { },
-
-    /**
-     * @param {V} value
-     * @return {boolean}
-     */
-    delete: function(value) { },
-
-    /**
-     * @return {!Iterator.<V>}
-     */
-    values: function() { },
-
-    /**
-     * @param {V} value
-     * @return {boolean}
-     */
-    has: function(value) { },
-
-    clear: function() { },
-
-    /**
-     * @return {number}
-     */
-    get size() { },
-
-    // FIXME: This should be removed once transpilation is not required for closure compiler ES6
-    $$iterator: function() { }
-}
-
-/**
- * @constructor
- * @template K, V
- */
-var WeakMap = function() { }
-
-WeakMap.prototype = {
-    /**
-     * @param {K} key
-     * @param {V} value
-     */
-    set: function(key, value) { },
-
-    /**
-     * @param {K} key
-     * @return {boolean}
-     */
-    delete: function(key) { },
-
-    /**
-     * @param {K} key
-     * @return {V}
-     */
-    get: function(key) { },
-
-    /**
-     * @param {K} key
-     * @return {boolean}
-     */
-    has: function(key) { },
-}
-
-/**
- * @constructor
- * @template V
- */
-var WeakSet = function() { }
-
-WeakSet.prototype = {
-    /**
-     * @param {V} value
-     */
-    add: function(value) { },
-
-    /**
-     * @param {V} value
-     * @return {boolean}
-     */
-    delete: function(value) { },
-
-    /**
-     * @param {V} value
-     * @return {boolean}
-     */
-    has: function(value) { },
-}
-
 /**
  * @param {*} obj
  * @return {boolean}
@@ -726,3 +582,98 @@ ArrayBuffer.isView = function(obj) { }
  * @return {Object}
  */
 Element.prototype.animate = function(keyframes, timing) { }
+
+var acorn = {
+    /**
+     * @param {string} text
+     * @param {Object.<string, boolean>} options
+     * @return {!ESTree.Node}
+     */
+    parse: function(text, options) {},
+
+    /**
+     * @param {string} text
+     * @param {Object.<string, boolean>} options
+     * @return {!Acorn.Tokenizer}
+     */
+    tokenizer: function(text, options) {},
+
+    tokTypes: {
+        _true: new Acorn.TokenType(),
+        _false: new Acorn.TokenType(),
+        num: new Acorn.TokenType(),
+        regexp: new Acorn.TokenType(),
+        string: new Acorn.TokenType(),
+        name: new Acorn.TokenType(),
+        eof: new Acorn.TokenType()
+    }
+};
+
+var Acorn = {};
+/**
+ * @constructor
+ */
+Acorn.Tokenizer = function() {
+    /** @type {function():!Acorn.Token} */
+    this.getToken;
+}
+
+/**
+ * @constructor
+ */
+Acorn.TokenType = function() {
+    /** @type {string} */
+    this.label;
+    /** @type {(string|undefined)} */
+    this.keyword;
+}
+
+/**
+ * @typedef {{type: !Acorn.TokenType, value: string, start: number, end: number}}
+ */
+Acorn.Token;
+
+/**
+ * @typedef {{type: string, value: string, start: number, end: number}}
+ */
+Acorn.Comment;
+
+/**
+ * @typedef {(!Acorn.Token|!Acorn.Comment)}
+ */
+Acorn.TokenOrComment;
+
+var ESTree = {};
+
+/**
+ * @constructor
+ */
+ESTree.Node = function()
+{
+    /** @type {number} */
+    this.start;
+    /** @type {number} */
+    this.end;
+    /** @type {string} */
+    this.type;
+    /** @type {(!ESTree.Node|undefined)} */
+    this.body;
+    /** @type {(!Array.<!ESTree.Node>|undefined)} */
+    this.declarations;
+    /** @type {(!Array.<!ESTree.Node>|undefined)} */
+    this.properties;
+    /** @type {(!ESTree.Node|undefined)} */
+    this.init;
+}
+
+/**
+ * @extends {ESTree.Node}
+ * @constructor
+ */
+ESTree.TemplateLiteralNode = function()
+{
+    /** @type {!Array.<!ESTree.Node>} */
+    this.quasis;
+    /** @type {!Array.<!ESTree.Node>} */
+    this.expressions;
+}

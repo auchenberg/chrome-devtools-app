@@ -54,29 +54,20 @@ svg_file_paths = [os.path.join(image_sources_path, file_name) for file_name in f
 svg_file_paths_to_optimize = devtools_file_hashes.files_with_invalid_hashes(hashes_file_path, svg_file_paths)
 svg_file_names = [os.path.basename(file_path) for file_path in svg_file_paths_to_optimize]
 
-optimize_script_path = os.path.join("tools", "resources", "optimize-png-files.sh")
 
-
-def check_installed(app_name, package, how_to):
+def check_installed(app_name):
     proc = subprocess.Popen("which %s" % app_name, stdout=subprocess.PIPE, shell=True)
     proc.communicate()
     if proc.returncode != 0:
         print "This script needs \"%s\" to be installed." % app_name
-        if how_to:
-            print how_to
-        else:
-            print "To install execute the following command: sudo apt-get install %s" % package
+        print "Run sudo gem install image_optim image_optim_pack"
         sys.exit(1)
 
-check_installed("pngcrush", "pngcrush", None)
-check_installed("optipng", "optipng", None)
-check_installed("advdef", "advancecomp", None)
-check_installed("pngout", None, "Utility can be downloaded here: http://www.jonof.id.au/kenutils")
-
+check_installed("image_optim")
 
 def optimize_png(file_name):
     png_full_path = os.path.join(images_path, file_name + ".png")
-    optimize_command = "bash %s -o2 %s" % (optimize_script_path, png_full_path)
+    optimize_command = "image_optim %s" % png_full_path
     proc = subprocess.Popen(optimize_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, cwd=chromium_src_path)
     return proc
 

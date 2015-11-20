@@ -38,6 +38,7 @@ WebInspector.ScreencastView = function(target)
 {
     WebInspector.VBox.call(this);
     this._target = target;
+    this._domModel = WebInspector.DOMModel.fromTarget(target);
 
     this.setMinimumSize(150, 150);
     this.registerRequiredCSS("screencast/screencastView.css");
@@ -130,7 +131,7 @@ WebInspector.ScreencastView.prototype = {
         dimensions.width *= window.devicePixelRatio;
         dimensions.height *= window.devicePixelRatio;
         this._target.pageAgent().startScreencast("jpeg", 80, Math.min(maxImageDimension, dimensions.width), Math.min(maxImageDimension, dimensions.height));
-        this._target.domModel.setHighlighter(this);
+        this._domModel.setHighlighter(this);
     },
 
     _stopCasting: function()
@@ -139,7 +140,7 @@ WebInspector.ScreencastView.prototype = {
             return;
         this._isCasting = false;
         this._target.pageAgent().stopScreencast();
-        this._target.domModel.setHighlighter(null);
+        this._domModel.setHighlighter(null);
     },
 
     /**
@@ -152,8 +153,6 @@ WebInspector.ScreencastView.prototype = {
         this._imageElement.src = "data:image/jpg;base64," + base64Data;
         this._pageScaleFactor = metadata.pageScaleFactor;
         this._screenOffsetTop = metadata.offsetTop;
-        this._deviceWidth = metadata.deviceWidth;
-        this._deviceHeight = metadata.deviceHeight;
         this._scrollOffsetX = metadata.scrollOffsetX;
         this._scrollOffsetY = metadata.scrollOffsetY;
 
@@ -220,8 +219,8 @@ WebInspector.ScreencastView.prototype = {
     _handleMouseEvent: function(event)
     {
         if (this._isGlassPaneActive()) {
-          event.consume();
-          return;
+            event.consume();
+            return;
         }
 
         if (!this._pageScaleFactor)
@@ -236,7 +235,7 @@ WebInspector.ScreencastView.prototype = {
         }
 
         var position = this._convertIntoScreenSpace(event);
-        this._target.domModel.nodeForLocation(position.x / this._pageScaleFactor + this._scrollOffsetX, position.y / this._pageScaleFactor + this._scrollOffsetY, callback.bind(this));
+        this._domModel.nodeForLocation(position.x / this._pageScaleFactor + this._scrollOffsetX, position.y / this._pageScaleFactor + this._scrollOffsetY, callback.bind(this));
 
         /**
          * @param {?WebInspector.DOMNode} node
@@ -279,8 +278,20 @@ WebInspector.ScreencastView.prototype = {
         }
 
         var text = event.type === "keypress" ? String.fromCharCode(event.charCode) : undefined;
-        this._target.inputAgent().dispatchKeyEvent(type, this._modifiersForEvent(event), event.timeStamp / 1000, text, text ? text.toLowerCase() : undefined,
-                                    event.keyIdentifier, event.code, event.keyCode /* windowsVirtualKeyCode */, event.keyCode /* nativeVirtualKeyCode */, false, false, false);
+        this._target.inputAgent().invoke_dispatchKeyEvent({
+            type: type,
+            modifiers: this._modifiersForEvent(event),
+            timestamp: event.timeStamp / 1000,
+            text: text,
+            unmodifiedText: text ? text.toLowerCase() : undefined,
+            keyIdentifier: event.keyIdentifier,
+            code: event.code,
+            key: event.key,
+            windowsVirtualKeyCode: event.keyCode,
+            nativeVirtualKeyCode: event.keyCode,
+            autoRepeat: false,
+            isKeypad: false,
+            isSystemKey: false});
         event.consume();
         this._canvasElement.focus();
     },
@@ -393,9 +404,10 @@ WebInspector.ScreencastView.prototype = {
      * @override
      * @param {?WebInspector.DOMNode} node
      * @param {?DOMAgent.HighlightConfig} config
+     * @param {!DOMAgent.BackendNodeId=} backendNodeId
      * @param {!RuntimeAgent.RemoteObjectId=} objectId
      */
-    highlightDOMNode: function(node, config, objectId)
+    highlightDOMNode: function(node, config, backendNodeId, objectId)
     {
         this._highlightNode = node;
         this._highlightConfig = config;
@@ -440,8 +452,8 @@ WebInspector.ScreencastView.prototype = {
         function scaleQuad(quad)
         {
             for (var i = 0; i < quad.length; i += 2) {
-                quad[i] = quad[i] * this._pageScaleFactor * this._screenZoom;
-                quad[i + 1] = (quad[i + 1] * this._pageScaleFactor + this._screenOffsetTop) * this._screenZoom;
+                quad[i] = quad[i] * this._screenZoom;
+                quad[i + 1] = (quad[i + 1] + this._screenOffsetTop) * this._screenZoom;
             }
         }
 
@@ -666,14 +678,13 @@ WebInspector.ScreencastView.prototype = {
 
     /**
      * @override
-     * @param {boolean} enabled
-     * @param {boolean} inspectUAShadowDOM
+     * @param {!DOMAgent.InspectMode} mode
      * @param {!DOMAgent.HighlightConfig} config
      * @param {function(?Protocol.Error)=} callback
      */
-    setInspectModeEnabled: function(enabled, inspectUAShadowDOM, config, callback)
+    setInspectMode: function(mode, config, callback)
     {
-        this._inspectModeConfig = enabled ? config : null;
+        this._inspectModeConfig = mode !== DOMAgent.InspectMode.None ? config : null;
         if (callback)
             callback(null);
     },

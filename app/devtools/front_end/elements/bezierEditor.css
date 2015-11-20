@@ -5,17 +5,14 @@
  */
 
 :host {
-    width: 235px;
-    height: 320px;
+    width: 270px;
+    height: 350px;
     -webkit-user-select: none;
+    padding: 16px;
+    overflow: hidden;
 }
 
-.bezier-presets {
-    display: inline-flex;
-    flex-direction: column;
-}
-
-.bezier-preset-selected > svg{
+.bezier-preset-selected > svg {
     background-color: rgb(56, 121, 217);
 }
 
@@ -28,7 +25,7 @@
     height: 50px;
     padding: 5px;
     margin: auto;
-    background-color: #ccc;
+    background-color: #f5f5f5;
     border-radius: 3px;
 }
 
@@ -66,14 +63,16 @@
 }
 
 .bezier-curve line.bezier-control-line {
-    stroke: rgba(56, 121, 217, 0.6);
+    stroke: #9C27B0;
     stroke-width: 2;
     stroke-linecap: round;
     fill: none;
+    opacity: 0.6;
 }
 
 .bezier-curve circle.bezier-control-circle {
-    fill: rgb(56, 121, 217);
+    fill: #9C27B0;
+    cursor: pointer;
 }
 
 .bezier-curve path.bezier-path {
@@ -88,14 +87,15 @@
     background-color: white;
     overflow: hidden;
     border-radius: 20px;
-    width: 100%;
+    width: 200%;
     height: 20px;
-    margin-left: 10px;
     z-index: 2;
+    flex-shrink: 0;
+    opacity: 0;
 }
 
 .bezier-preview-animation {
-    background-color: rgb(56, 121, 217);
+    background-color: #9C27B0;
     width: 20px;
     height: 20px;
     border-radius: 20px;
@@ -106,7 +106,6 @@
     margin-top: -20px;
     position: relative;
     z-index: 1;
-    margin-left: 10px;
 }
 
 .bezier-preview-onion > .bezier-preview-animation {
@@ -114,12 +113,13 @@
 }
 
 svg.bezier-preset-modify {
-    background-color: #ccc;
-    border-radius: 10px;
+    background-color: #f5f5f5;
+    border-radius: 35px;
     display: inline-block;
-    opacity: 0;
-    transition: opacity 250ms;
-    margin: 2px;
+    visibility: hidden;
+    transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: absolute;
 }
 
 svg.bezier-preset-modify:hover, .bezier-preset:hover {
@@ -132,7 +132,7 @@ svg.bezier-preset-modify:hover, .bezier-preset:hover {
 
 .bezier-preset-modify path {
     stroke-width: 2;
-    stroke: white;
+    stroke: black;
     fill: none;
 }
 
@@ -142,21 +142,53 @@ svg.bezier-preset-modify:hover, .bezier-preset:hover {
 
 .bezier-preset-category {
     width: 50px;
+    margin: 20px 0;
+    cursor: pointer;
+    transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.bezier-display-value {
+span.bezier-display-value {
     width: 100%;
     -webkit-user-select: text;
     display: block;
     text-align: center;
-    padding-top: 5px;
-    padding-bottom: 10px;
+    line-height: 20px;
+    height: 20px;
+    cursor: text;
+    white-space: nowrap !important;
 }
 
 .bezier-container {
     display: flex;
+    margin-top: 38px;
 }
 
 svg.bezier-curve {
-    margin-left: 10px;
+    margin-left: 32px;
+    margin-top: -8px;
+}
+
+svg.bezier-preset-modify.bezier-preset-plus {
+    right: 0;
+}
+
+.bezier-header {
+    margin-top: 16px;
+}
+
+svg.bezier-preset-modify:active {
+    transform: scale(1.1);
+    background-color: rgb(56, 121, 217);
+}
+
+.bezier-preset-category:active {
+    transform: scale(1.05);
+}
+
+.bezier-header-active > svg.bezier-preset-modify {
+    visibility: visible;
+}
+
+.bezier-preset-modify:active path {
+    stroke: white;
 }

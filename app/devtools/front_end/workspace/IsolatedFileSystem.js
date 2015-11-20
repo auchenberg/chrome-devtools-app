@@ -416,14 +416,14 @@ WebInspector.IsolatedFileSystem.prototype = {
         function fileWriterCreated(fileWriter)
         {
             fileWriter.onerror = errorHandler.bind(this);
-            fileWriter.onwriteend = fileTruncated;
-            fileWriter.truncate(0);
+            fileWriter.onwriteend = fileWritten;
+            var blob = new Blob([content], { type: "text/plain" });
+            fileWriter.write(blob);
 
-            function fileTruncated()
+            function fileWritten()
             {
                 fileWriter.onwriteend = writerEnd;
-                var blob = new Blob([content], { type: "text/plain" });
-                fileWriter.write(blob);
+                fileWriter.truncate(blob.size);
             }
         }
 

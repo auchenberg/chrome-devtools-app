@@ -27,8 +27,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-label {
-    cursor: pointer;
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    cursor: default;
+    font-family: Lucida Grande, sans-serif;
+    font-size: 12px;
+    tab-size: 4;
+    -webkit-user-select: none;
+    color: #222;
+}
+
+.platform-linux {
+    color: rgb(48, 57, 66);
+    font-family: Ubuntu, Arial, sans-serif;
+}
+
+.platform-mac {
+    color: rgb(48, 57, 66);
+    font-family: 'Lucida Grande', sans-serif;
+}
+
+.platform-windows {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 label:hover input {
@@ -54,138 +83,8 @@ fieldset[disabled] label:hover input {
     background-clip: padding-box;
 }
 
-body .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {
-    background-color: #eee;
-}
-
-.inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {
-    flex: 0 0 24px;
-}
-
 .inspector-view-toolbar-left {
-    padding-left: 2px;
     margin-right: -5px; /* Should compensate for .tabbed-pane-header-contents margin-left. */
-}
-
-.inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header-tab,
-.inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header-tab.selected {
-    border-width: 0 2px 0 2px;
-    background: none;
-    padding-right: 3px;
-}
-
-.inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header-tab.selected {
-    border-width: 0 2px 0 2px;
-    -webkit-border-image: url(Images/toolbarItemSelected.png) 0 2 0 2;
-}
-
-.inspector-view-close-button {
-    float: right;
-    padding-right: 6px;
-    padding-left: 4px;
-}
-
-body.undocked .inspector-view-close-button {
-    display: none;
-}
-
-.platform-windows .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header,
-.platform-windows.inactive .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {
-    background-image: none;
-}
-
-body.undocked.platform-mac .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {
-    background-image: linear-gradient(to bottom, rgb(208, 208, 208), rgb(200, 200, 200)) !important;
-    color: #333 !important;
-}
-
-body.undocked.platform-mac.inactive .inspector-view-tabbed-pane.tabbed-pane::shadow .tabbed-pane-header {
-    background-image: linear-gradient(to bottom, rgb(238, 238, 238), rgb(224, 224, 224)) !important;
-    color: #555 !important;
-}
-
-.close-button,
-.close-button-gray {
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
-    display: inline-block;
-}
-
-.close-button {
-    width: 14px;
-    height: 14px;
-    background-position: -128px -96px;
-}
-
-.close-button-gray {
-    width: 13px;
-    height: 13px;
-    background-position: -175px -96px;
-}
-
-@media (-webkit-min-device-pixel-ratio: 1.5) {
-.close-button,
-.close-button-gray {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
-}
-} /* media */
-
-.close-button:hover {
-    background-position: -96px -96px;
-}
-
-.close-button:active {
-    background-position: -111px -96px;
-}
-
-.close-button-gray:hover {
-    background-position: -143px -96px;
-}
-
-.close-button-gray:active {
-    background-position: -160px -96px;
-}
-
-.error-icon-small,
-.warning-icon-small,
-.red-ball,
-.green-ball,
-.orange-ball {
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
-    width: 10px;
-    height: 10px;
-    display: inline-block;
-}
-
-@media (-webkit-min-device-pixel-ratio: 1.5) {
-.error-icon-small,
-.warning-icon-small,
-.red-ball,
-.green-ball,
-.orange-ball {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
-}
-} /* media */
-
-.error-icon-small {
-    background-position: -213px -96px;
-}
-
-.warning-icon-small {
-    background-position: -202px -107px;
-}
-
-.red-ball {
-    background-position: -224px -96px;
-}
-
-.green-ball {
-    background-position: -235px -96px;
-}
-
-.orange-ball {
-    background-position: -246px -96px;
 }
 
 .bubble-repeat-count {
@@ -205,105 +104,6 @@ body.undocked.platform-mac.inactive .inspector-view-tabbed-pane.tabbed-pane::sha
     border-radius: 7px;
 }
 
-.console-formatted-object,
-.console-formatted-map,
-.console-formatted-set,
-.console-formatted-iterator,
-.console-formatted-generator,
-.console-formatted-node,
-.console-formatted-array {
-    position: relative;
-    display: inline-block;
-    vertical-align: top;
-    color: inherit;
-}
-
-.console-formatted-node:hover {
-    background-color: rgba(56, 121, 217, 0.1);
-}
-
-.console-formatted-object .section,
-.console-formatted-map .section,
-.console-formatted-set .section,
-.console-formatted-iterator .section,
-.console-formatted-generator .section,
-.console-formatted-node .section,
-.console-formatted-array .section {
-    position: static;
-}
-
-.console-formatted-object .section > .header::before {
-    margin-top: 0;
-}
-
-.console-formatted-object .properties-tree,
-.console-formatted-map .properties-tree,
-.console-formatted-set .properties-tree,
-.console-formatted-iterator .properties-tree,
-.console-formatted-generator .properties-tree,
-.console-formatted-node .properties-tree {
-    padding-left: 0 !important;
-}
-
-.console-formatted-number,
-.console-formatted-boolean {
-    color: rgb(28, 0, 207);
-}
-
-.scientific-notation-exponent {
-    flex-shrink: 0;
-}
-
-.scientific-notation-mantissa {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-shrink: 1;
-    min-width: 1ex;
-}
-
-.scientific-notation-number {
-    display: flex !important;
-}
-
-.console-formatted-string,
-.console-formatted-regexp,
-.console-formatted-symbol {
-    color: rgb(196, 26, 22);
-    white-space: pre-wrap;
-    unicode-bidi: -webkit-isolate;
-}
-
-.console-formatted-null,
-.console-formatted-undefined {
-    color: rgb(128, 128, 128);
-}
-
-.console-formatted-preview-node,
-.section .console-formatted-node {
-    color: rgb(136, 18, 128);
-}
-
-.object-info-state-note {
-    display: inline-block;
-    width: 11px;
-    height: 11px;
-    background-color: rgb(179, 203, 247);
-    color: white;
-    text-align: center;
-    border-radius: 3px;
-    line-height: 13px;
-    margin: 0 6px;
-    font-size: 9px;
-}
-
-.object-info-state-note::before {
-    content: "i";
-}
-
-.section:not(.expanded) .object-info-state-note {
-    display: none;
-}
-
 .error-message {
     color: red;
 }
@@ -313,7 +113,7 @@ body.undocked.platform-mac.inactive .inspector-view-tabbed-pane.tabbed-pane::sha
 }
 
 .panel {
-    display: none !important;
+    display: flex;
     overflow: hidden;
     position: absolute;
     top: 0;
@@ -323,11 +123,8 @@ body.undocked.platform-mac.inactive .inspector-view-tabbed-pane.tabbed-pane::sha
     z-index: 0;
 }
 
-.panel.visible {
-    display: flex !important;
-}
-
 iframe.extension {
+    flex: auto;
     width: 100%;
     height: 100%;
 }
@@ -361,7 +158,7 @@ iframe.panel.extension {
 
 .outline-disclosure li.selected .selection {
     display: block;
-    background-color: rgb(212, 212, 212);
+    background-color: #dadada;
 }
 
 .outline-disclosure li.in-clipboard .highlight {
@@ -413,8 +210,8 @@ ol.outline-disclosure:focus li.selected * {
 .outline-disclosure li::before {
     float: left;
     -webkit-user-select: none;
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-    -webkit-mask-size: 320px 144px;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
     content: "a";
     color: transparent;
     text-shadow: none;
@@ -431,7 +228,7 @@ ol.outline-disclosure:focus li.selected * {
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .outline-disclosure li::before {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 
@@ -452,34 +249,8 @@ ol.outline-disclosure:focus li.selected * {
     display: block;
 }
 
-.properties-calculate-value-button:hover {
-    text-decoration: underline;
-}
-
 .properties-accessor-property-name {
     font-style: italic;
-}
-
-.editing {
-    -webkit-user-select: text;
-    box-shadow: rgba(0, 0, 0, .5) 3px 3px 4px;
-    outline: 1px solid rgb(66%, 66%, 66%) !important;
-    background-color: white;
-    -webkit-user-modify: read-write-plaintext-only;
-    text-overflow: clip !important;
-    padding-left: 2px;
-    margin-left: -2px;
-    padding-right: 2px;
-    margin-right: -2px;
-    margin-bottom: -1px;
-    padding-bottom: 1px;
-    opacity: 1.0 !important;
-}
-
-.editing,
-.editing * {
-    color: #222 !important;
-    text-decoration: none !important;
 }
 
 .child-editing {
@@ -490,7 +261,7 @@ ol.outline-disclosure:focus li.selected * {
 
 .sidebar {
     overflow-x: hidden;
-    background-color: #eee;
+    background-color: #f3f3f3;
 }
 
 .pane-title-button {
@@ -571,8 +342,8 @@ ol.outline-disclosure:focus li.selected * {
     width: 10px;
     height: 10px;
     border: 0;
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-    -webkit-mask-size: 320px 144px;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
     -webkit-appearance: none;
     background-color: rgba(0, 0, 0, 0.75);
     position: relative;
@@ -581,7 +352,7 @@ ol.outline-disclosure:focus li.selected * {
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .sidebar-tree-item .disclosure-button {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 
@@ -774,11 +545,6 @@ body.inactive .sidebar-tree-item.selected {
     background-color: rgb(216, 35, 35) !important;
 }
 
-.source-frame-eval-expression {
-    outline: 1px solid rgb(163, 41, 34);
-    background-color: rgb(255, 255, 194);
-}
-
 .soft-context-menu-glass-pane {
     z-index: 20000;
 }
@@ -846,25 +612,4 @@ body.inactive select.chrome-select,
     box-shadow: 0 1px 0 rgba(80, 80, 80, 0.08),
     inset 0 1px 2px rgba(255, 255, 255, 0.75);
     color: #aaa;
-}
-
-.custom-expandable-section::before {
-    -webkit-user-select: none;
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
-    opacity: 0.5;
-    content: "a";
-    width: 8px;
-    margin-right: 4px;
-    padding-right: 2px;
-    color: transparent;
-    text-shadow: none;
-}
-
-.custom-expandable-section::before {
-    background-position: -4px -96px;
-}
-
-.custom-expandable-section.expanded::before {
-    background-position: -20px -96px;
 }

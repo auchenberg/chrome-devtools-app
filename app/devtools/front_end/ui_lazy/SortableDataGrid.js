@@ -136,8 +136,8 @@ WebInspector.SortableDataGrid.prototype = {
      */
     insertChild: function(node)
     {
-        var parentNode = this.rootNode();
-        parentNode.insertChild(node, parentNode.children.upperBound(node, this._sortingFunction));
+        var root = /** @type {!WebInspector.SortableDataGridNode} */ (this.rootNode());
+        root.insertChildOrdered(node);
     },
 
     /**
@@ -147,11 +147,8 @@ WebInspector.SortableDataGrid.prototype = {
     sortNodes: function(comparator, reverseMode)
     {
         this._sortingFunction = WebInspector.SortableDataGrid.Comparator.bind(null, comparator, reverseMode);
-        var children = this._rootNode.children;
-        children.sort(this._sortingFunction);
-        for (var i = 0; i < children.length; ++i)
-            children[i].recalculateSiblings(i);
-        this.scheduleUpdate();
+        this._rootNode._sortChildren(reverseMode);
+        this.scheduleUpdateStructure();
     },
 
     __proto__: WebInspector.ViewportDataGrid.prototype
@@ -161,12 +158,30 @@ WebInspector.SortableDataGrid.prototype = {
  * @constructor
  * @extends {WebInspector.ViewportDataGridNode}
  * @param {?Object.<string, *>=} data
+ * @param {boolean=} hasChildren
  */
-WebInspector.SortableDataGridNode = function(data)
+WebInspector.SortableDataGridNode = function(data, hasChildren)
 {
-    WebInspector.ViewportDataGridNode.call(this, data);
+    WebInspector.ViewportDataGridNode.call(this, data, hasChildren);
 }
 
 WebInspector.SortableDataGridNode.prototype = {
+    /**
+     * @param {!WebInspector.DataGridNode} node
+     */
+    insertChildOrdered: function(node)
+    {
+        this.insertChild(node, this.children.upperBound(node, this.dataGrid._sortingFunction));
+    },
+
+    _sortChildren: function()
+    {
+        this.children.sort(this.dataGrid._sortingFunction);
+        for (var i = 0; i < this.children.length; ++i)
+            this.children[i].recalculateSiblings(i);
+        for (var child of this.children)
+            child._sortChildren();
+    },
+
     __proto__: WebInspector.ViewportDataGridNode.prototype
 }

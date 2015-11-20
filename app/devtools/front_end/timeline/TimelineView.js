@@ -52,7 +52,7 @@ WebInspector.TimelineView = function(delegate, model)
     this._scrollTop = 0;
 
     this._recordsView = this._createRecordsView();
-    this._recordsView.addEventListener(WebInspector.SplitView.Events.SidebarSizeChanged, this._sidebarResized, this);
+    this._recordsView.addEventListener(WebInspector.SplitWidget.Events.SidebarSizeChanged, this._sidebarResized, this);
 
     this._topGapElement = this.element.createChild("div", "timeline-gap");
     this._recordsView.show(this.element);
@@ -85,7 +85,7 @@ WebInspector.TimelineView.prototype = {
     },
 
     /**
-     * @return {!WebInspector.SplitView}
+     * @return {!WebInspector.SplitWidget}
      */
     _createRecordsView: function()
     {
@@ -94,19 +94,19 @@ WebInspector.TimelineView.prototype = {
         this._containerElement.id = "timeline-container";
         this._containerElement.addEventListener("scroll", this._onScroll.bind(this), false);
 
-        var recordsView = new WebInspector.SplitView(true, false, "timelinePanelRecorsSplitViewState");
+        var recordsView = new WebInspector.SplitWidget(true, false, "timelinePanelRecorsSplitViewState");
         recordsView.element.style.flex = "1 0 auto";
 
         // Create records list in the records sidebar.
-        var sidebarView = new WebInspector.VBox();
-        sidebarView.element.createChild("div", "timeline-records-title").textContent = WebInspector.UIString("RECORDS");
-        recordsView.setSidebarView(sidebarView);
-        this._sidebarListElement = sidebarView.element.createChild("div", "timeline-records-list");
+        var sidebarWidget = new WebInspector.VBox();
+        sidebarWidget.element.createChild("div", "timeline-records-title").textContent = WebInspector.UIString("RECORDS");
+        recordsView.setSidebarWidget(sidebarWidget);
+        this._sidebarListElement = sidebarWidget.element.createChild("div", "timeline-records-list");
 
         // Create grid in the records main area.
         this._gridContainer = new WebInspector.VBoxWithResizeCallback(this._onViewportResize.bind(this));
         this._gridContainer.element.id = "resources-container-content";
-        recordsView.setMainView(this._gridContainer);
+        recordsView.setMainWidget(this._gridContainer);
         this._timelineGrid = new WebInspector.TimelineGrid();
         this._gridContainer.element.appendChild(this._timelineGrid.element);
 
@@ -139,7 +139,7 @@ WebInspector.TimelineView.prototype = {
             var dividerPosition = Math.round(position);
             if (dividerPosition < 0 || dividerPosition >= clientWidth || dividers.has(dividerPosition))
                 continue;
-            dividers.set(dividerPosition, WebInspector.TimelineUIUtils.createDividerForRecord(record, dividerPosition));
+            dividers.set(dividerPosition, WebInspector.TimelineUIUtils.createDividerForRecord(record, this._calculator.zeroTime(), dividerPosition));
         }
         this._timelineGrid.addEventDividers(dividers.valuesArray());
     },
@@ -215,7 +215,7 @@ WebInspector.TimelineView.prototype = {
      */
     _sidebarResized: function(event)
     {
-        this.dispatchEventToListeners(WebInspector.SplitView.Events.SidebarSizeChanged, event.data);
+        this.dispatchEventToListeners(WebInspector.SplitWidget.Events.SidebarSizeChanged, event.data);
     },
 
     _onViewportResize: function()
@@ -250,7 +250,7 @@ WebInspector.TimelineView.prototype = {
 
     /**
      * @override
-     * @return {!WebInspector.View}
+     * @return {!WebInspector.Widget}
      */
     view: function()
     {
@@ -296,13 +296,7 @@ WebInspector.TimelineView.prototype = {
     willHide: function()
     {
         this._closeRecordDetails();
-        WebInspector.View.prototype.willHide.call(this);
-    },
-
-    wasShown: function()
-    {
-        this._presentationModel.refreshRecords();
-        WebInspector.VBox.prototype.wasShown.call(this);
+        WebInspector.Widget.prototype.willHide.call(this);
     },
 
     _onScroll: function(event)
@@ -339,13 +333,13 @@ WebInspector.TimelineView.prototype = {
             var aggregatedStats = {};
             var presentationChildren = presentationRecord.presentationChildren();
             for (var i = 0; i < presentationChildren.length; ++i)
-                WebInspector.TimelineUIUtils.aggregateTimeForRecord(aggregatedStats, presentationChildren[i].record());
+                WebInspector.TimelineUIUtils.aggregateTimeForRecord(aggregatedStats, this._model, presentationChildren[i].record());
             var idle = presentationRecord.endTime() - presentationRecord.startTime();
             for (var category in aggregatedStats)
                 idle -= aggregatedStats[category];
             aggregatedStats["idle"] = idle;
 
-            var contentHelper = new WebInspector.TimelineDetailsContentHelper(null, null, true);
+            var contentHelper = new WebInspector.TimelineDetailsContentHelper(null, null, null, true);
             var pieChart = WebInspector.TimelineUIUtils.generatePieChart(aggregatedStats);
             var title = WebInspector.TimelineUIUtils.eventTitle(presentationRecord.record().traceEvent());
             contentHelper.appendTextRow(WebInspector.UIString("Type"), title);
@@ -466,7 +460,7 @@ WebInspector.TimelineView.prototype = {
         var windowEndTime = this._windowEndTime || this._model.maximumRecordTime();
         this._timelinePaddingLeft = this._expandOffset;
         this._calculator.setWindow(windowStartTime, windowEndTime);
-        this._calculator.setDisplayWindow(this._timelinePaddingLeft, this._graphRowsElementWidth);
+        this._calculator.setDisplayWindow(this._graphRowsElementWidth, this._timelinePaddingLeft);
 
         this._refreshRecords();
         if (!this._boundariesAreValid) {
@@ -505,7 +499,7 @@ WebInspector.TimelineView.prototype = {
         }
         var recordsInWindow = this._presentationModel.filteredRecords();
         var index = recordsInWindow.indexOf(recordToReveal);
-
+        console.assert(index >= 0, "Failed to find record in window");
         var itemOffset = index * WebInspector.TimelinePanel.rowHeight;
         var visibleTop = this._scrollTop - WebInspector.TimelinePanel.headerHeight;
         var visibleBottom = visibleTop + this._containerElementHeight - WebInspector.TimelinePanel.rowHeight;
@@ -664,13 +658,15 @@ WebInspector.TimelineView.prototype = {
             if (task.startTime() > endTime)
                 break;
 
+            var data = task.traceEvent().args["data"];
+            var foreign = data && data["foreign"];
             var left = Math.max(0, this._calculator.computePosition(task.startTime()) + barOffset - widthAdjustment);
             var right = Math.min(width, this._calculator.computePosition(task.endTime() || 0) + barOffset + widthAdjustment);
 
             if (lastElement) {
                 var gap = Math.floor(left) - Math.ceil(lastRight);
                 if (gap < minGap) {
-                    if (!task.data["foreign"])
+                    if (!foreign)
                         lastElement.classList.remove(foreignStyle);
                     lastRight = right;
                     lastElement._tasksInfo.lastTaskIndex = taskIndex;
@@ -683,7 +679,7 @@ WebInspector.TimelineView.prototype = {
                 element = container.createChild("div", "timeline-graph-bar");
             element.style.left = left + "px";
             element._tasksInfo = {name: name, tasks: tasks, firstTaskIndex: taskIndex, lastTaskIndex: taskIndex};
-            if (task.data["foreign"])
+            if (foreign)
                 element.classList.add(foreignStyle);
             lastLeft = left;
             lastRight = right;
@@ -864,7 +860,7 @@ WebInspector.TimelineView.prototype = {
     {
         if (!anchor._tasksInfo)
             return;
-        popover.showForAnchor(WebInspector.TimelineUIUtils.generateMainThreadBarPopupContent(this._model, anchor._tasksInfo), anchor, null, null, WebInspector.Popover.Orientation.Bottom);
+        popover.showForAnchor(WebInspector.TimelineUIUtils.generateMainThreadBarPopupContent(this._model, anchor._tasksInfo), anchor);
     },
 
     _closeRecordDetails: function()
@@ -972,13 +968,13 @@ WebInspector.TimelineCalculator.prototype = {
     },
 
     /**
-     * @param {number} paddingLeft
      * @param {number} clientWidth
+     * @param {number=} paddingLeft
      */
-    setDisplayWindow: function(paddingLeft, clientWidth)
+    setDisplayWindow: function(clientWidth, paddingLeft)
     {
-        this._workingArea = clientWidth - WebInspector.TimelineCalculator._minWidth - paddingLeft;
-        this._paddingLeft = paddingLeft;
+        this._paddingLeft = paddingLeft || 0;
+        this._workingArea = clientWidth - WebInspector.TimelineCalculator._minWidth - this._paddingLeft;
     },
 
     /**

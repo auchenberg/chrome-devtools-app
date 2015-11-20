@@ -51,7 +51,8 @@ WebInspector.CodeMirrorTextEditor = function(url, delegate)
         matchBrackets: true,
         smartIndent: false,
         styleSelectedText: true,
-        electricChars: false
+        electricChars: false,
+        styleActiveLine: true
     });
     this._codeMirrorElement = this.element.lastElementChild;
 
@@ -113,6 +114,7 @@ WebInspector.CodeMirrorTextEditor = function(url, delegate)
         "Shift-Ctrl-Right": "selectCamelRight",
         "Cmd-Left": "goLineStartSmart",
         "Cmd-Right": "goLineEnd",
+        "Cmd-Backspace": "delLineLeft",
         "Alt-Backspace": "delGroupBefore",
         "Alt-Delete": "delGroupAfter",
         "Cmd-/": "toggleComment",
@@ -121,17 +123,15 @@ WebInspector.CodeMirrorTextEditor = function(url, delegate)
         fallthrough: "devtools-common"
     };
 
-    WebInspector.settings.textEditorIndent.addChangeListener(this._updateEditorIndentation, this);
-    WebInspector.settings.textEditorAutoDetectIndent.addChangeListener(this._updateEditorIndentation, this);
-    this._updateEditorIndentation();
-    WebInspector.settings.showWhitespacesInEditor.addChangeListener(this._updateCodeMirrorMode, this);
-    WebInspector.settings.textEditorBracketMatching.addChangeListener(this._enableBracketMatchingIfNeeded, this);
+    WebInspector.moduleSetting("textEditorIndent").addChangeListener(this._onUpdateEditorIndentation, this);
+    WebInspector.moduleSetting("textEditorAutoDetectIndent").addChangeListener(this._onUpdateEditorIndentation, this);
+    this._onUpdateEditorIndentation();
+    WebInspector.moduleSetting("showWhitespacesInEditor").addChangeListener(this._updateCodeMirrorMode, this);
+    WebInspector.moduleSetting("textEditorBracketMatching").addChangeListener(this._enableBracketMatchingIfNeeded, this);
     this._enableBracketMatchingIfNeeded();
 
     this._codeMirror.setOption("keyMap", WebInspector.isMac() ? "devtools-mac" : "devtools-pc");
 
-    CodeMirror.commands.maybeAvoidSmartSingleQuotes = this._maybeAvoidSmartQuotes.bind(this, "'");
-    CodeMirror.commands.maybeAvoidSmartDoubleQuotes = this._maybeAvoidSmartQuotes.bind(this, "\"");
     this._codeMirror.addKeyMap({
         "'": "maybeAvoidSmartSingleQuotes",
         "'\"'": "maybeAvoidSmartDoubleQuotes"
@@ -152,7 +152,7 @@ WebInspector.CodeMirrorTextEditor = function(url, delegate)
     this._fixWordMovement = new WebInspector.CodeMirrorTextEditor.FixWordMovement(this._codeMirror);
     this._selectNextOccurrenceController = new WebInspector.CodeMirrorTextEditor.SelectNextOccurrenceController(this, this._codeMirror);
 
-    WebInspector.settings.textEditorAutocompletion.addChangeListener(this._enableAutocompletionIfNeeded, this);
+    WebInspector.moduleSetting("textEditorAutocompletion").addChangeListener(this._enableAutocompletionIfNeeded, this);
     this._enableAutocompletionIfNeeded();
 
     this._codeMirror.on("changes", this._changes.bind(this));
@@ -330,9 +330,81 @@ CodeMirror.commands.dismissMultipleSelections = function(codemirror)
     codemirror._codeMirrorTextEditor._revealLine(selection.anchor.line);
 }
 
+/**
+ * @param {string} quoteCharacter
+ * @param {!CodeMirror} codeMirror
+ * @return {*}
+ */
+WebInspector.CodeMirrorTextEditor._maybeAvoidSmartQuotes = function(quoteCharacter, codeMirror)
+{
+    var textEditor = codeMirror._codeMirrorTextEditor;
+    if (!WebInspector.moduleSetting("textEditorBracketMatching").get())
+        return CodeMirror.Pass;
+    var selections = textEditor.selections();
+    if (selections.length !== 1 || !selections[0].isEmpty())
+        return CodeMirror.Pass;
+
+    var selection = selections[0];
+    var token = textEditor.tokenAtTextPosition(selection.startLine, selection.startColumn);
+    if (!token || !token.type || token.type.indexOf("string") === -1)
+        return CodeMirror.Pass;
+    var line = textEditor.line(selection.startLine);
+    var tokenValue = line.substring(token.startColumn, token.endColumn);
+    if (tokenValue[0] === tokenValue[tokenValue.length - 1] && (tokenValue[0] === "'" || tokenValue[0] === "\""))
+        return CodeMirror.Pass;
+    codeMirror.replaceSelection(quoteCharacter);
+}
+CodeMirror.commands.maybeAvoidSmartSingleQuotes = WebInspector.CodeMirrorTextEditor._maybeAvoidSmartQuotes.bind(null, "'");
+CodeMirror.commands.maybeAvoidSmartDoubleQuotes = WebInspector.CodeMirrorTextEditor._maybeAvoidSmartQuotes.bind(null, "\"");
+
 WebInspector.CodeMirrorTextEditor.LongLineModeLineLengthThreshold = 2000;
 WebInspector.CodeMirrorTextEditor.MaximumNumberOfWhitespacesPerSingleSpan = 16;
 WebInspector.CodeMirrorTextEditor.MaxEditableTextSize = 1024 * 1024 * 10;
+
+WebInspector.CodeMirrorTextEditor.LinesToScanForIndentationGuessing = 1000;
+
+/**
+ * @param {!Array.<string>} lines
+ * @return {string}
+ */
+WebInspector.CodeMirrorTextEditor._guessIndentationLevel = function(lines)
+{
+    var tabRegex = /^\t+/;
+    var tabLines = 0;
+    var indents = {};
+
+    for (var lineNumber = 0; lineNumber < lines.length; ++lineNumber) {
+        var text = lines[lineNumber];
+        if (text.length === 0 || !WebInspector.TextUtils.isSpaceChar(text[0]))
+            continue;
+        if (tabRegex.test(text)) {
+            ++tabLines;
+            continue;
+        }
+        var i = 0;
+        while (i < text.length && WebInspector.TextUtils.isSpaceChar(text[i]))
+            ++i;
+        if (i % 2 !== 0)
+            continue;
+        indents[i] = 1 + (indents[i] || 0);
+    }
+
+    var linesCountPerIndentThreshold = 3 * lines.length / 100;
+    if (tabLines && tabLines > linesCountPerIndentThreshold)
+        return "\t";
+    var minimumIndent = Infinity;
+    for (var i in indents) {
+        if (indents[i] < linesCountPerIndentThreshold)
+            continue;
+        var indent = parseInt(i, 10);
+        if (minimumIndent > indent)
+            minimumIndent = indent;
+    }
+    if (minimumIndent === Infinity)
+        return WebInspector.moduleSetting("textEditorIndent").get();
+    return " ".repeat(minimumIndent);
+}
+
 
 WebInspector.CodeMirrorTextEditor.prototype = {
     /**
@@ -346,30 +418,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
 
     _enableAutocompletionIfNeeded: function()
     {
-        this._autocompleteController.setEnabled(WebInspector.settings.textEditorAutocompletion.get());
-    },
-
-    /**
-     * @param {string} quoteCharacter
-     * @return {*}
-     */
-    _maybeAvoidSmartQuotes: function(quoteCharacter)
-    {
-        if (!WebInspector.settings.textEditorBracketMatching.get())
-            return CodeMirror.Pass;
-        var selections = this.selections();
-        if (selections.length !== 1 || !selections[0].isEmpty())
-            return CodeMirror.Pass;
-
-        var selection = selections[0];
-        var token = this.tokenAtTextPosition(selection.startLine, selection.startColumn);
-        if (!token || !token.type || token.type.indexOf("string") === -1)
-            return CodeMirror.Pass;
-        var line = this.line(selection.startLine);
-        var tokenValue = line.substring(token.startColumn, token.endColumn);
-        if (tokenValue[0] === tokenValue[tokenValue.length - 1] && (tokenValue[0] === "'" || tokenValue[0] === "\""))
-            return CodeMirror.Pass;
-        this._codeMirror.replaceSelection(quoteCharacter);
+        this._autocompleteController.setEnabled(WebInspector.moduleSetting("textEditorAutocompletion").get());
     },
 
     _onKeyHandled: function()
@@ -546,16 +595,16 @@ WebInspector.CodeMirrorTextEditor.prototype = {
 
     dispose: function()
     {
-        WebInspector.settings.textEditorIndent.removeChangeListener(this._updateEditorIndentation, this);
-        WebInspector.settings.textEditorAutoDetectIndent.removeChangeListener(this._updateEditorIndentation, this);
-        WebInspector.settings.showWhitespacesInEditor.removeChangeListener(this._updateCodeMirrorMode, this);
-        WebInspector.settings.textEditorBracketMatching.removeChangeListener(this._enableBracketMatchingIfNeeded, this);
-        WebInspector.settings.textEditorAutocompletion.removeChangeListener(this._enableAutocompletionIfNeeded, this);
+        WebInspector.moduleSetting("textEditorIndent").removeChangeListener(this._onUpdateEditorIndentation, this);
+        WebInspector.moduleSetting("textEditorAutoDetectIndent").removeChangeListener(this._onUpdateEditorIndentation, this);
+        WebInspector.moduleSetting("showWhitespacesInEditor").removeChangeListener(this._updateCodeMirrorMode, this);
+        WebInspector.moduleSetting("textEditorBracketMatching").removeChangeListener(this._enableBracketMatchingIfNeeded, this);
+        WebInspector.moduleSetting("textEditorAutocompletion").removeChangeListener(this._enableAutocompletionIfNeeded, this);
     },
 
     _enableBracketMatchingIfNeeded: function()
     {
-        this._codeMirror.setOption("autoCloseBrackets", WebInspector.settings.textEditorBracketMatching.get() ? { explode: false } : false);
+        this._codeMirror.setOption("autoCloseBrackets", WebInspector.moduleSetting("textEditorBracketMatching").get() ? { explode: false } : false);
     },
 
     /**
@@ -577,52 +626,20 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         delete this._editorSizeInSync;
     },
 
-    _guessIndentationLevel: function()
+    _onUpdateEditorIndentation: function()
     {
-        var tabRegex = /^\t+/;
-        var tabLines = 0;
-        var indents = {};
-        var maxScanLines = 1000;
-        function processLine(lineHandle)
-        {
-            var text = lineHandle.text;
-            if (text.length === 0 || !WebInspector.TextUtils.isSpaceChar(text[0]))
-                return;
-            if (tabRegex.test(text)) {
-                ++tabLines;
-                return;
-            }
-            var i = 0;
-            while (i < text.length && WebInspector.TextUtils.isSpaceChar(text[i]))
-                ++i;
-            if (i % 2 !== 0)
-                return;
-            indents[i] = 1 + (indents[i] || 0);
-        }
-        this._codeMirror.eachLine(0, maxScanLines, processLine);
-
-        var linesCountPerIndentThreshold = 3 * Math.min(maxScanLines, this.linesCount) / 100;
-        if (tabLines && tabLines > linesCountPerIndentThreshold)
-            return "\t";
-        var minimumIndent = Infinity;
-        for (var i in indents) {
-            if (indents[i] < linesCountPerIndentThreshold)
-                continue;
-            var indent = parseInt(i, 10);
-            if (minimumIndent > indent)
-                minimumIndent = indent;
-        }
-        if (minimumIndent === Infinity)
-            return WebInspector.settings.textEditorIndent.get();
-        return new Array(minimumIndent + 1).join(" ");
+        this._setEditorIndentation(WebInspector.CodeMirrorUtils.pullLines(this._codeMirror, WebInspector.CodeMirrorTextEditor.LinesToScanForIndentationGuessing));
     },
 
-    _updateEditorIndentation: function()
+    /**
+     * @param {!Array.<string>} lines
+     */
+    _setEditorIndentation: function(lines)
     {
         var extraKeys = {};
-        var indent = WebInspector.settings.textEditorIndent.get();
-        if (WebInspector.settings.textEditorAutoDetectIndent.get())
-            indent = this._guessIndentationLevel();
+        var indent = WebInspector.moduleSetting("textEditorIndent").get();
+        if (WebInspector.moduleSetting("textEditorAutoDetectIndent").get())
+            indent = WebInspector.CodeMirrorTextEditor._guessIndentationLevel(lines);
         if (indent === WebInspector.TextUtils.Indent.TabCharacter) {
             this._codeMirror.setOption("indentWithTabs", true);
             this._codeMirror.setOption("indentUnit", 4);
@@ -674,9 +691,6 @@ WebInspector.CodeMirrorTextEditor.prototype = {
                     this.setSelection(range);
                 else
                     this.setSelection(WebInspector.TextRange.createFromLocation(range.startLine, range.startColumn));
-            } else {
-                // Collapse selection to end on search start so that we jump to next occurrence on the first enter press.
-                this.setSelection(this.selection().collapseToEnd());
             }
             this._tokenHighlighter.highlightSearchResults(regex, range);
         }
@@ -707,7 +721,7 @@ WebInspector.CodeMirrorTextEditor.prototype = {
     _setupWhitespaceHighlight: function()
     {
         var doc = this.element.ownerDocument;
-        if (doc._codeMirrorWhitespaceStyleInjected || !WebInspector.settings.showWhitespacesInEditor.get())
+        if (doc._codeMirrorWhitespaceStyleInjected || !WebInspector.moduleSetting("showWhitespacesInEditor").get())
             return;
         doc._codeMirrorWhitespaceStyleInjected = true;
         const classBase = ".show-whitespaces .CodeMirror .cm-whitespace-";
@@ -840,10 +854,10 @@ WebInspector.CodeMirrorTextEditor.prototype = {
      * @param {string} mimeType
      * @return {string}
      */
-    _whitespaceOverlayMode: function(mimeType)
+    _allWhitespaceOverlayMode: function(mimeType)
     {
         var modeName = CodeMirror.mimeModes[mimeType] ? (CodeMirror.mimeModes[mimeType].name || CodeMirror.mimeModes[mimeType]) : CodeMirror.mimeModes["text/plain"];
-        modeName += "+whitespaces";
+        modeName += "+all-whitespaces";
         if (CodeMirror.modes[modeName])
             return modeName;
 
@@ -872,24 +886,66 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         return modeName;
     },
 
+    /**
+     * @param {string} mimeType
+     * @return {string}
+     */
+    _trailingWhitespaceOverlayMode: function(mimeType)
+    {
+        var modeName = CodeMirror.mimeModes[mimeType] ? (CodeMirror.mimeModes[mimeType].name || CodeMirror.mimeModes[mimeType]) : CodeMirror.mimeModes["text/plain"];
+        modeName += "+trailing-whitespaces";
+        if (CodeMirror.modes[modeName])
+            return modeName;
+
+        function modeConstructor(config, parserConfig)
+        {
+            function nextToken(stream)
+            {
+                var pos = stream.pos;
+                if (stream.match(/^\s+$/, true))
+                    return true ? "trailing-whitespace" : null;
+                do {
+                    stream.next();
+                } while (!stream.eol() && stream.peek() !== " ");
+                return null;
+            }
+            var whitespaceMode = {
+                token: nextToken
+            };
+            return CodeMirror.overlayMode(CodeMirror.getMode(config, mimeType), whitespaceMode, false);
+        }
+        CodeMirror.defineMode(modeName, modeConstructor);
+        return modeName;
+    },
+
     _enableLongLinesMode: function()
     {
         this._codeMirror.setOption("styleSelectedText", false);
-        this._longLinesMode = true;
     },
 
     _disableLongLinesMode: function()
     {
         this._codeMirror.setOption("styleSelectedText", true);
-        this._longLinesMode = false;
     },
 
     _updateCodeMirrorMode: function()
     {
         this._setupWhitespaceHighlight();
-        var showWhitespaces = WebInspector.settings.showWhitespacesInEditor.get();
-        this.element.classList.toggle("show-whitespaces", showWhitespaces);
-        this._codeMirror.setOption("mode", showWhitespaces ? this._whitespaceOverlayMode(this._mimeType) : this._mimeType);
+        var whitespaceMode = WebInspector.moduleSetting("showWhitespacesInEditor").get();
+        this.element.classList.toggle("show-whitespaces", whitespaceMode === "all");
+        var mimeType = this._mimeType;
+        if (whitespaceMode === "all")
+            mimeType = this._allWhitespaceOverlayMode(this._mimeType);
+        else if (whitespaceMode === "trailing")
+            mimeType = this._trailingWhitespaceOverlayMode(this._mimeType);
+        this._codeMirror.setOption("mode", mimeType);
+        WebInspector.CodeMirrorTextEditor._loadMimeTypeModes(this._mimeType, this._mimeTypeModesLoaded.bind(this));
+    },
+
+    _mimeTypeModesLoaded: function()
+    {
+        // Do not remove, this function is sniffed in tests.
+        this._updateCodeMirrorMode();
     },
 
     /**
@@ -966,15 +1022,12 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.focus();
     },
 
-    beginUpdates: function()
+    /**
+     * @param {function()} operation
+     */
+    operation: function(operation)
     {
-        ++this._nestedUpdatesCounter;
-    },
-
-    endUpdates: function()
-    {
-        if (!--this._nestedUpdatesCounter)
-            this._codeMirror.refresh();
+        this._codeMirror.operation(operation);
     },
 
     /**
@@ -1014,8 +1067,10 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         var target = event.target.enclosingNodeOrSelfWithClass("CodeMirror-gutter-elt");
         if (target)
             this._delegate.populateLineGutterContextMenu(contextMenu, parseInt(target.textContent, 10) - 1);
-        else
-            this._delegate.populateTextAreaContextMenu(contextMenu, 0);
+        else {
+            var textSelection = this.selection();
+            this._delegate.populateTextAreaContextMenu(contextMenu, textSelection.startLine, textSelection.startColumn);
+        }
         contextMenu.appendApplicableItems(this);
         contextMenu.show();
     },
@@ -1052,14 +1107,16 @@ WebInspector.CodeMirrorTextEditor.prototype = {
 
     /**
      * @param {number} lineNumber
+     * @param {number} columnNumber
      */
-    setExecutionLine: function(lineNumber)
+    setExecutionLocation: function(lineNumber, columnNumber)
     {
         this.clearPositionHighlight();
         this._executionLine = this._codeMirror.getLineHandle(lineNumber);
         if (!this._executionLine)
             return;
         this._codeMirror.addLineClass(this._executionLine, "wrap", "cm-execution-line");
+        this._executionLineTailMarker = this._codeMirror.markText({ line: lineNumber, ch: columnNumber }, { line: lineNumber, ch: this._codeMirror.getLine(lineNumber).length }, { className: "cm-execution-line-tail" });
     },
 
     clearExecutionLine: function()
@@ -1068,6 +1125,10 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         if (this._executionLine)
             this._codeMirror.removeLineClass(this._executionLine, "wrap", "cm-execution-line");
         delete this._executionLine;
+
+        if (this._executionLineTailMarker)
+            this._executionLineTailMarker.clear();
+        delete this._executionLineTailMarker;
     },
 
     /**
@@ -1224,8 +1285,8 @@ WebInspector.CodeMirrorTextEditor.prototype = {
         this._codeMirror.replaceRange(text, pos.start, pos.end);
         var newRange = WebInspector.CodeMirrorUtils.toRange(pos.start, this._codeMirror.posFromIndex(this._codeMirror.indexFromPos(pos.start) + text.length));
         this._delegate.onTextChanged(range, newRange);
-        if (WebInspector.settings.textEditorAutoDetectIndent.get())
-            this._updateEditorIndentation();
+        if (WebInspector.moduleSetting("textEditorAutoDetectIndent").get())
+            this._onUpdateEditorIndentation();
         return newRange;
     },
 
@@ -1435,8 +1496,9 @@ WebInspector.CodeMirrorTextEditor.prototype = {
             this._autocompleteController.setEnabled(false);
             this.setReadOnly(true);
         }
+
+        this._setEditorIndentation(text.split("\n").slice(0, WebInspector.CodeMirrorTextEditor.LinesToScanForIndentationGuessing));
         this._codeMirror.setValue(text);
-        this._updateEditorIndentation();
         if (this._shouldClearHistory) {
             this._codeMirror.clearHistory();
             this._shouldClearHistory = false;
@@ -2114,8 +2176,9 @@ WebInspector.TextEditorDelegate.prototype = {
     /**
      * @param {!WebInspector.ContextMenu} contextMenu
      * @param {number} lineNumber
+     * @param {number} columnNumber
      */
-    populateTextAreaContextMenu: function(contextMenu, lineNumber) { },
+    populateTextAreaContextMenu: function(contextMenu, lineNumber, columnNumber) { },
 
     /**
      * @param {?WebInspector.TextRange} from
@@ -2134,4 +2197,69 @@ WebInspector.CodeMirrorTextEditor.GutterClickEventData;
 /** @enum {string} */
 WebInspector.CodeMirrorTextEditor.Events = {
     GutterClick: "GutterClick"
+}
+
+/** @type {!Set<!Runtime.Extension>} */
+WebInspector.CodeMirrorTextEditor._loadedMimeModeExtensions = new Set();
+
+/**
+ * @param {string} mimeType
+ * @param {function()} callback
+ */
+WebInspector.CodeMirrorTextEditor._loadMimeTypeModes = function(mimeType, callback)
+{
+    var installed = WebInspector.CodeMirrorTextEditor._loadedMimeModeExtensions;
+
+    var nameToExtension = new Map();
+    var extensions = self.runtime.extensions(WebInspector.CodeMirrorMimeMode);
+    for (var extension of extensions)
+        nameToExtension.set(extension.descriptor()["fileName"], extension);
+
+    var modesToLoad = new Set();
+    for (var extension of extensions) {
+        var descriptor = extension.descriptor();
+        if (installed.has(extension) || descriptor["mimeTypes"].indexOf(mimeType) === -1)
+            continue;
+
+        modesToLoad.add(extension);
+        var deps = descriptor["dependencies"] || [];
+        for (var i = 0; i < deps.length; ++i) {
+            var extension = nameToExtension.get(deps[i]);
+            if (extension && !installed.has(extension))
+                modesToLoad.add(extension);
+        }
+    }
+
+    var promises = [];
+    for (var extension of modesToLoad)
+        promises.push(extension.instancePromise().then(installMode.bind(null, extension)));
+    if (promises.length)
+        Promise.all(promises).then(callback);
+
+    /**
+     * @param {!Runtime.Extension} extension
+     * @param {!Object} instance
+     */
+    function installMode(extension, instance)
+    {
+        if (installed.has(extension))
+            return;
+        var mode = /** @type {!WebInspector.CodeMirrorMimeMode} */ (instance);
+        mode.install(extension);
+        installed.add(extension);
+    }
+}
+
+/**
+ * @interface
+ */
+WebInspector.CodeMirrorMimeMode = function()
+{
+}
+
+WebInspector.CodeMirrorMimeMode.prototype = {
+    /**
+     * @param {!Runtime.Extension} extension
+     */
+    install: function(extension) { }
 }

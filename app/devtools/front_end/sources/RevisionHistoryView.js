@@ -39,7 +39,9 @@ WebInspector.RevisionHistoryView = function()
     this.element.classList.add("revision-history-drawer");
     this._uiSourceCodeItems = new Map();
 
-    this._treeOutline = new TreeOutline(this.element.createChild("ol", "outline-disclosure"));
+    this._treeOutline = new TreeOutline();
+    this._treeOutline.element.classList.add("outline-disclosure");
+    this.element.appendChild(this._treeOutline.element);
 
     /**
      * @param {!WebInspector.UISourceCode} uiSourceCode
@@ -75,18 +77,19 @@ WebInspector.RevisionHistoryView.prototype = {
      */
     _createUISourceCodeItem: function(uiSourceCode)
     {
-        var uiSourceCodeItem = new TreeElement(uiSourceCode.displayName(), null, true);
+        var uiSourceCodeItem = new TreeElement(uiSourceCode.displayName(), true);
         uiSourceCodeItem.selectable = false;
 
         // Insert in sorted order
-        for (var i = 0; i < this._treeOutline.children.length; ++i) {
-            if (this._treeOutline.children[i].title.localeCompare(uiSourceCode.displayName()) > 0) {
-                this._treeOutline.insertChild(uiSourceCodeItem, i);
+        var rootElement = this._treeOutline.rootElement();
+        for (var i = 0; i < rootElement.childCount(); ++i) {
+            if (rootElement.childAt(i).title.localeCompare(uiSourceCode.displayName()) > 0) {
+                rootElement.insertChild(uiSourceCodeItem, i);
                 break;
             }
         }
-        if (i === this._treeOutline.children.length)
-            this._treeOutline.appendChild(uiSourceCodeItem);
+        if (i === rootElement.childCount())
+            rootElement.appendChild(uiSourceCodeItem);
 
         this._uiSourceCodeItems.set(uiSourceCode, uiSourceCodeItem);
 
@@ -97,7 +100,7 @@ WebInspector.RevisionHistoryView.prototype = {
             uiSourceCodeItem.appendChild(historyItem);
         }
 
-        var linkItem = new TreeElement("", null, false);
+        var linkItem = new TreeElement();
         linkItem.selectable = false;
         uiSourceCodeItem.appendChild(linkItem);
 
@@ -117,11 +120,6 @@ WebInspector.RevisionHistoryView.prototype = {
     _revertToOriginal: function(uiSourceCode)
     {
         uiSourceCode.revertToOriginal();
-
-        WebInspector.notifications.dispatchEventToListeners(WebInspector.UserMetrics.UserAction, {
-            action: WebInspector.UserMetrics.UserActionNames.ApplyOriginalContent,
-            url: WebInspector.networkMapping.networkURL(uiSourceCode)
-        });
     },
 
     /**
@@ -130,11 +128,6 @@ WebInspector.RevisionHistoryView.prototype = {
     _clearHistory: function(uiSourceCode)
     {
         uiSourceCode.revertAndClearHistory(this._removeUISourceCode.bind(this));
-
-        WebInspector.notifications.dispatchEventToListeners(WebInspector.UserMetrics.UserAction, {
-            action: WebInspector.UserMetrics.UserActionNames.RevertRevision,
-            url: WebInspector.networkMapping.networkURL(uiSourceCode)
-        });
     },
 
     _revisionAdded: function(event)
@@ -148,8 +141,8 @@ WebInspector.RevisionHistoryView.prototype = {
 
         var historyLength = uiSourceCode.history.length;
         var historyItem = new WebInspector.RevisionHistoryTreeElement(uiSourceCode.history[historyLength - 1], uiSourceCode.history[historyLength - 2], false);
-        if (uiSourceCodeItem.children.length)
-            uiSourceCodeItem.children[0].allowRevert();
+        if (uiSourceCodeItem.firstChild())
+            uiSourceCodeItem.firstChild().allowRevert();
         uiSourceCodeItem.insertChild(historyItem, 0);
     },
 
@@ -201,7 +194,7 @@ WebInspector.RevisionHistoryView.prototype = {
  */
 WebInspector.RevisionHistoryTreeElement = function(revision, baseRevision, allowRevert)
 {
-    TreeElement.call(this, revision.timestamp.toLocaleTimeString(), null, true);
+    TreeElement.call(this, revision.timestamp.toLocaleTimeString(), true);
     this.selectable = false;
 
     this._revision = revision;
@@ -221,13 +214,9 @@ WebInspector.RevisionHistoryTreeElement.prototype = {
         this.listItemElement.classList.add("revision-history-revision");
     },
 
-    onexpand: function()
+    onpopulate: function()
     {
         this.listItemElement.appendChild(this._revertElement);
-
-        if (this._wasExpandedOnce)
-            return;
-        this._wasExpandedOnce = true;
 
         this.childrenListElement.classList.add("source-code");
         if (this._baseRevision)
@@ -251,40 +240,32 @@ WebInspector.RevisionHistoryTreeElement.prototype = {
          */
         function step2(baseContent, newContent)
         {
-            var baseLines = difflib.stringAsLines(baseContent);
-            var newLines = difflib.stringAsLines(newContent);
-            var sm = new difflib.SequenceMatcher(baseLines, newLines);
-            var opcodes = sm.get_opcodes();
+            var baseLines = baseContent.split("\n");
+            var newLines = newContent.split("\n");
+            var opcodes = WebInspector.Diff.lineDiff(baseLines, newLines);
             var lastWasSeparator = false;
 
+            var baseLineNumber = 0;
+            var newLineNumber = 0;
             for (var idx = 0; idx < opcodes.length; idx++) {
-                var code = opcodes[idx];
-                var change = code[0];
-                var b = code[1];
-                var be = code[2];
-                var n = code[3];
-                var ne = code[4];
-                var rowCount = Math.max(be - b, ne - n);
-                for (var i = 0; i < rowCount; i++) {
-                    if (change === "delete" || (change === "replace" && b < be)) {
-                        var lineNumber = b++;
-                        this._createLine(lineNumber, null, baseLines[lineNumber], "removed");
-                        lastWasSeparator = false;
-                    }
-
-                    if (change === "insert" || (change === "replace" && n < ne)) {
-                        var lineNumber = n++;
-                        this._createLine(null, lineNumber, newLines[lineNumber], "added");
-                        lastWasSeparator = false;
-                    }
-
-                    if (change === "equal") {
-                        b++;
-                        n++;
-                        if (!lastWasSeparator)
-                            this._createLine(null, null, "    \u2026", "separator");
-                        lastWasSeparator = true;
-                    }
+                var code = opcodes[idx][0];
+                var rowCount = opcodes[idx][1].length;
+                if (code === WebInspector.Diff.Operation.Equal) {
+                    baseLineNumber += rowCount;
+                    newLineNumber += rowCount;
+                    if (!lastWasSeparator)
+                        this._createLine(null, null, "    \u2026", "separator");
+                    lastWasSeparator = true;
+                } else if (code === WebInspector.Diff.Operation.Delete) {
+                    lastWasSeparator = false;
+                    for (var i = 0; i < rowCount; ++i)
+                        this._createLine(baseLineNumber + i, null, baseLines[baseLineNumber + i], "removed");
+                    baseLineNumber += rowCount;
+                } else if (code === WebInspector.Diff.Operation.Insert) {
+                    lastWasSeparator = false;
+                    for (var i = 0; i < rowCount; ++i)
+                        this._createLine(null, newLineNumber + i, newLines[newLineNumber + i], "added");
+                    newLineNumber += rowCount;
                 }
             }
         }
@@ -303,7 +284,7 @@ WebInspector.RevisionHistoryTreeElement.prototype = {
      */
     _createLine: function(baseLineNumber, newLineNumber, lineContent, changeType)
     {
-        var child = new TreeElement("", null, false);
+        var child = new TreeElement();
         child.selectable = false;
         this.appendChild(child);
 

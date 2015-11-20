@@ -21,6 +21,9 @@ WebInspector.CPUProfileDataModel = function(profile)
         this._fixMissingSamples();
         this._fixLineAndColumnNumbers();
     }
+    if (!WebInspector.moduleSetting("showNativeFunctionsInJSProfile").get())
+        this._filterNativeFrames();
+    this._assignDepthsInProfile();
     this._calculateTimes(profile);
 }
 
@@ -53,6 +56,67 @@ WebInspector.CPUProfileDataModel.prototype = {
         calculateTimesForNode(profile.head);
     },
 
+    _filterNativeFrames: function()
+    {
+        if (this.samples) {
+            for (var i = 0; i < this.samples.length; ++i) {
+                var node = this.nodeByIndex(i);
+                while (isNativeNode(node))
+                    node = node.parent;
+                this.samples[i] = node.id;
+            }
+        }
+        processSubtree(this.profileHead);
+
+        /**
+         * @param {!ProfilerAgent.CPUProfileNode} node
+         * @return {boolean}
+         */
+        function isNativeNode(node)
+        {
+            return !!node.url && node.url.startsWith("native ");
+        }
+
+        /**
+         * @param {!ProfilerAgent.CPUProfileNode} node
+         */
+        function processSubtree(node)
+        {
+            var nativeChildren = [];
+            var children = node.children;
+            for (var i = 0, j = 0; i < children.length; ++i) {
+                var child = children[i];
+                if (isNativeNode(child)) {
+                    nativeChildren.push(child);
+                } else {
+                    children[j++] = child;
+                    processSubtree(child);
+                }
+            }
+            children.length = j;
+            nativeChildren.forEach(mergeChildren.bind(null, node));
+        }
+
+        /**
+         * @param {!ProfilerAgent.CPUProfileNode} node
+         * @param {!ProfilerAgent.CPUProfileNode} nativeNode
+         */
+        function mergeChildren(node, nativeNode)
+        {
+            node.hitCount += nativeNode.hitCount;
+            for (var i = 0; i < nativeNode.children.length; ++i) {
+                var child = nativeNode.children[i];
+                if (isNativeNode(child)) {
+                    mergeChildren(node, child);
+                } else {
+                    node.children.push(child);
+                    child.parent = node;
+                    processSubtree(child);
+                }
+            }
+        }
+    },
+
     _fixLineAndColumnNumbers: function()
     {
         var nodeListsToTraverse = [ this.profileHead.children ];
@@ -72,6 +136,23 @@ WebInspector.CPUProfileDataModel.prototype = {
     {
         var head = this.profileHead;
         head.parent = null;
+        var nodesToTraverse = [ head ];
+        while (nodesToTraverse.length) {
+            var parent = nodesToTraverse.pop();
+            var children = parent.children;
+            var length = children.length;
+            for (var i = 0; i < length; ++i) {
+                var child = children[i];
+                child.parent = parent;
+                if (child.children.length)
+                    nodesToTraverse.push(child);
+            }
+        }
+    },
+
+    _assignDepthsInProfile: function()
+    {
+        var head = this.profileHead;
         head.depth = -1;
         this.maxDepth = 0;
         var nodesToTraverse = [ head ];
@@ -84,7 +165,6 @@ WebInspector.CPUProfileDataModel.prototype = {
             var length = children.length;
             for (var i = 0; i < length; ++i) {
                 var child = children[i];
-                child.parent = parent;
                 child.depth = depth;
                 if (child.children.length)
                     nodesToTraverse.push(child);

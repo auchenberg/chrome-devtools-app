@@ -56,7 +56,6 @@ WebInspector.FileSystemWorkspaceBinding = function(isolatedFileSystemManager, wo
     InspectorFrontendHost.events.addEventListener(InspectorFrontendHostAPI.Events.SearchCompleted, this._onSearchCompleted, this);
 }
 
-WebInspector.FileSystemWorkspaceBinding._scriptExtensions = ["js", "java", "coffee", "ts", "dart"].keySet();
 WebInspector.FileSystemWorkspaceBinding._styleSheetExtensions = ["css", "scss", "sass", "less"].keySet();
 WebInspector.FileSystemWorkspaceBinding._documentExtensions = ["htm", "html", "asp", "aspx", "phtml", "jsp"].keySet();
 
@@ -160,6 +159,10 @@ WebInspector.FileSystemWorkspaceBinding.prototype = {
         if (!progress)
             return;
         progress.worked(worked);
+        if (progress.isCanceled()) {
+            InspectorFrontendHost.stopIndexing(requestId);
+            this._onIndexingDone(event);
+        }
     },
 
     /**
@@ -206,7 +209,8 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem = function(fileSystemWorkspac
     WebInspector.Object.call(this);
     this._fileSystemWorkspaceBinding = fileSystemWorkspaceBinding;
     this._fileSystem = isolatedFileSystem;
-    this._fileSystemURL = "file://" + this._fileSystem.normalizedPath() + "/";
+    this._fileSystemBaseURL = "file://" + this._fileSystem.normalizedPath() + "/";
+    this._fileSystemProjectURL = "filesystem:" + this._fileSystem.normalizedPath();
     this._workspace = workspace;
     // FIXME: This dependency should be removed from here once we do not need URL to create a UISourceCode.
     this._networkMapping = networkMapping;
@@ -251,8 +255,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
      */
     url: function()
     {
-        // Overriddden by subclasses
-        return "";
+        return this._fileSystemProjectURL;
     },
 
     /**
@@ -346,7 +349,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
             filePath = filePath.substr(1);
             var newURL = this._networkMapping.urlForPath(this._fileSystem.path(), filePath);
             var extension = this._extensionForPath(validNewName);
-            var newOriginURL = this._fileSystemURL + filePath;
+            var newOriginURL = this._fileSystemBaseURL + filePath;
             var newContentType = this._contentTypeForExtension(extension);
             callback(true, validNewName, newURL, newOriginURL, newContentType);
         }
@@ -462,16 +465,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
     {
         progress.setTotalWork(1);
         var requestId = this._fileSystemWorkspaceBinding.registerProgress(progress);
-        progress.addEventListener(WebInspector.Progress.Events.Canceled, this._indexingCanceled.bind(this, requestId));
         InspectorFrontendHost.indexPath(requestId, this._fileSystem.path());
-    },
-
-    /**
-     * @param {number} requestId
-     */
-    _indexingCanceled: function(requestId)
-    {
-        InspectorFrontendHost.stopIndexing(requestId);
     },
 
     /**
@@ -492,13 +486,11 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
      */
     _contentTypeForExtension: function(extension)
     {
-        if (WebInspector.FileSystemWorkspaceBinding._scriptExtensions[extension])
-            return WebInspector.resourceTypes.Script;
         if (WebInspector.FileSystemWorkspaceBinding._styleSheetExtensions[extension])
             return WebInspector.resourceTypes.Stylesheet;
         if (WebInspector.FileSystemWorkspaceBinding._documentExtensions[extension])
             return WebInspector.resourceTypes.Document;
-        return WebInspector.resourceTypes.Other;
+        return WebInspector.resourceTypes.Script;
     },
 
     populate: function()
@@ -599,7 +591,7 @@ WebInspector.FileSystemWorkspaceBinding.FileSystem.prototype = {
         var extension = this._extensionForPath(name);
         var contentType = this._contentTypeForExtension(extension);
 
-        var fileDescriptor = new WebInspector.FileDescriptor(parentPath, name, this._fileSystemURL + filePath, url, contentType);
+        var fileDescriptor = new WebInspector.FileDescriptor(parentPath, name, this._fileSystemBaseURL + filePath, url, contentType);
         this.dispatchEventToListeners(WebInspector.ProjectDelegate.Events.FileAdded, fileDescriptor);
     },
 

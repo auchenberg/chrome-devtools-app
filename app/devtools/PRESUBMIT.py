@@ -42,14 +42,13 @@ def _CompileDevtoolsFrontend(input_api, output_api):
     # FIXME: The compilation does not actually run if injected script-related files
     # have changed, as they reside in core/inspector, which is not affected
     # by this presubmit.
-    # Once this is fixed, InjectedScriptHost.idl and JavaScriptCallFrame.idl
+    # Once this is fixed, injected_script_externs.js
     # should be added to the list of triggers.
     devtools_front_end = input_api.os_path.join("devtools", "front_end")
     if (any(devtools_front_end in path for path in local_paths) or
         any("protocol.json" in path for path in local_paths) or
         any("compile_frontend.py" in path for path in local_paths) or
-        any("InjectedScriptSource.js" in path for path in local_paths) or
-        any("InjectedScriptCanvasModuleSource.js" in path for path in local_paths)):
+        any("InjectedScriptSource.js" in path for path in local_paths)):
         lint_path = input_api.os_path.join(input_api.PresubmitLocalPath(),
             "scripts", "compile_frontend.py")
         out, _ = input_api.subprocess.Popen(
@@ -115,11 +114,25 @@ def _CheckOptimizePNGHashes(input_api, output_api):
     return [output_api.PresubmitError(error_message)]
 
 
+def _CheckCSSViolations(input_api, output_api):
+    results = []
+    for f in input_api.AffectedFiles(include_deletes=False):
+        if not f.LocalPath().endswith(".css"):
+            continue
+        for line_number, line in f.ChangedContents():
+            if "/deep/" in line:
+                results.append(output_api.PresubmitError(("%s:%d uses /deep/ selector") % (f.LocalPath(), line_number)))
+            if "::shadow" in line:
+                results.append(output_api.PresubmitError(("%s:%d uses ::shadow selector") % (f.LocalPath(), line_number)))
+    return results
+
+
 def CheckChangeOnUpload(input_api, output_api):
     results = []
     results.extend(_CompileDevtoolsFrontend(input_api, output_api))
     results.extend(_CheckConvertSVGToPNGHashes(input_api, output_api))
     results.extend(_CheckOptimizePNGHashes(input_api, output_api))
+    results.extend(_CheckCSSViolations(input_api, output_api))
     return results
 
 

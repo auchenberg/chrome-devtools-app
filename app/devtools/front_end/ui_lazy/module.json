@@ -13,9 +13,10 @@
         "FlameChart.js",
         "OverviewGrid.js",
         "PieChart.js",
-        "TimelineGrid.js"
+        "TimelineGrid.js",
+        "TimelineOverviewPane.js"
     ],
-    "stylesheets": [
+    "resources": [
         "dataGrid.css",
         "flameChart.css",
         "overviewGrid.css",

@@ -65,7 +65,21 @@ WebInspector.CompilerScriptMapping = function(debuggerModel, workspace, networkM
     debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, this._debuggerReset, this);
 }
 
+WebInspector.CompilerScriptMapping.StubProjectID = "compiler-script-project";
+
 WebInspector.CompilerScriptMapping.prototype = {
+    /**
+     * @param {!WebInspector.DebuggerModel.Location} rawLocation
+     * @return {boolean}
+     */
+    mapsToSourceCode: function (rawLocation) {
+        var sourceMap = this._sourceMapForScriptId[rawLocation.scriptId];
+        if (!sourceMap) {
+            return true;
+        }
+        return !!sourceMap.findEntry(rawLocation.lineNumber, rawLocation.columnNumber);
+    },
+
     /**
      * @override
      * @param {!WebInspector.DebuggerModel.Location} rawLocation
@@ -85,13 +99,12 @@ WebInspector.CompilerScriptMapping.prototype = {
         var lineNumber = debuggerModelLocation.lineNumber;
         var columnNumber = debuggerModelLocation.columnNumber || 0;
         var entry = sourceMap.findEntry(lineNumber, columnNumber);
-        if (!entry || entry.length === 2)
+        if (!entry || !entry.sourceURL)
             return null;
-        var url = /** @type {string} */ (entry[2]);
-        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url);
+        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(/** @type {string} */ (entry.sourceURL), this._target);
         if (!uiSourceCode)
             return null;
-        return uiSourceCode.uiLocation(/** @type {number} */ (entry[3]), /** @type {number} */ (entry[4]));
+        return uiSourceCode.uiLocation(/** @type {number} */ (entry.sourceLineNumber), /** @type {number} */ (entry.sourceColumnNumber));
     },
 
     /**
@@ -113,12 +126,10 @@ WebInspector.CompilerScriptMapping.prototype = {
             return null;
         var script = /** @type {!WebInspector.Script} */ (this._scriptForSourceMap.get(sourceMap));
         console.assert(script);
-        var mappingSearchLinesCount = 5;
-        // We do not require precise (breakpoint) location but limit the number of lines to search or mapping.
-        var entry = sourceMap.findEntryReversed(networkURL, lineNumber, mappingSearchLinesCount);
+        var entry = sourceMap.firstSourceLineMapping(networkURL, lineNumber);
         if (!entry)
             return null;
-        return this._debuggerModel.createRawLocation(script, /** @type {number} */ (entry[0]), /** @type {number} */ (entry[1]));
+        return this._debuggerModel.createRawLocation(script, entry.lineNumber, entry.columnNumber);
     },
 
     /**
@@ -194,11 +205,11 @@ WebInspector.CompilerScriptMapping.prototype = {
             if (this._sourceMapForURL.get(sourceURL))
                 continue;
             this._sourceMapForURL.set(sourceURL, sourceMap);
-            if (!this._networkMapping.hasMappingForURL(sourceURL) && !this._networkMapping.uiSourceCodeForURL(sourceURL)) {
+            if (!this._networkMapping.hasMappingForURL(sourceURL) && !this._networkMapping.uiSourceCodeForURL(sourceURL, script.target())) {
                 var contentProvider = sourceMap.sourceContentProvider(sourceURL, WebInspector.resourceTypes.Script);
                 this._networkProject.addFileForURL(sourceURL, contentProvider, script.isContentScript());
             }
-            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(sourceURL);
+            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(sourceURL, this._target);
             if (uiSourceCode) {
                 this._bindUISourceCode(uiSourceCode);
             } else {
@@ -240,7 +251,7 @@ WebInspector.CompilerScriptMapping.prototype = {
         var sourceMap = this._sourceMapForURL.get(networkURL);
         if (!sourceMap)
             return true;
-        return !!sourceMap.findEntryReversed(networkURL, lineNumber, 0);
+        return !!sourceMap.firstSourceLineMapping(networkURL, lineNumber);
     },
 
     /**
@@ -279,7 +290,7 @@ WebInspector.CompilerScriptMapping.prototype = {
     {
         // script.sourceURL can be a random string, but is generally an absolute path -> complete it to inspected page url for
         // relative links.
-        var scriptURL = WebInspector.ParsedURL.completeURL(script.target().resourceTreeModel.inspectedPageURL(), script.sourceURL);
+        var scriptURL = WebInspector.ParsedURL.completeURL(this._target.resourceTreeModel.inspectedPageURL(), script.sourceURL);
         if (!scriptURL) {
             callback(null);
             return;
@@ -337,7 +348,7 @@ WebInspector.CompilerScriptMapping.prototype = {
          */
         function unbindUISourceCodeForURL(sourceURL)
         {
-            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(sourceURL);
+            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(sourceURL, this._target);
             if (!uiSourceCode)
                 return;
             this._unbindUISourceCode(uiSourceCode);

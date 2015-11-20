@@ -42,6 +42,11 @@
     display: none;
 }
 
+.platform-mac .data-grid .corner,
+.data-grid.data-grid-fits-viewport .corner {
+    display: none;
+}
+
 .data-grid .corner {
     width: 14px;
     padding-right: 0;
@@ -148,8 +153,8 @@
 
 .data-grid th .sort-order-icon {
     margin-right: 4px;
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
+    background-image: url(Images/toolbarButtonGlyphs.png);
+    background-size: 352px 168px;
     opacity: 0.5;
     width: 8px;
     height: 7px;
@@ -158,7 +163,7 @@
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .data-grid th .sort-order-icon {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
+    background-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 
@@ -181,10 +186,11 @@
     color: inherit;
 }
 
-.data-grid tr.parent td.disclosure::before {
+.data-grid td.disclosure::before {
     -webkit-user-select: none;
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-    -webkit-mask-size: 320px 144px;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-position: -4px -96px;
+    -webkit-mask-size: 352px 168px;
     float: left;
     width: 8px;
     height: 12px;
@@ -193,16 +199,16 @@
     color: transparent;
     position: relative;
     top: 1px;
+    background-color: rgb(110, 110, 110);
 }
 
-.data-grid tr.parent td.disclosure::before {
-    background-color: rgb(110, 110, 110);
-    -webkit-mask-position: -4px -96px;
+.data-grid tr:not(.parent) td.disclosure::before {
+    background-color: transparent;
 }
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .data-grid tr.parent td.disclosure::before {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 
@@ -232,10 +238,6 @@
 .data-grid:focus tr.expanded.selected td.disclosure::before {
     background-color: white;
     -webkit-mask-position: -20px -96px;
-}
-
-.data-grid tr:not(.parent) td.disclosure {
-    text-indent: 10px;
 }
 
 .data-grid-resizer {

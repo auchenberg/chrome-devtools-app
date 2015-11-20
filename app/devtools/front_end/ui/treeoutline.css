@@ -5,7 +5,7 @@
  */
 
 .tree-outline {
-    padding: 0 0 0 4px;
+    padding: 0 0 4px 4px;
     margin: 0;
     z-index: 0;
     position: relative;
@@ -31,7 +31,7 @@
 
 .tree-outline li.selected .selection {
     display: block;
-    background-color: rgb(161, 161, 161);
+    background-color: #ddd;
 }
 
 .tree-outline li.in-clipboard .highlight {
@@ -69,7 +69,7 @@ ol.tree-outline,
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    height: 17px;
+    min-height: 17px;
     padding-top: 2px;
 }
 
@@ -84,8 +84,8 @@ ol.tree-outline:focus li.selected * {
 .tree-outline li::before {
     float: left;
     -webkit-user-select: none;
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-    -webkit-mask-size: 320px 144px;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
     content: "a";
     color: transparent;
     text-shadow: none;
@@ -102,7 +102,7 @@ ol.tree-outline:focus li.selected * {
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .tree-outline li::before {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 

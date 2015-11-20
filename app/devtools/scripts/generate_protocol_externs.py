@@ -40,6 +40,9 @@ type_traits = {
 }
 
 promisified_domains = {
+    "Accessibility",
+    "CSS",
+    "Emulation",
     "Profiler"
 }
 
@@ -120,46 +123,44 @@ Protocol.Error;
             for command in domain["commands"]:
                 output_file.write("\n/**\n")
                 params = []
+                has_return_value = "returns" in command
+                explicit_parameters = promisified and has_return_value
                 if ("parameters" in command):
                     for in_param in command["parameters"]:
-                        if ("optional" in in_param):
+                        # All parameters are not optional in case of promisified domain with return value.
+                        if (not explicit_parameters and "optional" in in_param):
                             params.append("opt_%s" % in_param["name"])
                             output_file.write(" * @param {%s=} opt_%s\n" % (param_type(domain_name, in_param), in_param["name"]))
                         else:
                             params.append(in_param["name"])
                             output_file.write(" * @param {%s} %s\n" % (param_type(domain_name, in_param), in_param["name"]))
                 returns = []
-                if (not promisified):
-                    returns.append("?Protocol.Error")
-                    if ("error" in command):
-                        returns.append("%s=" % param_type(domain_name, command["error"]))
-                if ("returns" in command):
+                returns.append("?Protocol.Error")
+                if ("error" in command):
+                    returns.append("%s=" % param_type(domain_name, command["error"]))
+                if (has_return_value):
                     for out_param in command["returns"]:
                         if ("optional" in out_param):
                             returns.append("%s=" % param_type(domain_name, out_param))
                         else:
                             returns.append("%s" % param_type(domain_name, out_param))
+                callback_return_type = "void="
+                if explicit_parameters:
+                    callback_return_type = "T"
+                elif promisified:
+                    callback_return_type = "T="
+                output_file.write(" * @param {function(%s):%s} opt_callback\n" % (", ".join(returns), callback_return_type))
                 if (promisified):
-                    returns_len = len(command["returns"]) if "returns" in command else 0
-                    if returns_len == 0:
-                        output_file.write(" * @return {!Promise.<undefined>}\n")
-                    else:
-                        promise_returns = []
-                        for out_param in command["returns"]:
-                            type = param_type(domain_name, out_param)
-                            if "optional" in out_param:
-                                type = "(%s|undefined)" % type
-                            promise_returns.append("%s: %s" % (out_param["name"], type))
-                        output_file.write(" * @return {!Promise.<!{%s}>}\n" % ", ".join(promise_returns))
-                else:
-                    output_file.write(" * @param {function(%s):void=} opt_callback\n" % ", ".join(returns))
-                    params.append("opt_callback")
+                    output_file.write(" * @return {!Promise.<T>}\n")
+                    output_file.write(" * @template T\n")
+                params.append("opt_callback")
+
                 output_file.write(" */\n")
                 output_file.write("Protocol.%sAgent.prototype.%s = function(%s) {}\n" % (domain_name, command["name"], ", ".join(params)))
                 output_file.write("/** @param {function(%s):void=} opt_callback */\n" % ", ".join(returns))
                 output_file.write("Protocol.%sAgent.prototype.invoke_%s = function(obj, opt_callback) {}\n" % (domain_name, command["name"]))
 
-        output_file.write("\n\n\nvar %sAgent = {};\n" % domain_name)
+        output_file.write("\n\n\nvar %sAgent = function(){};\n" % domain_name)
 
         if "types" in domain:
             for type in domain["types"]:

@@ -96,7 +96,7 @@ public final class DisallowedGlobalPropertiesChecker extends ContextTrackingChec
         if (nameNode == null) {
             return;
         }
-        String name = getContext().getNodeText(nameNode);
+        String name = nameNode.getString();
         if (name != null) {
             declaredLocalVariables.get(getCurrentFunction()).add(name);
         }

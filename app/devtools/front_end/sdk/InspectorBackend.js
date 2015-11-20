@@ -33,11 +33,9 @@
  */
 function InspectorBackendClass()
 {
-    this._connection = null;
     this._agentPrototypes = {};
     this._dispatcherPrototypes = {};
     this._initialized = false;
-    this._enums = {};
     this._initProtocolAgentsConstructor();
 }
 
@@ -100,30 +98,6 @@ InspectorBackendClass.prototype = {
     },
 
     /**
-     * @return {!InspectorBackendClass.Connection}
-     */
-    connection: function()
-    {
-        if (!this._connection)
-            throw "Main connection was not initialized";
-        return this._connection;
-    },
-
-    /**
-     * @param {!InspectorBackendClass.MainConnection} connection
-     */
-    setConnection: function(connection)
-    {
-        this._connection = connection;
-
-        this._connection.registerAgentsOn(window);
-        for (var type in this._enums) {
-            var domainAndMethod = type.split(".");
-            window[domainAndMethod[0] + "Agent"][domainAndMethod[1]] = this._enums[type];
-        }
-    },
-
-    /**
      * @param {string} domain
      * @return {!InspectorBackendClass.AgentPrototype}
      */
@@ -167,7 +141,12 @@ InspectorBackendClass.prototype = {
      */
     registerEnum: function(type, values)
     {
-        this._enums[type] = values;
+        var domainAndMethod = type.split(".");
+        var agentName = domainAndMethod[0] + "Agent";
+        if (!window[agentName])
+            window[agentName] = {};
+
+        window[agentName][domainAndMethod[1]] = values;
         this._initialized = true;
     },
 
@@ -363,15 +342,6 @@ InspectorBackendClass.Connection.prototype = {
         for (var domain in dispatcherPrototypes)
             this._dispatchers[domain] = Object.create(dispatcherPrototypes[domain]);
 
-    },
-
-    /**
-     * @param {!Object} object
-     */
-    registerAgentsOn: function(object)
-    {
-        for (var domain in this._agents)
-            object[domain + "Agent"]  = {};
     },
 
     /**
@@ -581,7 +551,7 @@ InspectorBackendClass.Connection.prototype = {
      */
     _dispatchConnectionErrorResponse: function(domain, methodName, callback)
     {
-        var error = { message: "Connection is closed", code:  InspectorBackendClass._DevToolsErrorCode, data: null};
+        var error = { message: "Connection is closed, can't dispatch pending " + methodName, code:  InspectorBackendClass._DevToolsErrorCode, data: null};
         var messageObject = {error: error};
         setTimeout(InspectorBackendClass.AgentPrototype.prototype.dispatchResponse.bind(this.agent(domain), messageObject, methodName, callback), 0);
     },
@@ -760,11 +730,13 @@ InspectorBackendClass.AgentPrototype = function(domain)
 }
 
 InspectorBackendClass.AgentPrototype.PromisifiedDomains = {
+    "Accessibility": true,
+    "CSS": true,
+    "Emulation": true,
     "Profiler": true
 }
 
 InspectorBackendClass.AgentPrototype.prototype = {
-
     /**
      * @param {!InspectorBackendClass.Connection} connection
      */
@@ -913,6 +885,7 @@ InspectorBackendClass.AgentPrototype.prototype = {
             console.error(message)
             errorMessage = message;
         }
+        var userCallback = (args.length && typeof args.peekLast() === "function") ? args.pop() : null;
         var params = this._prepareParameters(method, signature, args, false, onError);
         if (errorMessage)
             return Promise.reject(new Error(errorMessage));
@@ -927,17 +900,12 @@ InspectorBackendClass.AgentPrototype.prototype = {
         function promiseAction(resolve, reject)
         {
             /**
-             * @param {?Protocol.Error} error
-             * @param {?Object} result
+             * @param {...*} vararg
              */
-            function callback(error, result)
+            function callback(vararg)
             {
-                if (error) {
-                    console.error(error);
-                    resolve(null);
-                    return;
-                }
-                resolve(replyArgs.length ? result : undefined);
+                var result = userCallback ? userCallback.apply(null, arguments) : undefined;
+                resolve(result);
             }
             this._connection._wrapCallbackAndSendMessageObject(this._domain, method, params, callback);
         }
@@ -960,12 +928,9 @@ InspectorBackendClass.AgentPrototype.prototype = {
      */
     dispatchResponse: function(messageObject, methodName, callback)
     {
-        if (messageObject.error && messageObject.error.code !== InspectorBackendClass._DevToolsErrorCode && !InspectorBackendClass.Options.suppressRequestErrors && !this._suppressErrorLogging)
-            console.error("Request with id = " + messageObject.id + " failed. " + JSON.stringify(messageObject.error));
-
-        if (this._promisified) {
-            callback(messageObject.error && messageObject.error.message, messageObject.result);
-            return;
+        if (messageObject.error && messageObject.error.code !== InspectorBackendClass._DevToolsErrorCode && !InspectorBackendClass.Options.suppressRequestErrors && !this._suppressErrorLogging) {
+            var id = InspectorFrontendHost.isUnderTest() ? "##" : messageObject.id;
+            console.error("Request with id = " + id + " failed. " + JSON.stringify(messageObject.error));
         }
 
         var argumentsArray = [];
@@ -1052,7 +1017,6 @@ InspectorBackendClass.DispatcherPrototype.prototype = {
         if (InspectorBackendClass.Options.dumpInspectorTimeStats)
             console.log("time-stats: " + messageObject.method + " = " + (Date.now() - processingStartTime));
     }
-
 }
 
 InspectorBackendClass.Options = {

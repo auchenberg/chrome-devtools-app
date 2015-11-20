@@ -28,246 +28,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** @interface */
-function InspectorFrontendHostAPI()
-{
-    /**
-     * @type {!WebInspector.EventTarget}
-     */
-    this.events;
-}
-
-/** @typedef {{type:string, id:(number|undefined),
-               label:(string|undefined), enabled:(boolean|undefined), checked:(boolean|undefined),
-               subItems:(!Array.<!InspectorFrontendHostAPI.ContextMenuDescriptor>|undefined)}} */
-InspectorFrontendHostAPI.ContextMenuDescriptor;
-
-InspectorFrontendHostAPI.Events = {
-    AddExtensions: "addExtensions",
-    AppendedToURL: "appendedToURL",
-    CanceledSaveURL: "canceledSaveURL",
-    ContextMenuCleared: "contextMenuCleared",
-    ContextMenuItemSelected: "contextMenuItemSelected",
-    DeviceCountUpdated: "deviceCountUpdated",
-    DevicesUpdated: "devicesUpdated",
-    DispatchMessage: "dispatchMessage",
-    DispatchMessageChunk: "dispatchMessageChunk",
-    EnterInspectElementMode: "enterInspectElementMode",
-    FileSystemsLoaded: "fileSystemsLoaded",
-    FileSystemRemoved: "fileSystemRemoved",
-    FileSystemAdded: "fileSystemAdded",
-    IndexingTotalWorkCalculated: "indexingTotalWorkCalculated",
-    IndexingWorked: "indexingWorked",
-    IndexingDone: "indexingDone",
-    KeyEventUnhandled: "keyEventUnhandled",
-    RevealSourceLine: "revealSourceLine",
-    SavedURL: "savedURL",
-    SearchCompleted: "searchCompleted",
-    SetInspectedTabId: "setInspectedTabId",
-    SetToolbarColors: "setToolbarColors",
-    SetUseSoftMenu: "setUseSoftMenu",
-    ShowConsole: "showConsole"
-}
-
-InspectorFrontendHostAPI.EventDescriptors = [
-    [InspectorFrontendHostAPI.Events.AddExtensions, ["extensions"]],
-    [InspectorFrontendHostAPI.Events.AppendedToURL, ["url"]],
-    [InspectorFrontendHostAPI.Events.CanceledSaveURL, ["url"]],
-    [InspectorFrontendHostAPI.Events.ContextMenuCleared, []],
-    [InspectorFrontendHostAPI.Events.ContextMenuItemSelected, ["id"]],
-    [InspectorFrontendHostAPI.Events.DeviceCountUpdated, ["count"]],
-    [InspectorFrontendHostAPI.Events.DevicesUpdated, ["devices"]],
-    [InspectorFrontendHostAPI.Events.DispatchMessage, ["messageObject"]],
-    [InspectorFrontendHostAPI.Events.DispatchMessageChunk, ["messageChunk", "messageSize"]],
-    [InspectorFrontendHostAPI.Events.EnterInspectElementMode, []],
-    [InspectorFrontendHostAPI.Events.FileSystemsLoaded, ["fileSystems"]],
-    [InspectorFrontendHostAPI.Events.FileSystemRemoved, ["fileSystemPath"]],
-    [InspectorFrontendHostAPI.Events.FileSystemAdded, ["errorMessage", "fileSystem"]],
-    [InspectorFrontendHostAPI.Events.IndexingTotalWorkCalculated, ["requestId", "fileSystemPath", "totalWork"]],
-    [InspectorFrontendHostAPI.Events.IndexingWorked, ["requestId", "fileSystemPath", "worked"]],
-    [InspectorFrontendHostAPI.Events.IndexingDone, ["requestId", "fileSystemPath"]],
-    [InspectorFrontendHostAPI.Events.KeyEventUnhandled, ["event"]],
-    [InspectorFrontendHostAPI.Events.RevealSourceLine, ["url", "lineNumber", "columnNumber"]],
-    [InspectorFrontendHostAPI.Events.SavedURL, ["url"]],
-    [InspectorFrontendHostAPI.Events.SearchCompleted, ["requestId", "fileSystemPath", "files"]],
-    [InspectorFrontendHostAPI.Events.SetInspectedTabId, ["tabId"]],
-    [InspectorFrontendHostAPI.Events.SetToolbarColors, ["backgroundColor", "color"]],
-    [InspectorFrontendHostAPI.Events.SetUseSoftMenu, ["useSoftMenu"]],
-    [InspectorFrontendHostAPI.Events.ShowConsole, []]
-];
-
-InspectorFrontendHostAPI.prototype = {
-    addFileSystem: function() { },
-
-    /**
-     * @param {string} url
-     * @param {string} content
-     */
-    append: function(url, content) { },
-
-    loadCompleted: function() { },
-
-    /**
-     * @param {number} requestId
-     * @param {string} fileSystemPath
-     */
-    indexPath: function(requestId, fileSystemPath) { },
-
-    /**
-     * @return {string}
-     */
-    getSelectionBackgroundColor: function() { },
-
-    /**
-     * @return {string}
-     */
-    getSelectionForegroundColor: function() { },
-
-    /**
-     * Requests inspected page to be placed atop of the inspector frontend with specified bounds.
-     * @param {{x: number, y: number, width: number, height: number}} bounds
-     */
-    setInspectedPageBounds: function(bounds) { },
-
-    /**
-     * @param {string} shortcuts
-     */
-    setWhitelistedShortcuts: function(shortcuts) { },
-
-    inspectElementCompleted: function() { },
-
-    /**
-     * @param {string} url
-     */
-    openInNewTab: function(url) { },
-
-    /**
-     * @param {string} fileSystemPath
-     */
-    removeFileSystem: function(fileSystemPath) { },
-
-    requestFileSystems: function() { },
-
-    /**
-     * @param {string} url
-     * @param {string} content
-     * @param {boolean} forceSaveAs
-     */
-    save: function(url, content, forceSaveAs) { },
-
-    /**
-     * @param {number} requestId
-     * @param {string} fileSystemPath
-     * @param {string} query
-     */
-    searchInPath: function(requestId, fileSystemPath, query) { },
-
-    /**
-     * @param {number} requestId
-     */
-    stopIndexing: function(requestId) { },
-
-    bringToFront: function() { },
-
-    /**
-     * @param {string} browserId
-     * @param {string} url
-     */
-    openUrlOnRemoteDeviceAndInspect: function(browserId, url) { },
-
-    closeWindow: function() { },
-
-    copyText: function(text) { },
-
-    /**
-     * @param {string} url
-     */
-    inspectedURLChanged: function(url) { },
-
-    /**
-     * @param {string} fileSystemId
-     * @param {string} registeredName
-     * @return {?DOMFileSystem}
-     */
-    isolatedFileSystem: function(fileSystemId, registeredName) { },
-
-    /**
-     * @param {!FileSystem} fileSystem
-     */
-    upgradeDraggedFileSystemPermissions: function(fileSystem) { },
-
-    /**
-     * @return {string}
-     */
-    platform: function() { },
-
-    /**
-     * @param {number} actionCode
-     */
-    recordActionTaken: function(actionCode) { },
-
-    /**
-     * @param {number} panelCode
-     */
-    recordPanelShown: function(panelCode) { },
-
-    /**
-     * @param {string} message
-     */
-    sendMessageToBackend: function(message) { },
-
-    /**
-     * @param {boolean} enabled
-     */
-    setDeviceCountUpdatesEnabled: function(enabled) { },
-
-    /**
-     * @param {boolean} enabled
-     */
-    setDevicesUpdatesEnabled: function(enabled) { },
-
-    /**
-     * @param {string} origin
-     * @param {string} script
-     */
-    setInjectedScriptForOrigin: function(origin, script) { },
-
-    /**
-     * @param {boolean} isDocked
-     * @param {function()} callback
-     */
-    setIsDocked: function(isDocked, callback) { },
-
-    /**
-     * @return {number}
-     */
-    zoomFactor: function() { },
-
-    zoomIn: function() { },
-
-    zoomOut: function() { },
-
-    resetZoom: function() { },
-
-    /**
-     * @param {number} x
-     * @param {number} y
-     * @param {!Array.<!InspectorFrontendHostAPI.ContextMenuDescriptor>} items
-     * @param {!Document} document
-     */
-    showContextMenuAtPoint: function(x, y, items, document) { },
-
-    /**
-     * @return {boolean}
-     */
-    isUnderTest: function() { },
-
-    /**
-     * @return {boolean}
-     */
-    isHostedMode: function() { }
-}
-
 /**
  * @constructor
  * @implements {InspectorFrontendHostAPI}
@@ -440,17 +200,11 @@ WebInspector.InspectorFrontendHostStub.prototype = {
 
     /**
      * @override
+     * @param {string} actionName
      * @param {number} actionCode
+     * @param {number} bucketSize
      */
-    recordActionTaken: function(actionCode)
-    {
-    },
-
-    /**
-     * @override
-     * @param {number} panelCode
-     */
-    recordPanelShown: function(panelCode)
+    recordEnumeratedHistogram: function(actionName, actionCode, bucketSize)
     {
     },
 
@@ -485,6 +239,62 @@ WebInspector.InspectorFrontendHostStub.prototype = {
     isolatedFileSystem: function(fileSystemId, registeredName)
     {
         return null;
+    },
+
+    /**
+     * @override
+     * @param {string} url
+     * @param {string} headers
+     * @param {number} streamId
+     * @param {function(!InspectorFrontendHostAPI.LoadNetworkResourceResult)} callback
+     */
+    loadNetworkResource: function(url, headers, streamId, callback)
+    {
+        loadResourcePromise(url).then(function(text) {
+            WebInspector.ResourceLoader.streamWrite(streamId, text);
+            callback({statusCode : 200});
+        }).catch(function() {
+            callback({statusCode : 404});
+        });
+    },
+
+    /**
+     * @override
+     * @param {function(!Object<string, string>)} callback
+     */
+    getPreferences: function(callback)
+    {
+        var prefs = {};
+        for (var name in window.localStorage)
+            prefs[name] = window.localStorage[name];
+        callback(prefs);
+    },
+
+    /**
+     * @override
+     * @param {string} name
+     * @param {string} value
+     */
+    setPreference: function(name, value)
+    {
+        window.localStorage[name] = value;
+    },
+
+    /**
+     * @override
+     * @param {string} name
+     */
+    removePreference: function(name)
+    {
+        delete window.localStorage[name];
+    },
+
+    /**
+     * @override
+     */
+    clearPreferences: function()
+    {
+        window.localStorage.clear();
     },
 
     /**
@@ -571,18 +381,11 @@ WebInspector.InspectorFrontendHostStub.prototype = {
 
     /**
      * @override
-     * @param {string} browserId
-     * @param {string} url
+     * @param {boolean} discoverUsbDevices
+     * @param {boolean} portForwardingEnabled
+     * @param {!Adb.PortForwardingConfig} portForwardingConfig
      */
-    openUrlOnRemoteDeviceAndInspect: function(browserId, url)
-    {
-    },
-
-    /**
-     * @override
-     * @param {boolean} enabled
-     */
-    setDeviceCountUpdatesEnabled: function(enabled)
+    setDevicesDiscoveryConfig: function(discoverUsbDevices, portForwardingEnabled, portForwardingConfig)
     {
     },
 
@@ -591,6 +394,15 @@ WebInspector.InspectorFrontendHostStub.prototype = {
      * @param {boolean} enabled
      */
     setDevicesUpdatesEnabled: function(enabled)
+    {
+    },
+
+    /**
+     * @override
+     * @param {string} pageId
+     * @param {string} action
+     */
+    performActionOnRemotePage: function(pageId, action)
     {
     },
 
@@ -613,6 +425,14 @@ WebInspector.InspectorFrontendHostStub.prototype = {
     isHostedMode: function()
     {
         return true;
+    },
+
+    /**
+     * @override
+     * @param {string} message
+     */
+    sendFrontendAPINotification: function(message)
+    {
     }
 };
 
@@ -642,6 +462,7 @@ var InspectorFrontendHost = window.InspectorFrontendHost || null;
 
         /**
          * @param {string} name
+         * @return {?}
          */
         function stub(name)
         {
@@ -659,7 +480,7 @@ var InspectorFrontendHost = window.InspectorFrontendHost || null;
      */
     function InspectorFrontendAPIImpl()
     {
-        this._debugFrontend = !!Runtime.queryParam("debugFrontend");
+        this._debugFrontend = !!Runtime.queryParam("debugFrontend") || (window["InspectorTest"] && window["InspectorTest"]["debugTest"]);
 
         var descriptors = InspectorFrontendHostAPI.EventDescriptors;
         for (var i = 0; i < descriptors.length; ++i)
@@ -685,25 +506,42 @@ var InspectorFrontendHost = window.InspectorFrontendHost || null;
             {
                 // Single argument methods get dispatched with the param.
                 if (signature.length < 2) {
-                    InspectorFrontendHost.events.dispatchEventToListeners(name, params[0]);
+                    try {
+                        InspectorFrontendHost.events.dispatchEventToListeners(name, params[0]);
+                    } catch(e) {
+                        console.error(e + " " + e.stack);
+                    }
                     return;
                 }
                 var data = {};
                 for (var i = 0; i < signature.length; ++i)
                     data[signature[i]] = params[i];
-                InspectorFrontendHost.events.dispatchEventToListeners(name, data);
+                try {
+                    InspectorFrontendHost.events.dispatchEventToListeners(name, data);
+                } catch(e) {
+                    console.error(e + " " + e.stack);
+                }
             }
+        },
+
+        /**
+         * @param {number} id
+         * @param {string} chunk
+         */
+        streamWrite: function(id, chunk)
+        {
+            WebInspector.ResourceLoader.streamWrite(id, chunk);
         }
     }
 
     // FIXME: This file is included into both apps, since the devtools_app needs the InspectorFrontendHostAPI only,
     // so the host instance should not initialized there.
-    if (!window.DevToolsHost) {
-        initializeInspectorFrontendHost();
-        window.InspectorFrontendAPI = new InspectorFrontendAPIImpl();
-        WebInspector.setLocalizationPlatform(InspectorFrontendHost.platform());
-    } else {
-        WebInspector.setLocalizationPlatform(DevToolsHost.platform());
-    }
-
+    initializeInspectorFrontendHost();
+    window.InspectorFrontendAPI = new InspectorFrontendAPIImpl();
+    WebInspector.setLocalizationPlatform(InspectorFrontendHost.platform());
 })();
+
+/**
+ * @type {!WebInspector.EventTarget}
+ */
+InspectorFrontendHost.events;

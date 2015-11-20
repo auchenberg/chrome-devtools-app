@@ -109,16 +109,3 @@ WebInspector.DOMSyntaxHighlighter.prototype = {
         }
     }
 }
-
-/**
- * @interface
- */
-WebInspector.TokenizerFactory = function() { }
-
-WebInspector.TokenizerFactory.prototype = {
-    /**
-     * @param {string} mimeType
-     * @return {function(string, function(string, ?string, number, number))}
-     */
-    createTokenizer: function(mimeType) { }
-}

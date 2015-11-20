@@ -31,20 +31,20 @@
 /**
  * @constructor
  * @implements {WebInspector.Progress}
- * @extends {WebInspector.Object}
  */
 WebInspector.ProgressIndicator = function()
 {
-    this.element = createElementWithClass("div", "progress-indicator")
-    this._shadowRoot = this.element.createShadowRoot();
-    this._shadowRoot.appendChild(WebInspector.View.createStyleElement("ui/progressIndicator.css"));
+    this.element = createElementWithClass("div", "progress-indicator");
+    this._shadowRoot = WebInspector.createShadowRootWithCoreStyles(this.element);
+    this._shadowRoot.appendChild(WebInspector.Widget.createStyleElement("ui/progressIndicator.css"));
     this._contentElement = this._shadowRoot.createChild("div", "progress-indicator-shadow-container");
 
     this._labelElement = this._contentElement.createChild("div", "title");
     this._progressElement = this._contentElement.createChild("progress");
-
+    this._progressElement.value = 0;
     this._stopButton = this._contentElement.createChild("button", "progress-indicator-shadow-stop-button");
     this._stopButton.addEventListener("click", this.cancel.bind(this));
+
     this._isCanceled = false;
     this._worked = 0;
 }
@@ -67,13 +67,11 @@ WebInspector.ProgressIndicator.prototype = {
             return;
         this._isDone = true;
         this.element.remove();
-        this.dispatchEventToListeners(WebInspector.Progress.Events.Done);
     },
 
     cancel: function()
     {
         this._isCanceled = true;
-        this.dispatchEventToListeners(WebInspector.Progress.Events.Canceled);
     },
 
     /**
@@ -123,12 +121,5 @@ WebInspector.ProgressIndicator.prototype = {
     worked: function(worked)
     {
         this.setWorked(this._worked + (worked || 1));
-    },
-
-    hideStopButton: function()
-    {
-        this._stopButton.classList.add("hidden");
-    },
-
-    __proto__: WebInspector.Object.prototype
+    }
 }

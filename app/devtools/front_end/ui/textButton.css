@@ -13,10 +13,11 @@
     font-size: 12px;
     margin: 0 1px 0 0;
     text-shadow: 0 1px 0 hsl(0, 0%, 94%);
-    min-height: 2em;
+    min-height: 2em !important;
     padding-left: 10px;
     padding-right: 10px;
     -webkit-user-select: none;
+    flex: none;
 }
 
 :host-context(body.inactive),
@@ -38,4 +39,10 @@
     background-image: linear-gradient(hsl(0, 0%, 91%), hsl(0, 0%, 91%) 38%, hsl(0, 0%, 84%));
     box-shadow: none;
     text-shadow: none;
+}
+
+:host(:not(:disabled):focus) {
+    -webkit-transition: border-color 200ms;
+    border-color: rgb(77, 144, 254);
+    outline: none;
 }

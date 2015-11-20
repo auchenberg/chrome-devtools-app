@@ -136,23 +136,24 @@ WebInspector.RequestJSONView._buildObjectFromJSON = function(text)
  */
 WebInspector.RequestJSONView.parseJSON = function(text)
 {
-    // Trim stubs like "while(1)", "for(;;)", weird numbers, etc. We need JSON start.
+    // Do not treat HTML as JSON.
+    if (text.startsWith("<"))
+        return null;
     var inner = WebInspector.RequestJSONView._findBrackets(text, "{", "}");
     var inner2 = WebInspector.RequestJSONView._findBrackets(text, "[", "]");
     inner = inner2.length > inner.length ? inner2 : inner;
-    var inner3 = WebInspector.RequestJSONView._findBrackets(text, "(", ")");
-    if (inner3.length - 2 > inner.length) {
-        inner = inner3;
-        ++inner.start;
-        --inner.end;
-    }
-    if (inner.length === -1)
-        return null;
 
+    // Return on blank payloads or on payloads significantly smaller than original text.
+    if (inner.length === -1 || text.length - inner.length > 80)
+        return null;
 
     var prefix = text.substring(0, inner.start);
     var suffix = text.substring(inner.end + 1);
     text = text.substring(inner.start, inner.end + 1);
+
+    // Only process valid JSONP.
+    if (suffix.trim().length && !(suffix.trim().startsWith(")") && prefix.trim().endsWith("(")))
+        return null;
 
     try {
         return new WebInspector.ParsedJSON(WebInspector.RequestJSONView._buildObjectFromJSON(text), prefix, suffix);

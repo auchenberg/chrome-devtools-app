@@ -68,15 +68,16 @@ WebInspector.Resource.Events = {
  * @param {?string} content
  * @param {string} mimeType
  * @param {boolean} contentEncoded
+ * @param {?string=} charset
  * @return {?string}
  */
-WebInspector.Resource.contentAsDataURL = function(content, mimeType, contentEncoded)
+WebInspector.Resource.contentAsDataURL = function(content, mimeType, contentEncoded, charset)
 {
     const maxDataUrlSize = 1024 * 1024;
     if (content === null || content.length > maxDataUrlSize)
         return null;
 
-    return "data:" + mimeType + (contentEncoded ? ";base64," : ",") + content;
+    return "data:" + mimeType + (charset ? ";charset=" + charset : "") + (contentEncoded ? ";base64" : "") + "," + content;
 }
 
 /**
@@ -264,6 +265,8 @@ WebInspector.Resource.prototype = {
      */
     contentType: function()
     {
+        if (this.resourceType() === WebInspector.resourceTypes.Document && this.mimeType.indexOf("javascript") !== -1)
+            return WebInspector.resourceTypes.Script;
         return this.resourceType();
     },
 
@@ -288,7 +291,7 @@ WebInspector.Resource.prototype = {
      */
     canonicalMimeType: function()
     {
-        return this.resourceType().canonicalMimeType() || this.mimeType;
+        return this.contentType().canonicalMimeType() || this.mimeType;
     },
 
     /**
@@ -302,16 +305,11 @@ WebInspector.Resource.prototype = {
     {
         /**
          * @param {?Protocol.Error} error
-         * @param {!Array.<!PageAgent.SearchMatch>} searchMatches
+         * @param {!Array.<!DebuggerAgent.SearchMatch>} searchMatches
          */
         function callbackWrapper(error, searchMatches)
         {
             callback(searchMatches || []);
-        }
-
-        if (this.resourceType() === WebInspector.resourceTypes.Document) {
-            callback([]);
-            return;
         }
 
         if (this.frameId)

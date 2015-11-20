@@ -159,7 +159,7 @@ WebInspector.CSSSourceFrame.AutocompleteDelegate.prototype = {
                 return null;
             if (token.type === "css-property")
                 return seenColumn ? token : null;
-            if (token.type && !(token.type.startsWith("whitespace") || token.type.startsWith("css-comment")))
+            if (token.type && !(token.type.indexOf("whitespace") !== -1 || token.type.startsWith("css-comment")))
                 return null;
 
             if (!token.type && line.substring(token.startColumn, token.endColumn) === ":") {

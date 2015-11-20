@@ -93,6 +93,12 @@ WebInspector.NetworkTimeCalculator.prototype = {
         this._boundaryChanged();
     },
 
+    setInitialUserFriendlyBoundaries: function()
+    {
+        this._minimumBoundary = 0;
+        this._maximumBoundary = 1;
+    },
+
     /**
      * @override
      * @return {number}
@@ -120,7 +126,7 @@ WebInspector.NetworkTimeCalculator.prototype = {
      */
     formatTime: function(value, precision)
     {
-        return Number.secondsToString(value);
+        return Number.secondsToString(value, !!precision);
     },
 
     /**
@@ -235,9 +241,28 @@ WebInspector.NetworkTimeCalculator.prototype = {
         return 0;
     },
 
+    /**
+     * @param {number} percentage
+     * @return {number}
+     */
+    percentageToTime: function(percentage)
+    {
+        return percentage * this.boundarySpan() / 100 + this.minimumBoundary();
+    },
+
     _boundaryChanged: function()
     {
-        this._boundryChangedEventThrottler.schedule(this.dispatchEventToListeners.bind(this, WebInspector.NetworkTimeCalculator.Events.BoundariesChanged));
+        this._boundryChangedEventThrottler.schedule(dispatchEvent.bind(this));
+
+        /**
+         * @return {!Promise.<undefined>}
+         * @this {WebInspector.NetworkTimeCalculator}
+         */
+        function dispatchEvent()
+        {
+            this.dispatchEventToListeners(WebInspector.NetworkTimeCalculator.Events.BoundariesChanged);
+            return Promise.resolve();
+        }
     },
 
     /**
@@ -294,22 +319,33 @@ WebInspector.NetworkTimeCalculator.prototype = {
      */
     updateBoundaries: function(request)
     {
-        var lowerBound;
-        if (this.startAtZero)
-            lowerBound = 0;
-        else
-            lowerBound = this._lowerBound(request);
-
-        if (lowerBound !== -1 && (typeof this._minimumBoundary === "undefined" || lowerBound < this._minimumBoundary)) {
-            this._minimumBoundary = lowerBound;
-            this._boundaryChanged();
-        }
-
+        var lowerBound = this._lowerBound(request);
         var upperBound = this._upperBound(request);
-        if (upperBound !== -1 && (typeof this._maximumBoundary === "undefined" || upperBound > this._maximumBoundary)) {
-            this._maximumBoundary = upperBound;
+        var changed = false;
+        if (lowerBound !== -1 || this.startAtZero)
+            changed = this._extendBoundariesToIncludeTimestamp(this.startAtZero ? 0 : lowerBound);
+        if (upperBound !== -1)
+            changed = this._extendBoundariesToIncludeTimestamp(upperBound) || changed;
+        if (changed)
             this._boundaryChanged();
+    },
+
+    /**
+     * @param {number} timestamp
+     * @return {boolean}
+     */
+    _extendBoundariesToIncludeTimestamp: function(timestamp)
+    {
+        var previousMinimumBoundary = this._minimumBoundary;
+        var previousMaximumBoundary = this._maximumBoundary;
+        if (typeof this._minimumBoundary === "undefined" || typeof this._maximumBoundary === "undefined") {
+            this._minimumBoundary = timestamp;
+            this._maximumBoundary = timestamp + 1;
+        } else {
+            this._minimumBoundary = Math.min(timestamp, this._minimumBoundary);
+            this._maximumBoundary = Math.max(timestamp, this._minimumBoundary + 1, this._maximumBoundary);
         }
+        return previousMinimumBoundary !== this._minimumBoundary || previousMaximumBoundary !== this._maximumBoundary;
     },
 
     /**
@@ -351,7 +387,7 @@ WebInspector.NetworkTransferTimeCalculator.prototype = {
      */
     formatTime: function(value, precision)
     {
-        return Number.secondsToString(value - this.zeroTime());
+        return Number.secondsToString(value - this.zeroTime(), !!precision);
     },
 
     /**
@@ -361,7 +397,7 @@ WebInspector.NetworkTransferTimeCalculator.prototype = {
      */
     _lowerBound: function(request)
     {
-        return request.startTime;
+        return request.issueTime();
     },
 
     /**
@@ -395,7 +431,7 @@ WebInspector.NetworkTransferDurationCalculator.prototype = {
      */
     formatTime: function(value, precision)
     {
-        return Number.secondsToString(value);
+        return Number.secondsToString(value, !!precision);
     },
 
     /**

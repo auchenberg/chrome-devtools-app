@@ -11,35 +11,46 @@ WebInspector.ServiceWorkerCacheModel = function(target)
 {
     WebInspector.SDKModel.call(this, WebInspector.ServiceWorkerCacheModel, target);
 
-    /** @type {!Map.<!WebInspector.ServiceWorkerCacheModel.CacheId, !WebInspector.ServiceWorkerCacheModel.Cache>} */
+    /** @type {!Map<string, !WebInspector.ServiceWorkerCacheModel.Cache>} */
     this._caches = new Map();
-    /** @type {!Set.<string>} */
-    this._cacheNames = new Set();
 
-    this._agent = target.serviceWorkerCacheAgent();
+    this._agent = target.cacheStorageAgent();
+
+    /** @type {boolean} */
+    this._enabled = false;
 }
 
 WebInspector.ServiceWorkerCacheModel.EventTypes = {
     CacheAdded: "CacheAdded",
-    CacheRemoved: "CacheRemoved",
+    CacheRemoved: "CacheRemoved"
 }
 
 WebInspector.ServiceWorkerCacheModel.prototype = {
-    _reset: function()
+    enable: function()
     {
-        this._updateCacheNames([]);
-        this._loadCacheNames();
+        if (this._enabled)
+            return;
+
+        this.target().resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginAdded, this._securityOriginAdded, this);
+        this.target().resourceTreeModel.addEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginRemoved, this._securityOriginRemoved, this);
+
+        var securityOrigins = this.target().resourceTreeModel.securityOrigins();
+        for (var i = 0; i < securityOrigins.length; ++i)
+            this._addOrigin(securityOrigins[i]);
+        this._enabled = true;
     },
 
     refreshCacheNames: function()
     {
-        this._loadCacheNames();
+        var securityOrigins = this.target().resourceTreeModel.securityOrigins();
+        for (var securityOrigin of securityOrigins)
+            this._loadCacheNames(securityOrigin);
     },
 
     /**
-     * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
      */
-    deleteCache: function(cacheId)
+    deleteCache: function(cache)
     {
         /**
          * @this {WebInspector.ServiceWorkerCacheModel}
@@ -47,138 +58,208 @@ WebInspector.ServiceWorkerCacheModel.prototype = {
         function callback(error)
         {
             if (error) {
-                console.error("ServiceWorkerCacheAgent error: ", error);
+                console.error("ServiceWorkerCacheAgent error deleting cache ", cache.toString(), ": ", error);
                 return;
             }
-            this._cacheRemoved(cacheId.name);
+            this._caches.delete(cache.cacheId);
+            this._cacheRemoved(cache);
         }
-        this._agent.deleteCache(cacheId.name, callback.bind(this));
+        this._agent.deleteCache(cache.cacheId, callback.bind(this));
     },
 
     /**
-     * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
+     * @param {string} request
+     * @param {function()} callback
+     */
+    deleteCacheEntry: function(cache, request, callback)
+    {
+
+        /**
+         * @param {?Protocol.Error} error
+         */
+        function myCallback(error)
+        {
+            if (error) {
+                WebInspector.console.error(WebInspector.UIString("ServiceWorkerCacheAgent error deleting cache entry %s in cache: %s", cache.toString(), error));
+                return;
+            }
+            callback();
+        }
+        this._agent.deleteEntry(cache.cacheId, request, myCallback);
+    },
+
+    /**
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
      * @param {number} skipCount
      * @param {number} pageSize
      * @param {function(!Array.<!WebInspector.ServiceWorkerCacheModel.Entry>, boolean)} callback
      */
-    loadCacheData: function(cacheId, skipCount, pageSize, callback)
+    loadCacheData: function(cache, skipCount, pageSize, callback)
     {
-        this._requestEntries(cacheId, cacheId.name, skipCount, pageSize, callback);
+        this._requestEntries(cache, skipCount, pageSize, callback);
     },
 
     /**
-     * @return {!Array.<!WebInspector.ServiceWorkerCacheModel.CacheId>}
+     * @return {!Array.<!WebInspector.ServiceWorkerCacheModel.Cache>}
      */
     caches: function()
     {
-        var result = [];
-        for (var cacheName of this._cacheNames) {
-          result.push(new WebInspector.ServiceWorkerCacheModel.CacheId(cacheName));
-        }
-        return result;
+        var caches = new Array();
+        for (var cache of this._caches.values())
+            caches.push(cache);
+        return caches;
     },
 
     dispose: function()
     {
-        this._updateCacheNames([]);
+        for (var cache of this._caches.values())
+            this._cacheRemoved(cache);
+        this._caches.clear();
+        if (this._enabled) {
+            this.target().resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginAdded, this._securityOriginAdded, this);
+            this.target().resourceTreeModel.removeEventListener(WebInspector.ResourceTreeModel.EventTypes.SecurityOriginRemoved, this._securityOriginRemoved, this);
+        }
     },
 
-    _loadCacheNames: function()
+    _addOrigin: function(securityOrigin)
+    {
+        this._loadCacheNames(securityOrigin);
+    },
+
+    /**
+     * @param {string} securityOrigin
+     */
+    _removeOrigin: function(securityOrigin)
+    {
+        for (var opaqueId of this._caches.keys()) {
+            var cache = this._caches.get(opaqueId);
+            if (cache.securityOrigin == securityOrigin) {
+                this._caches.delete(opaqueId);
+                this._cacheRemoved(cache);
+            }
+        }
+    },
+
+    /**
+     * @param {string} securityOrigin
+     */
+    _loadCacheNames: function(securityOrigin)
     {
         /**
          * @param {?Protocol.Error} error
-         * @param {!Array.<string>} cacheNames
+         * @param {!Array.<!WebInspector.ServiceWorkerCacheModel.Cache>} caches
          * @this {WebInspector.ServiceWorkerCacheModel}
          */
-        function callback(error, cacheNames)
+        function callback(error, caches)
         {
             if (error) {
-                console.error("ServiceWorkerCacheAgent error: ", error);
+                console.error("ServiceWorkerCacheAgent error while loading caches: ", error);
                 return;
             }
+            this._updateCacheNames(securityOrigin, caches);
+        }
+        this._agent.requestCacheNames(securityOrigin, callback.bind(this));
+    },
 
-            if (!this._cacheNames)
-                return;
-            this._updateCacheNames(cacheNames);
+    /**
+     * @param {string} securityOrigin
+     * @param {!Array} cachesJson
+     */
+    _updateCacheNames: function(securityOrigin, cachesJson)
+    {
+        /**
+         * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
+         * @this {WebInspector.ServiceWorkerCacheModel}
+         */
+        function deleteAndSaveOldCaches(cache)
+        {
+            if (cache.securityOrigin == securityOrigin && !updatingCachesIds.has(cache.cacheId)) {
+                oldCaches.set(cache.cacheId, cache);
+                this._caches.delete(cache.cacheId);
+            }
         }
 
-        this._agent.requestCacheNames(callback.bind(this));
-    },
+        /** @type {!Set<string>} */
+        var updatingCachesIds = new Set();
+        /** @type {!Map<string, !WebInspector.ServiceWorkerCacheModel.Cache>} */
+        var newCaches = new Map();
+        /** @type {!Map<string, !WebInspector.ServiceWorkerCacheModel.Cache>} */
+        var oldCaches = new Map();
 
-    /**
-     * @param {!Array.<string>} cacheNames
-     */
-    _updateCacheNames: function(cacheNames)
-    {
-        /** @type {!Set.<string>} */
-        var newCacheNames = new Set(cacheNames);
-        /** @type {!Set.<string>} */
-        var oldCacheNames = this._cacheNames;
-
-        this._cacheNames = new Set(cacheNames);
-
-        for (var oldCacheName of oldCacheNames) {
-            if (!newCacheNames[oldCacheName])
-                this._cacheRemoved(oldCacheName);
+        for (var cacheJson of cachesJson) {
+            var cache = new WebInspector.ServiceWorkerCacheModel.Cache(cacheJson.securityOrigin, cacheJson.cacheName, cacheJson.cacheId);
+            updatingCachesIds.add(cache.cacheId);
+            if (this._caches.has(cache.cacheId))
+                continue;
+            newCaches.set(cache.cacheId, cache);
+            this._caches.set(cache.cacheId, cache);
         }
-        for (var newCacheName of newCacheNames) {
-            if (!oldCacheNames[newCacheName])
-                this._cacheAdded(newCacheName);
-        }
+        this._caches.forEach(deleteAndSaveOldCaches, this);
+        newCaches.forEach(this._cacheAdded, this);
+        oldCaches.forEach(this._cacheRemoved, this);
     },
 
     /**
-     * @param {string} cacheName
+     * @param {!WebInspector.Event} event
      */
-    _cacheAdded: function(cacheName)
+    _securityOriginAdded: function(event)
     {
-        var cacheId = new WebInspector.ServiceWorkerCacheModel.CacheId(cacheName);
-        this.dispatchEventToListeners(WebInspector.ServiceWorkerCacheModel.EventTypes.CacheAdded, cacheId);
+        var securityOrigin = /** @type {string} */ (event.data);
+        this._addOrigin(securityOrigin);
     },
 
     /**
-     * @param {string} cacheName
+     * @param {!WebInspector.Event} event
      */
-    _cacheRemoved: function(cacheName)
+    _securityOriginRemoved: function(event)
     {
-        var cacheId = new WebInspector.ServiceWorkerCacheModel.CacheId(cacheName);
-        this.dispatchEventToListeners(WebInspector.ServiceWorkerCacheModel.EventTypes.CacheRemoved, cacheId);
+        var securityOrigin = /** @type {string} */ (event.data);
+        this._removeOrigin(securityOrigin);
     },
 
     /**
-     * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
-     * @param {string} cacheName
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
+     */
+    _cacheAdded: function(cache)
+    {
+        this.dispatchEventToListeners(WebInspector.ServiceWorkerCacheModel.EventTypes.CacheAdded, cache);
+    },
+
+    /**
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
+     */
+    _cacheRemoved: function(cache)
+    {
+        this.dispatchEventToListeners(WebInspector.ServiceWorkerCacheModel.EventTypes.CacheRemoved, cache);
+    },
+
+    /**
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
      * @param {number} skipCount
      * @param {number} pageSize
      * @param {function(!Array.<!WebInspector.ServiceWorkerCacheModel.Entry>, boolean)} callback
      */
-    _requestEntries: function(cacheId, cacheName, skipCount, pageSize, callback)
+    _requestEntries: function(cache, skipCount, pageSize, callback)
     {
         /**
          * @param {?Protocol.Error} error
          * @param {!Array.<!WebInspector.ServiceWorkerCacheModel.Entry>} dataEntries
          * @param {boolean} hasMore
-         * @this {WebInspector.ServiceWorkerCacheModel}
          */
         function innerCallback(error, dataEntries, hasMore)
         {
             if (error) {
-                console.error("ServiceWorkerCacheAgent error: ", error);
+                console.error("ServiceWorkerCacheAgent error while requesting entries: ", error);
                 return;
             }
-
-            if (!this._cacheNames)
-                return;
             var entries = [];
             for (var i = 0; i < dataEntries.length; ++i) {
-                var request = WebInspector.RemoteObject.fromLocalObject(JSON.parse(dataEntries[i].request));
-                var response = WebInspector.RemoteObject.fromLocalObject(JSON.parse(dataEntries[i].response));
-                entries.push(new WebInspector.ServiceWorkerCacheModel.Entry(request, response));
+                entries.push(new WebInspector.ServiceWorkerCacheModel.Entry(dataEntries[i].request, dataEntries[i].response));
             }
             callback(entries, hasMore);
         }
-
-        this._agent.requestEntries(cacheName, skipCount, pageSize, innerCallback.bind(this));
+        this._agent.requestEntries(cache.cacheId, skipCount, pageSize, innerCallback);
     },
 
     __proto__: WebInspector.SDKModel.prototype
@@ -186,8 +267,8 @@ WebInspector.ServiceWorkerCacheModel.prototype = {
 
 /**
  * @constructor
- * @param {!WebInspector.RemoteObject} request
- * @param {!WebInspector.RemoteObject} response
+ * @param {string} request
+ * @param {string} response
  */
 WebInspector.ServiceWorkerCacheModel.Entry = function(request, response)
 {
@@ -197,29 +278,47 @@ WebInspector.ServiceWorkerCacheModel.Entry = function(request, response)
 
 /**
  * @constructor
- * @param {string} name
+ * @param {string} securityOrigin
+ * @param {string} cacheName
+ * @param {string} cacheId
  */
-WebInspector.ServiceWorkerCacheModel.CacheId = function(name)
+WebInspector.ServiceWorkerCacheModel.Cache = function(securityOrigin, cacheName, cacheId)
 {
-    this.name = name;
+    this.securityOrigin = securityOrigin;
+    this.cacheName = cacheName;
+    this.cacheId = cacheId;
 }
 
-WebInspector.ServiceWorkerCacheModel.CacheId.prototype = {
+WebInspector.ServiceWorkerCacheModel.Cache.prototype = {
     /**
-     * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+     * @param {!WebInspector.ServiceWorkerCacheModel.Cache} cache
      * @return {boolean}
      */
-    equals: function(cacheId)
+    equals: function(cache)
     {
-        return this.name === cacheId.name;
+        return this.cacheId == cache.cacheId;
+    },
+
+    /**
+     * @override
+     * @return {string}
+     */
+    toString: function()
+    {
+        return this.securityOrigin + this.cacheName;
     }
 }
 
+
+WebInspector.ServiceWorkerCacheModel._symbol = Symbol("CacheStorageModel");
 /**
- * @constructor
- * @param {!WebInspector.ServiceWorkerCacheModel.CacheId} cacheId
+ * @param {!WebInspector.Target} target
+ * @return {!WebInspector.ServiceWorkerCacheModel}
  */
-WebInspector.ServiceWorkerCacheModel.Cache = function(cacheId)
+WebInspector.ServiceWorkerCacheModel.fromTarget = function(target)
 {
-    this.cacheId = cacheId;
+    if (!target[WebInspector.ServiceWorkerCacheModel._symbol])
+        target[WebInspector.ServiceWorkerCacheModel._symbol] = new WebInspector.ServiceWorkerCacheModel(target);
+
+    return target[WebInspector.ServiceWorkerCacheModel._symbol];
 }

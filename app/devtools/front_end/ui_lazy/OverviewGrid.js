@@ -76,15 +76,6 @@ WebInspector.OverviewGrid.prototype = {
         this._grid.removeEventDividers();
     },
 
-    /**
-     * @param {?number} start
-     * @param {?number} end
-     */
-    setWindowPosition: function(start, end)
-    {
-        this._window._setWindowPosition(start, end);
-    },
-
     reset: function()
     {
         this._window.reset();
@@ -139,7 +130,7 @@ WebInspector.OverviewGrid.prototype = {
      */
     setResizeEnabled: function(enabled)
     {
-        this._window._setEnabled(!!enabled);
+        this._window.setEnabled(enabled);
     }
 }
 
@@ -160,9 +151,9 @@ WebInspector.OverviewGrid.Window = function(parentElement, dividersLabelBarEleme
 {
     this._parentElement = parentElement;
 
-    WebInspector.installDragHandle(this._parentElement, this._startWindowSelectorDragging.bind(this), this._windowSelectorDragging.bind(this), this._endWindowSelectorDragging.bind(this), "ew-resize", null);
+    WebInspector.installDragHandle(this._parentElement, this._startWindowSelectorDragging.bind(this), this._windowSelectorDragging.bind(this), this._endWindowSelectorDragging.bind(this), "text", null);
     if (dividersLabelBarElement)
-        WebInspector.installDragHandle(dividersLabelBarElement, this._startWindowDragging.bind(this), this._windowDragging.bind(this), null, "move");
+        WebInspector.installDragHandle(dividersLabelBarElement, this._startWindowDragging.bind(this), this._windowDragging.bind(this), null, "-webkit-grabbing", "-webkit-grab");
 
     this.windowLeft = 0.0;
     this.windowRight = 1.0;
@@ -171,7 +162,7 @@ WebInspector.OverviewGrid.Window = function(parentElement, dividersLabelBarEleme
     this._parentElement.addEventListener("dblclick", this._resizeWindowMaximum.bind(this), true);
 
     this._overviewWindowElement = parentElement.createChild("div", "overview-grid-window");
-    this._overviewWindowElement.appendChild(WebInspector.View.createStyleElement("ui_lazy/overviewGrid.css"));
+    this._overviewWindowElement.appendChild(WebInspector.Widget.createStyleElement("ui_lazy/overviewGrid.css"));
     this._overviewWindowBordersElement = parentElement.createChild("div", "overview-grid-window-rulers");
     parentElement.createChild("div", "overview-grid-dividers-background");
 
@@ -182,11 +173,12 @@ WebInspector.OverviewGrid.Window = function(parentElement, dividersLabelBarEleme
     this._rightResizeElement = parentElement.createChild("div", "overview-grid-window-resizer overview-grid-window-resizer-right");
     this._rightResizeElement.style.right = 0;
     WebInspector.installDragHandle(this._rightResizeElement, this._resizerElementStartDragging.bind(this), this._rightResizeElementDragging.bind(this), null, "ew-resize");
-    this._setEnabled(true);
+    this.setEnabled(true);
 }
 
 WebInspector.OverviewGrid.Events = {
-    WindowChanged: "WindowChanged"
+    WindowChanged: "WindowChanged",
+    Click: "Click"
 }
 
 WebInspector.OverviewGrid.Window.prototype = {
@@ -201,17 +193,14 @@ WebInspector.OverviewGrid.Window.prototype = {
         this._overviewWindowBordersElement.style.right = "0%";
         this._leftResizeElement.style.left = "0%";
         this._rightResizeElement.style.left = "100%";
-        this._setEnabled(true);
+        this.setEnabled(true);
     },
 
     /**
      * @param {boolean} enabled
      */
-    _setEnabled: function(enabled)
+    setEnabled: function(enabled)
     {
-        enabled = !!enabled;
-        if (this._enabled === enabled)
-            return;
         this._enabled = enabled;
     },
 
@@ -275,7 +264,10 @@ WebInspector.OverviewGrid.Window.prototype = {
     {
         var window = this._overviewWindowSelector._close(event.x - this._offsetLeft);
         delete this._overviewWindowSelector;
-        if (window.end === window.start) { // Click, not drag.
+        var clickThreshold = 3;
+        if (window.end - window.start < clickThreshold) {
+            if (this.dispatchEventToListeners(WebInspector.OverviewGrid.Events.Click, event))
+                return;
             var middle = window.end;
             window.start = Math.max(0, middle - WebInspector.OverviewGrid.MinSelectableSize / 2);
             window.end = Math.min(this._parentElement.clientWidth, middle + WebInspector.OverviewGrid.MinSelectableSize / 2);

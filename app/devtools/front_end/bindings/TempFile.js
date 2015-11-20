@@ -298,6 +298,9 @@ WebInspector.DeferredTempFile.prototype = {
 
     _writeNextChunk: function()
     {
+        // File was deleted while create or write was in-flight.
+        if (!this._tempFile)
+            return;
         var chunk = this._chunks.shift();
         this._isWriting = true;
         this._tempFile.write(/** @type {!Array.<string>} */(chunk.strings), this._didWriteChunk.bind(this, chunk.callback));
@@ -382,6 +385,7 @@ WebInspector.DeferredTempFile.prototype = {
         }
         if (this._tempFile)
             this._tempFile.remove();
+        this._tempFile = null;
     }
 }
 
@@ -436,4 +440,156 @@ WebInspector.TempFile.ensureTempStorageCleared = function()
     if (!WebInspector.TempFile._storageCleanerPromise)
         WebInspector.TempFile._storageCleanerPromise = new Promise(WebInspector.TempFile._clearTempStorage);
     return WebInspector.TempFile._storageCleanerPromise;
+}
+
+/**
+ * @constructor
+ * @implements {WebInspector.BackingStorage}
+ * @param {string} dirName
+ */
+WebInspector.TempFileBackingStorage = function(dirName)
+{
+    this._dirName = dirName;
+    this.reset();
+}
+
+/**
+ * @typedef {{
+ *      string: ?string,
+ *      startOffset: number,
+ *      endOffset: number
+ * }}
+ */
+WebInspector.TempFileBackingStorage.Chunk;
+
+WebInspector.TempFileBackingStorage.prototype = {
+    /**
+     * @override
+     * @param {string} string
+     */
+    appendString: function(string)
+    {
+        this._strings.push(string);
+        this._stringsLength += string.length;
+        var flushStringLength = 10 * 1024 * 1024;
+        if (this._stringsLength > flushStringLength)
+            this._flush(false);
+    },
+
+    /**
+     * @override
+     * @param {string} string
+     * @return {function():!Promise.<?string>}
+     */
+    appendAccessibleString: function(string)
+    {
+        this._flush(false);
+        this._strings.push(string);
+        var chunk = /** @type {!WebInspector.TempFileBackingStorage.Chunk} */ (this._flush(true));
+
+        /**
+         * @param {!WebInspector.TempFileBackingStorage.Chunk} chunk
+         * @param {!WebInspector.DeferredTempFile} file
+         * @return {!Promise.<?string>}
+         */
+        function readString(chunk, file)
+        {
+            if (chunk.string)
+                return /** @type {!Promise.<?string>} */ (Promise.resolve(chunk.string));
+
+            console.assert(chunk.endOffset);
+            if (!chunk.endOffset)
+                return Promise.reject("Nor string nor offset to the string in the file were found.");
+
+            /**
+             * @param {function(?string)} fulfill
+             * @param {function(*)} reject
+             */
+            function readRange(fulfill, reject)
+            {
+                // FIXME: call reject for null strings.
+                file.readRange(chunk.startOffset, chunk.endOffset, fulfill);
+            }
+
+            return new Promise(readRange);
+        }
+
+        return readString.bind(null, chunk, this._file);
+    },
+
+    /**
+     * @param {boolean} createChunk
+     * @return {?WebInspector.TempFileBackingStorage.Chunk}
+     */
+    _flush: function(createChunk)
+    {
+        if (!this._strings.length)
+            return null;
+
+        var chunk = null;
+        if (createChunk) {
+            console.assert(this._strings.length === 1);
+            chunk = {
+                string: this._strings[0],
+                startOffset: 0,
+                endOffset: 0
+            };
+        }
+
+        /**
+         * @this {WebInspector.TempFileBackingStorage}
+         * @param {?WebInspector.TempFileBackingStorage.Chunk} chunk
+         * @param {number} fileSize
+         */
+        function didWrite(chunk, fileSize)
+        {
+            if (fileSize === -1)
+                return;
+            if (chunk) {
+                chunk.startOffset = this._fileSize;
+                chunk.endOffset = fileSize;
+                chunk.string = null;
+            }
+            this._fileSize = fileSize;
+        }
+
+        this._file.write(this._strings, didWrite.bind(this, chunk));
+        this._strings = [];
+        this._stringsLength = 0;
+        return chunk;
+    },
+
+    /**
+     * @override
+     */
+    finishWriting: function()
+    {
+        this._flush(false);
+        this._file.finishWriting(function() {});
+    },
+
+    /**
+     * @override
+     */
+    reset: function()
+    {
+        if (this._file)
+            this._file.remove();
+        this._file = new WebInspector.DeferredTempFile(this._dirName, String(Date.now()));
+        /**
+         * @type {!Array.<string>}
+         */
+        this._strings = [];
+        this._stringsLength = 0;
+        this._fileSize = 0;
+    },
+
+    /**
+     * @param {!WebInspector.OutputStream} outputStream
+     * @param {!WebInspector.OutputStreamDelegate} delegate
+     */
+    writeToStream: function(outputStream, delegate)
+    {
+        this._file.writeToOutputStream(outputStream, delegate);
+    }
 }

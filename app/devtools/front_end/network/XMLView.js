@@ -4,15 +4,17 @@
 
 /**
  * @constructor
- * @extends {WebInspector.View}
+ * @extends {WebInspector.Widget}
  * @param {!Document} parsedXML
  */
 WebInspector.XMLView = function(parsedXML)
 {
-    WebInspector.View.call(this, true);
+    WebInspector.Widget.call(this, true);
     this.registerRequiredCSS("network/xmlView.css");
     this.contentElement.classList.add("shadow-xml-view", "source-code");
-    WebInspector.XMLView.Node.populate(new TreeOutline(this.contentElement.createChild("ol")), parsedXML);
+    var treeOutline = new TreeOutline();
+    this.contentElement.appendChild(treeOutline.element);
+    WebInspector.XMLView.Node.populate(treeOutline, parsedXML);
 }
 
 /**
@@ -34,7 +36,7 @@ WebInspector.XMLView.parseXML = function(text, mimeType)
 }
 
 WebInspector.XMLView.prototype = {
-    __proto__: WebInspector.View.prototype
+    __proto__: WebInspector.Widget.prototype
 }
 
 /**
@@ -45,12 +47,10 @@ WebInspector.XMLView.prototype = {
  */
 WebInspector.XMLView.Node = function(node, closeTag)
 {
-    TreeElement.call(this, "", null, true);
+    TreeElement.call(this, "", !closeTag && !!node.childElementCount);
     this._node = node;
     this._closeTag = closeTag;
-    this._populated = false;
     this.selectable = false;
-    this.hasChildren = !closeTag && !!node.childElementCount;
     this._updateTitle();
 }
 
@@ -161,11 +161,8 @@ WebInspector.XMLView.Node.prototype = {
 
     onpopulate: function()
     {
-        if (this._populated || this._closeTag)
-            return;
         WebInspector.XMLView.Node.populate(this, this._node);
         this.appendChild(new WebInspector.XMLView.Node(this._node, true));
-        this._populated = true;
     },
 
     __proto__: TreeElement.prototype

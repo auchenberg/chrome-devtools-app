@@ -14,7 +14,7 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    -webkit-padding-start: 16px; /* step width + arrow width */
+    -webkit-padding-start: 16px;/* step width + arrow width */
 }
 
 .shadow-xml-view > ol {
@@ -25,20 +25,18 @@
     display: none;
 }
 
-.shadow-xml-view li {
-  display: flex;
-  align-items: center;
-}
-
 .shadow-xml-view li.parent::before {
-  -webkit-user-select: none;
-  -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-  -webkit-mask-size: 320px 144px;
-  -webkit-mask-position: -4px -97px;
-  background-color: rgb(110, 110, 110);
-  content: "";
-  width: 10px; /* arrow width */
-  height: 10px;
+    -webkit-user-select: none;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
+    -webkit-mask-position: -4px -97px;
+    background-color: rgb(110, 110, 110);
+    content: " ";
+    width: 10px;/* arrow width */
+    height: 10px;
+    display: inline-block;
+    position: relative;
+    top: 2px;
 }
 
 .shadow-xml-view li.parent.expanded::before {
@@ -47,7 +45,7 @@
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .shadow-xml-view li.parent::before {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 

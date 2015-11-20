@@ -5,13 +5,13 @@
 WebInspector.DebuggerPresentationUtils = {}
 
 /**
- * @param {?WebInspector.Target} target
+ * @param {?WebInspector.DebuggerModel} debuggerModel
  * @param {!Array.<!ConsoleAgent.CallFrame>=} stackTrace
  * @param {!ConsoleAgent.AsyncStackTrace=} asyncStackTrace
  * @param {boolean=} showBlackboxed
  * @return {?ConsoleAgent.CallFrame}
  */
-WebInspector.DebuggerPresentationUtils.callFrameAnchorFromStackTrace = function(target, stackTrace, asyncStackTrace, showBlackboxed)
+WebInspector.DebuggerPresentationUtils.callFrameAnchorFromStackTrace = function(debuggerModel, stackTrace, asyncStackTrace, showBlackboxed)
 {
     /**
      * @param {?Array.<!ConsoleAgent.CallFrame>=} stackTrace
@@ -24,7 +24,7 @@ WebInspector.DebuggerPresentationUtils.callFrameAnchorFromStackTrace = function(
         if (showBlackboxed)
             return stackTrace[0];
         for (var i = 0; i < stackTrace.length; ++i) {
-            var script = target && target.debuggerModel.scriptForId(stackTrace[i].scriptId);
+            var script = debuggerModel && debuggerModel.scriptForId(stackTrace[i].scriptId);
             var blackboxed = script ?
                 WebInspector.BlackboxSupport.isBlackboxed(script.sourceURL, script.isContentScript()) :
                 WebInspector.BlackboxSupport.isBlackboxedURL(stackTrace[i].url);

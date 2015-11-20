@@ -27,6 +27,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+.panel.network > .toolbar {
+    position: relative;
+    border-bottom: 1px solid #dadada;
+}
+
 .network-details-view {
     background: rgb(203, 203, 203);
 }
@@ -35,33 +40,17 @@
     margin: auto -1px auto 4px;
 }
 
-.network-details-view .network-item-view::shadow .tabbed-pane-header {
-    flex: 0 0 23px;
-    padding-top: 0;
-    white-space: nowrap;
-}
-
-.network-details-view-tall-header .network-item-view::shadow .tabbed-pane-header {
-    flex-basis: 31px;
-    padding-top: 8px;
+.network-details-view-tall-header {
+    margin-top: 4px;
 }
 
 .network-item-view {
-    display: none;
+    display: flex;
     background: white;
 }
 
-.network-item-view.visible {
-    display: flex;
-}
-
-.network-item-view::shadow .tabbed-pane-header {
-    border-bottom: 1px solid rgb(205, 205, 205);
-    background-color: transparent;
-}
-
 .resource-timing-view {
-    display: none;
+    display: block;
     margin: 6px;
     color: rgb(30%, 30%, 30%);
 }
@@ -130,6 +119,7 @@
     text-align: right;
 }
 
+.network-timing-bar.queueing,
 .network-timing-bar.total {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -177,22 +167,52 @@
     margin: auto;
 }
 
-.resource-timing-view.visible {
-    display: block;
-}
-
 .resource-timing-view .network-timing-table {
     width: 100%;
 }
 
-.network-filters-header {
-    flex: 0 0 23px;
-    padding-right: 4px;
+#network-overview-panel {
+    flex: none;
+    position: relative;
 }
 
-.network-filters-header .filter-text-filter {
-    flex-grow: 1;
-    max-width: 312px;
+#network-overview-container {
+    overflow: hidden;
+    flex: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-bottom: 1px solid #CDCDCD;
+}
+
+#network-overview-container canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#network-overview-grid .resources-dividers-label-bar {
+    pointer-events: auto;
+}
+
+.network .network-overview {
+    flex: 0 0 60px;
+}
+
+.network-overview .overview-grid-window,
+.network-overview .overview-grid-dividers-background {
+    height: 100%;
+}
+
+.network-overview .resources-dividers-label-bar {
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+.network-overview .resources-dividers-label-bar .resources-divider {
+    background-color: transparent;
+}
+
+.network-overview .resources-dividers {
+    z-index: 250;
 }
 
 .request-view.json {
@@ -203,4 +223,14 @@
     width: 100%;
     height: 100%;
     position: absolute;
+}
+
+.network-film-strip {
+    border-bottom: solid 1px #cdcdcd;
+    flex: none !important;
+}
+
+.network-blocked-urls {
+    border-top: 1px solid #dadada;
+    flex: 104px 0 0;
 }

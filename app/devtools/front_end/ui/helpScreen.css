@@ -33,7 +33,7 @@
 .help-content {
     overflow-y: auto;
     overflow-x: hidden;
-    margin: 8px;
+    margin: 8px 8px 8px 0;
     padding: 0 4px;
     flex: auto;
 }
@@ -80,26 +80,10 @@ body.dock-to-bottom .help-content {
     margin-bottom: 8px;
 }
 
-.platform-mac .help-window-main .tabbed-pane-header-contents {
-    margin-left: 27px;
-}
-
-.platform-mac .help-window-main .help-window-title {
-    margin-left: 18px;
-}
-
 .help-container {
     width: 100%;
     -webkit-user-select: auto;
-    -webkit-column-width: 470px;
-}
-
-.platform-mac .settings-tab .help-container {
-    -webkit-column-width: 430px;
-}
-
-.platform-mac .help-container {
-    -webkit-column-width: 361px;
+    -webkit-column-width: 288px;
 }
 
 .help-no-columns {
@@ -109,20 +93,15 @@ body.dock-to-bottom .help-content {
 .help-block {
     display: block;
     padding-bottom: 9px;
-    width: 470px;
+    width: 288px;
     -webkit-column-break-inside: avoid;
 }
 
-.platform-mac .settings-tab .help-block {
-    width: 430px;
-}
-
 .settings-tab.help-container {
-    -webkit-column-width: 410px;
+    -webkit-column-width: 308px;
 }
 
 .settings-tab .help-block {
-    width: 410px;
     margin-left: 20px;
 }
 
@@ -138,22 +117,22 @@ body.dock-to-bottom .help-content {
 
 .help-key-cell {
     display: inline-block;
-    width: 270px;
+    width: 153px;
+    white-space: nowrap;
     text-align: right;
-}
-
-.platform-mac .help-key-cell {
-    width: 151px;
+    vertical-align: middle;
+    padding-right: 6px;
 }
 
 .help-cell {
     display: inline-block;
-    width: 200px;
+    width: 135px;
     vertical-align: middle;
 }
 
 .help-section-title {
     font-size: 120%;
+    text-align: left;
 }
 
 .help-key {
@@ -169,9 +148,6 @@ body.dock-to-bottom .help-content {
     text-shadow: 0 1px 0 #fff;
     line-height: 1.5;
     white-space: nowrap;
-}
-
-.platform-mac .help-key {
     font-family: Lucida Grande, sans-serif;
 }
 
@@ -186,6 +162,7 @@ body.dock-to-bottom .help-content {
 
 .help-key-delimiter {
     margin: 0 0.5em;
+    display: none;
 }
 
 .help-window-outer fieldset {
@@ -254,7 +231,7 @@ body.dock-to-bottom .help-content {
 .help-container-wrapper {
     position: absolute;
     top: 40px;
-    left: 15px;
+    left: 0px;
     right: 0;
     bottom: 0;
     overflow: auto;
@@ -287,16 +264,13 @@ body.dock-to-bottom .help-content {
     border-bottom: 1px solid #EEEEEE;
 }
 
-#tab-shortcuts {
-    margin-top: 25px !important;
-}
-
 #experiments-tab-content .help-container {
     -webkit-column-width: 470px;
 }
 
 #experiments-tab-content .help-block {
     width: 470px;
+    margin-left: 0;
 }
 
 .settings-tab-container header > h3 {
@@ -334,156 +308,6 @@ body.dock-to-bottom .help-content {
 
 #workspace-tab-content .button:hover {
     opacity: 1.0 !important;
-}
-
-#devices-tab-content .settings-tab.help-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    height: 100%;
-    margin: 0;
-}
-
-#devices-tab-content .devices-title {
-    font-size: 120%;
-    color: #222;
-    flex: none;
-}
-
-#devices-tab-content .devices-button-row {
-    flex: none;
-    display: flex;
-}
-
-#devices-tab-content .devices-button-row button {
-    margin-right: 10px;
-    min-width: 120px;
-    flex: none;
-}
-
-#devices-tab-content .devices-list {
-    width: 350px;
-    overflow-y: auto;
-    margin: 10px 0;
-    border: 1px solid rgb(231, 231, 231);
-    flex: auto 0 1;
-}
-
-#devices-tab-content .devices-custom-separator {
-    background: rgb(231, 231, 231);
-    height: 1px;
-}
-
-#devices-tab-content .devices-list-item {
-    padding: 3px 0 3px 10px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-}
-
-#devices-tab-content .devices-list-item:hover {
-    background: hsl(0, 0%, 85%);
-}
-
-#devices-tab-content .devices-list-checkbox {
-    height: 12px;
-    width: 12px;
-    margin: 3px 5px 2px 2px;
-    flex: none;
-    pointer-events: none;
-}
-
-#devices-tab-content .devices-list-title {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    flex: auto;
-    -webkit-user-select: none;
-    color: #aaa;
-}
-
-#devices-tab-content .device-list-item-show .devices-list-title {
-    color: #222;
-}
-
-#devices-tab-content .devices-list-remove,
-#devices-tab-content .devices-list-edit {
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
-    width: 32px;
-    height: 24px;
-    opacity: 0.5;
-    cursor: pointer;
-    flex: none;
-    visibility: hidden;
-}
-
-#devices-tab-content .devices-list:not(.devices-list-editing) .devices-list-item:hover .devices-list-remove,
-#devices-tab-content .devices-list-item:hover .devices-list-edit {
-    visibility: visible;
-}
-
-#devices-tab-content .devices-list-remove:hover,
-#devices-tab-content .devices-list-edit:hover {
-    opacity: 0.7;
-}
-
-@media (-webkit-min-device-pixel-ratio: 1.5) {
-#devices-tab-content .devices-list-remove,
-#devices-tab-content .devices-list-edit {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
-}
-} /* media */
-
-#devices-tab-content .devices-list-remove {
-    background-position: -128px -24px;
-}
-
-#devices-tab-content .devices-list-edit {
-    background-position: -224px -72px;
-}
-
-#devices-tab-content .devices-edit-container {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    flex: none;
-    padding: 10px 20px 0 10px;
-    background: hsl(0, 0%, 95%);
-}
-
-#devices-tab-content .devices-edit-checkbox {
-    height: 12px;
-    width: 12px;
-    margin: 3px 5px 2px 2px;
-    flex: none;
-    cursor: pointer;
-}
-
-#devices-tab-content .devices-edit-fields {
-    flex: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-}
-
-#devices-tab-content .devices-edit-fields input {
-    margin-right: 10px;
-}
-
-#devices-tab-content .devices-edit-fields input.error-input {
-    outline: auto 2px red;
-    background-color: white;
-}
-
-#devices-tab-content .devices-edit-fields > * {
-    flex: none;
-    margin-bottom: 10px;
-}
-
-#devices-tab-content .devices-edit-buttons > button {
-    margin-right: 10px;
 }
 
 .settings-tab .settings-list-container {

@@ -1,12 +1,33 @@
 {
     "extensions": [
         {
-            "type": "ui-setting",
-            "section": "Console",
+            "type": "setting",
+            "category": "Console",
             "title": "Enable custom formatters",
-            "settingName": "enableCustomFormatters",
-            "settingType": "checkbox",
-            "experiment": "customObjectFormatters"
+            "settingName": "customFormatters",
+            "settingType": "boolean",
+            "defaultValue": false
+        },
+        {
+            "type": "@WebInspector.DOMPresentationUtils.MarkerDecorator",
+            "className": "WebInspector.DOMBreakpointsSidebarPane.MarkerDecorator",
+            "marker": "breakpoint-marker"
+        },
+        {
+            "type": "setting",
+            "settingName": "networkConditionsCustomProfiles",
+            "settingType": "array",
+            "defaultValue": []
+        },
+        {
+            "type": "settings-view",
+            "name": "network-conditions",
+            "title": "Throttling",
+            "order": "35",
+            "className": "WebInspector.NetworkConditionsSettingsTab",
+            "settings": [
+                "networkConditionsCustomProfiles"
+            ]
         }
     ],
     "dependencies": [
@@ -15,22 +36,36 @@
         "ui"
     ],
     "scripts": [
-        "NativeBreakpointsSidebarPane.js",
+        "BreakpointsSidebarPaneBase.js",
+        "CustomPreviewSection.js",
+        "DataSaverInfobar.js",
         "DebuggerPresentationUtils.js",
         "DOMBreakpointsSidebarPane.js",
         "DOMPresentationUtils.js",
         "DockController.js",
         "Drawer.js",
         "ExecutionContextSelector.js",
+        "ExecutionContextModel.js",
         "HandlerRegistry.js",
         "InspectElementModeController.js",
         "InspectorView.js",
+        "Linkifier.js",
+        "NetworkConditionsSelector.js",
         "ObjectPopoverHelper.js",
         "ObjectPropertiesSection.js",
-        "ShortcutsScreen.js"
+        "RemoteObjectPreviewFormatter.js",
+        "ShortcutsScreen.js",
+        "EventListenersUtils.js",
+        "EventListenersView.js"
     ],
-    "stylesheets": [
+    "resources": [
         "breakpointsList.css",
-        "nodeLink.css"
+        "customPreviewSection.css",
+        "eventListenersView.css",
+        "domUtils.css",
+        "inspectorViewTabbedPane.css",
+        "networkConditionsSettingsTab.css",
+        "objectPropertiesSection.css",
+        "objectValue.css"
     ]
 }

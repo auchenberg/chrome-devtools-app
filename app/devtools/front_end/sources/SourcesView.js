@@ -17,7 +17,7 @@ WebInspector.SourcesView = function(workspace, sourcesPanel)
     WebInspector.VBox.call(this);
     this.registerRequiredCSS("sources/sourcesView.css");
     this.element.id = "sources-panel-sources-view";
-    this.setMinimumAndPreferredSizes(50, 25, 150, 100);
+    this.setMinimumAndPreferredSizes(50, 52, 150, 100);
 
     this._workspace = workspace;
     this._sourcesPanel = sourcesPanel;
@@ -30,15 +30,15 @@ WebInspector.SourcesView = function(workspace, sourcesPanel)
     this._sourceFramesByUISourceCode = new Map();
 
     var tabbedEditorPlaceholderText = WebInspector.isMac() ? WebInspector.UIString("Hit Cmd+P to open a file") : WebInspector.UIString("Hit Ctrl+P to open a file");
-    this._editorContainer = new WebInspector.TabbedEditorContainer(this, "previouslyViewedFiles", tabbedEditorPlaceholderText);
+    this._editorContainer = new WebInspector.TabbedEditorContainer(this, WebInspector.settings.createLocalSetting("previouslyViewedFiles", []), tabbedEditorPlaceholderText);
     this._editorContainer.show(this._searchableView.element);
     this._editorContainer.addEventListener(WebInspector.TabbedEditorContainer.Events.EditorSelected, this._editorSelected, this);
     this._editorContainer.addEventListener(WebInspector.TabbedEditorContainer.Events.EditorClosed, this._editorClosed, this);
 
     this._historyManager = new WebInspector.EditingLocationHistoryManager(this, this.currentSourceFrame.bind(this));
 
-    this._statusBarContainerElement = this.element.createChild("div", "sources-status-bar");
-    this._statusBarEditorActions = new WebInspector.StatusBar(this._statusBarContainerElement);
+    this._toolbarContainerElement = this.element.createChild("div", "sources-toolbar");
+    this._toolbarEditorActions = new WebInspector.Toolbar(this._toolbarContainerElement);
 
     self.runtime.instancesPromise(WebInspector.SourcesView.EditorAction).then(appendButtonsForExtensions.bind(this));
     /**
@@ -48,9 +48,9 @@ WebInspector.SourcesView = function(workspace, sourcesPanel)
     function appendButtonsForExtensions(actions)
     {
         for (var i = 0; i < actions.length; ++i)
-            this._statusBarEditorActions.appendStatusBarItem(actions[i].button(this));
+            this._toolbarEditorActions.appendToolbarItem(actions[i].button(this));
     }
-    this._scriptViewStatusBarText = new WebInspector.StatusBar(this._statusBarContainerElement);
+    this._scriptViewToolbarText = new WebInspector.Toolbar(this._toolbarContainerElement);
 
     WebInspector.startBatchUpdate();
     this._workspace.uiSourceCodes().forEach(this._addUISourceCode.bind(this));
@@ -91,7 +91,7 @@ WebInspector.SourcesView.Events = {
  */
 WebInspector.SourcesView.uiSourceCodeHighlighterType = function(uiSourceCode)
 {
-    var networkContentType = WebInspector.networkProject.uiSourceCodeContentType(uiSourceCode);
+    var networkContentType = WebInspector.NetworkProject.uiSourceCodeContentType(uiSourceCode);
     if (networkContentType)
         return networkContentType.canonicalMimeType();
 
@@ -160,9 +160,9 @@ WebInspector.SourcesView.prototype = {
     /**
      * @return {!Element}
      */
-    statusBarContainerElement: function()
+    toolbarContainerElement: function()
     {
-        return this._statusBarContainerElement;
+        return this._toolbarContainerElement;
     },
 
     /**
@@ -183,7 +183,7 @@ WebInspector.SourcesView.prototype = {
     },
 
     /**
-     * @return {!WebInspector.View}
+     * @return {!WebInspector.Widget}
      */
     visibleView: function()
     {
@@ -295,15 +295,15 @@ WebInspector.SourcesView.prototype = {
             this._editorContainer.reset();
     },
 
-    _updateScriptViewStatusBarItems: function()
+    _updateScriptViewToolbarItems: function()
     {
-        this._scriptViewStatusBarText.removeStatusBarItems();
+        this._scriptViewToolbarText.removeToolbarItems();
         var sourceFrame = this.currentSourceFrame();
         if (!sourceFrame)
             return;
 
-        var statusBarText = sourceFrame.statusBarText();
-        this._scriptViewStatusBarText.appendStatusBarItem(statusBarText);
+        var toolbarText = sourceFrame.toolbarText();
+        this._scriptViewToolbarText.appendToolbarItem(toolbarText);
     },
 
     /**
@@ -322,11 +322,6 @@ WebInspector.SourcesView.prototype = {
         this._historyManager.pushNewState();
         if (!omitFocus)
             sourceFrame.focus();
-        WebInspector.notifications.dispatchEventToListeners(WebInspector.UserMetrics.UserAction, {
-            action: WebInspector.UserMetrics.UserActionNames.OpenSourceLink,
-            url: uiSourceCode.originURL(),
-            lineNumber: lineNumber
-        });
     },
 
     /**
@@ -341,7 +336,7 @@ WebInspector.SourcesView.prototype = {
 
         this._currentUISourceCode = uiSourceCode;
         this._editorContainer.showFile(uiSourceCode);
-        this._updateScriptViewStatusBarItems();
+        this._updateScriptViewToolbarItems();
         return sourceFrame;
     },
 
@@ -444,10 +439,13 @@ WebInspector.SourcesView.prototype = {
         delete this._executionSourceFrame;
     },
 
-    setExecutionLine: function(uiLocation)
+    /**
+     * @param {!WebInspector.UILocation} uiLocation
+     */
+    setExecutionLocation: function(uiLocation)
     {
         var sourceFrame = this._getOrCreateSourceFrame(uiLocation.uiSourceCode);
-        sourceFrame.setExecutionLine(uiLocation.lineNumber);
+        sourceFrame.setExecutionLocation(uiLocation);
         this._executionSourceFrame = sourceFrame;
     },
 
@@ -463,7 +461,7 @@ WebInspector.SourcesView.prototype = {
         }
 
         // SourcesNavigator does not need to update on EditorClosed.
-        this._updateScriptViewStatusBarItems();
+        this._updateScriptViewToolbarItems();
         this._searchableView.resetSearch();
 
         var data = {};
@@ -526,7 +524,7 @@ WebInspector.SourcesView.prototype = {
         this._searchConfig = searchConfig;
 
         /**
-         * @param {!WebInspector.View} view
+         * @param {!WebInspector.Widget} view
          * @param {number} searchMatches
          * @this {WebInspector.SourcesView}
          */
@@ -653,10 +651,10 @@ WebInspector.SourcesView.prototype = {
         switch (uiSourceCode.contentType()) {
         case WebInspector.resourceTypes.Document:
         case WebInspector.resourceTypes.Script:
-            WebInspector.JavaScriptOutlineDialog.show(this, uiSourceCode, this.showSourceLocation.bind(this, uiSourceCode));
+            WebInspector.JavaScriptOutlineDialog.show(uiSourceCode, this.showSourceLocation.bind(this, uiSourceCode));
             return true;
         case WebInspector.resourceTypes.Stylesheet:
-            WebInspector.StyleSheetOutlineDialog.show(this, uiSourceCode, this.showSourceLocation.bind(this, uiSourceCode));
+            WebInspector.StyleSheetOutlineDialog.show(uiSourceCode, this.showSourceLocation.bind(this, uiSourceCode));
             return true;
         default:
             // We don't want default browser shortcut to be executed, so pretend to handle this event.
@@ -674,7 +672,7 @@ WebInspector.SourcesView.prototype = {
         var defaultScores = new Map();
         for (var i = 1; i < uiSourceCodes.length; ++i) // Skip current element
             defaultScores.set(uiSourceCodes[i], uiSourceCodes.length - i);
-        WebInspector.OpenResourceDialog.show(this, this.element, query, defaultScores);
+        WebInspector.OpenResourceDialog.show(this, query, defaultScores);
     },
 
     /**
@@ -757,7 +755,7 @@ WebInspector.SourcesView.EditorAction = function()
 WebInspector.SourcesView.EditorAction.prototype = {
     /**
      * @param {!WebInspector.SourcesView} sourcesView
-     * @return {!WebInspector.StatusBarButton}
+     * @return {!WebInspector.ToolbarButton}
      */
     button: function(sourcesView) { }
 }
@@ -810,20 +808,18 @@ WebInspector.SourcesView.SwitchFileActionDelegate._nextFile = function(currentUI
 WebInspector.SourcesView.SwitchFileActionDelegate.prototype = {
     /**
      * @override
-     * @return {boolean}
+     * @param {!WebInspector.Context} context
+     * @param {string} actionId
      */
-    handleAction: function()
+    handleAction: function(context, actionId)
     {
         var sourcesView = WebInspector.context.flavor(WebInspector.SourcesView);
-        if (!sourcesView)
-            return false;
         var currentUISourceCode = sourcesView.currentUISourceCode();
         if (!currentUISourceCode)
-            return true;
+            return;
         var nextUISourceCode = WebInspector.SourcesView.SwitchFileActionDelegate._nextFile(currentUISourceCode);
         if (!nextUISourceCode)
-            return true;
+            return;
         sourcesView.showSourceLocation(nextUISourceCode);
-        return true;
     }
 }

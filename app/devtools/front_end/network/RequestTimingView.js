@@ -73,6 +73,7 @@ WebInspector.RequestTimingView.prototype = {
 
 /** @enum {string} */
 WebInspector.RequestTimeRangeNames = {
+    Queueing: "queueing",
     Blocking: "blocking",
     Connecting: "connecting",
     DNS: "dns",
@@ -87,6 +88,7 @@ WebInspector.RequestTimeRangeNames = {
 };
 
 WebInspector.RequestTimingView.ConnectionSetupRangeNames = [
+    WebInspector.RequestTimeRangeNames.Queueing,
     WebInspector.RequestTimeRangeNames.Blocking,
     WebInspector.RequestTimeRangeNames.Connecting,
     WebInspector.RequestTimeRangeNames.DNS,
@@ -104,6 +106,7 @@ WebInspector.RequestTimeRange;
 WebInspector.RequestTimingView._timeRangeTitle = function(name)
 {
     switch (name) {
+    case WebInspector.RequestTimeRangeNames.Queueing: return WebInspector.UIString("Queueing");
     case WebInspector.RequestTimeRangeNames.Blocking: return WebInspector.UIString("Stalled");
     case WebInspector.RequestTimeRangeNames.Connecting: return WebInspector.UIString("Initial connection");
     case WebInspector.RequestTimeRangeNames.DNS: return WebInspector.UIString("DNS Lookup");
@@ -177,12 +180,14 @@ WebInspector.RequestTimingView.calculateRequestTimeRanges = function(request)
     var endTime = firstPositive([request.endTime, request.responseReceivedTime]) || startTime;
 
     addRange(WebInspector.RequestTimeRangeNames.Total, issueTime < startTime ? issueTime : startTime, endTime);
+    if (issueTime < startTime)
+        addRange(WebInspector.RequestTimeRangeNames.Queueing, issueTime, startTime);
 
     if (request.fetchedViaServiceWorker) {
-        addOffsetRange(WebInspector.RequestTimeRangeNames.Blocking, 0, timing.serviceWorkerFetchStart);
-        addOffsetRange(WebInspector.RequestTimeRangeNames.ServiceWorker, timing.serviceWorkerFetchStart, timing.serviceWorkerFetchEnd);
-        addOffsetRange(WebInspector.RequestTimeRangeNames.ServiceWorkerPreparation, timing.serviceWorkerFetchStart, timing.serviceWorkerFetchReady);
-        addOffsetRange(WebInspector.RequestTimeRangeNames.Waiting, timing.serviceWorkerFetchEnd, timing.receiveHeadersEnd);
+        addOffsetRange(WebInspector.RequestTimeRangeNames.Blocking, 0, timing.workerStart);
+        addOffsetRange(WebInspector.RequestTimeRangeNames.ServiceWorkerPreparation, timing.workerStart, timing.workerReady);
+        addOffsetRange(WebInspector.RequestTimeRangeNames.ServiceWorker, timing.workerReady, timing.sendEnd);
+        addOffsetRange(WebInspector.RequestTimeRangeNames.Waiting, timing.sendEnd, timing.receiveHeadersEnd);
     } else {
         var blocking = firstPositive([timing.dnsStart, timing.connectStart, timing.sendStart]) || 0;
         addOffsetRange(WebInspector.RequestTimeRangeNames.Blocking, 0, blocking);
@@ -270,7 +275,7 @@ WebInspector.RequestTimingView.createTimingTable = function(request, navigationS
     var footer = tableElement.createChild("tr", "network-timing-footer");
     var note = footer.createChild("td");
     note.colSpan = 2;
-    note.appendChild(WebInspector.createDocumentationAnchor("network#resource-network-timing", WebInspector.UIString("Explanation")));
+    note.appendChild(WebInspector.linkifyDocumentationURLAsNode("profile-performance/network-performance/resource-loading#resource-network-timing", WebInspector.UIString("Explanation")));
     footer.createChild("td").createTextChild(Number.secondsToString(totalDuration, true));
 
     return tableElement;

@@ -177,7 +177,7 @@ WebInspector.PaintProfilerSnapshot.prototype = {
 };
 
 /**
- * @typedef {!{method: string, params: Array.<Object.<string, *>>}}
+ * @typedef {!{method: string, params: ?Array.<!Object.<string, *>>}}
  */
 WebInspector.RawPaintProfilerLogItem;
 

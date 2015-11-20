@@ -60,3 +60,8 @@
     white-space: nowrap;
     pointer-events: none;
 }
+
+.timeline-grid-header {
+    height: 20px;
+    pointer-events: none;
+}

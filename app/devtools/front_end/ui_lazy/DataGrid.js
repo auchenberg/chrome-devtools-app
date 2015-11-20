@@ -25,7 +25,7 @@
 
 /**
  * @constructor
- * @extends {WebInspector.View}
+ * @extends {WebInspector.Widget}
  * @param {!Array.<!WebInspector.DataGrid.ColumnDescriptor>} columnsArray
  * @param {function(!WebInspector.DataGridNode, string, string, string)=} editCallback
  * @param {function(!WebInspector.DataGridNode)=} deleteCallback
@@ -34,7 +34,7 @@
  */
 WebInspector.DataGrid = function(columnsArray, editCallback, deleteCallback, refreshCallback, contextMenuCallback)
 {
-    WebInspector.View.call(this);
+    WebInspector.Widget.call(this);
     this.registerRequiredCSS("ui_lazy/dataGrid.css");
 
     this.element.className = "data-grid"; // Override
@@ -81,9 +81,9 @@ WebInspector.DataGrid = function(columnsArray, editCallback, deleteCallback, ref
     this._dataTableColumnGroup = createElement("colgroup");
 
     /** @type {!Element} */
-    this._topFillerRow = createElementWithClass("tr", "revealed");
+    this._topFillerRow = createElementWithClass("tr", "data-grid-filler-row revealed");
     /** @type {!Element} */
-    this._bottomFillerRow = createElementWithClass("tr", "revealed");
+    this._bottomFillerRow = createElementWithClass("tr", "data-grid-filler-row revealed");
     this.setVerticalPadding(0, 0);
 
     /** @type {!Array.<!WebInspector.DataGrid.ColumnDescriptor>} */
@@ -105,7 +105,7 @@ WebInspector.DataGrid = function(columnsArray, editCallback, deleteCallback, ref
 
         var cell = createElement("th");
         cell.className = columnIdentifier + "-column";
-        cell.columnIdentifier = columnIdentifier;
+        cell.columnIdentifier = String(columnIdentifier);
         this._headerTableHeaders[columnIdentifier] = cell;
 
         var div = createElement("div");
@@ -158,7 +158,7 @@ WebInspector.DataGrid = function(columnsArray, editCallback, deleteCallback, ref
 // Keep in sync with .data-grid col.corner style rule.
 WebInspector.DataGrid.CornerWidth = 14;
 
-/** @typedef {!{id: ?string, editable: boolean, longText: ?boolean, sort: !WebInspector.DataGrid.Order, sortable: boolean, align: !WebInspector.DataGrid.Align}} */
+/** @typedef {!{id: ?string, editable: boolean, longText: ?boolean, sort: !WebInspector.DataGrid.Order, sortable: boolean, align: !WebInspector.DataGrid.Align, nonSelectable: boolean}} */
 WebInspector.DataGrid.ColumnDescriptor;
 
 WebInspector.DataGrid.Events = {
@@ -208,7 +208,7 @@ WebInspector.DataGrid.prototype = {
             }
             this._headerRow.appendChild(this._headerTableHeaders[columnIdentifier]);
             this._topFillerRow.createChild("td", "top-filler-td");
-            this._bottomFillerRow.createChild("td", "bottom-filler-td");
+            this._bottomFillerRow.createChild("td", "bottom-filler-td").columnIdentifier_ = columnIdentifier;
         }
 
         this._headerRow.createChild("th", "corner");
@@ -901,6 +901,10 @@ WebInspector.DataGrid.prototype = {
         if (gridNode.isEventWithinDisclosureTriangle(event))
             return;
 
+        var columnIdentifier = this.columnIdentifierFromNode(event.target);
+        if (columnIdentifier && this._columns[columnIdentifier].nonSelectable)
+            return;
+
         if (event.metaKey) {
             if (gridNode.selected)
                 gridNode.deselect();
@@ -1066,7 +1070,7 @@ WebInspector.DataGrid.prototype = {
 
     CenterResizerOverBorderAdjustment: 3,
 
-    __proto__: WebInspector.View.prototype
+    __proto__: WebInspector.Widget.prototype
 }
 
 /** @enum {string} */
@@ -1325,6 +1329,12 @@ WebInspector.DataGridNode.prototype = {
         if (alignment)
             cell.classList.add(alignment);
 
+        if (columnIdentifier === this.dataGrid.disclosureColumnIdentifier) {
+            cell.classList.add("disclosure");
+            if (this.leftPadding)
+                cell.style.setProperty("padding-left", this.leftPadding + "px");
+        }
+
         return cell;
     },
 
@@ -1343,12 +1353,6 @@ WebInspector.DataGridNode.prototype = {
             cell.textContent = data;
             if (this.dataGrid._columns[columnIdentifier].longText)
                 cell.title = data;
-        }
-
-        if (columnIdentifier === this.dataGrid.disclosureColumnIdentifier) {
-            cell.classList.add("disclosure");
-            if (this.leftPadding)
-                cell.style.setProperty("padding-left", this.leftPadding + "px");
         }
 
         return cell;

@@ -6,20 +6,20 @@
 
 /**
  * @constructor
- * @extends {WebInspector.SplitView}
+ * @extends {WebInspector.SplitWidget}
  */
 WebInspector.TimelineLayersView = function()
 {
-    WebInspector.SplitView.call(this, true, false, "timelineLayersView");
+    WebInspector.SplitWidget.call(this, true, false, "timelineLayersView");
     this.element.classList.add("timeline-layers-view");
-    this._rightSplitView = new WebInspector.SplitView(true, true, "timelineLayersViewDetails");
-    this._rightSplitView.element.classList.add("timeline-layers-view-properties");
-    this.setMainView(this._rightSplitView);
+    this._rightSplitWidget = new WebInspector.SplitWidget(true, true, "timelineLayersViewDetails");
+    this._rightSplitWidget.element.classList.add("timeline-layers-view-properties");
+    this.setMainWidget(this._rightSplitWidget);
 
     this._paintTiles = [];
 
     var vbox = new WebInspector.VBox();
-    this.setSidebarView(vbox);
+    this.setSidebarWidget(vbox);
 
     this._layerViewHost = new WebInspector.LayerViewHost();
 
@@ -28,10 +28,10 @@ WebInspector.TimelineLayersView = function()
 
     this._layers3DView = new WebInspector.Layers3DView(this._layerViewHost);
     this._layers3DView.addEventListener(WebInspector.Layers3DView.Events.PaintProfilerRequested, this._jumpToPaintEvent, this);
-    this._rightSplitView.setMainView(this._layers3DView);
+    this._rightSplitWidget.setMainWidget(this._layers3DView);
 
     var layerDetailsView = new WebInspector.LayerDetailsView(this._layerViewHost);
-    this._rightSplitView.setSidebarView(layerDetailsView);
+    this._rightSplitWidget.setSidebarWidget(layerDetailsView);
     layerDetailsView.addEventListener(WebInspector.LayerDetailsView.Events.PaintProfilerRequested, this._jumpToPaintEvent, this);
 
 }
@@ -151,5 +151,5 @@ WebInspector.TimelineLayersView.prototype = {
         this._paintTiles = [];
     },
 
-    __proto__: WebInspector.SplitView.prototype
+    __proto__: WebInspector.SplitWidget.prototype
 }

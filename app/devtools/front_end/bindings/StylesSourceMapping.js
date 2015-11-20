@@ -50,7 +50,7 @@ WebInspector.StylesSourceMapping = function(cssModel, workspace, networkMapping)
     this._initialize();
 }
 
-WebInspector.StylesSourceMapping.MinorChangeUpdateTimeoutMs = 1000;
+WebInspector.StylesSourceMapping.ChangeUpdateTimeoutMs = 200;
 
 WebInspector.StylesSourceMapping.prototype = {
     /**
@@ -60,11 +60,17 @@ WebInspector.StylesSourceMapping.prototype = {
      */
     rawLocationToUILocation: function(rawLocation)
     {
-        var location = /** @type WebInspector.CSSLocation */ (rawLocation);
-        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(location.url);
+        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(rawLocation.url, rawLocation.target());
         if (!uiSourceCode)
             return null;
-        return uiSourceCode.uiLocation(location.lineNumber, location.columnNumber);
+        var lineNumber = rawLocation.lineNumber;
+        var columnNumber = rawLocation.columnNumber;
+        var header = this._cssModel.styleSheetHeaderForId(rawLocation.styleSheetId);
+        if (header && header.isInline && header.hasSourceURL) {
+            lineNumber -= header.lineNumberInSource(0);
+            columnNumber -= header.columnNumberInSource(lineNumber, 0);
+        }
+        return uiSourceCode.uiLocation(lineNumber, columnNumber);
     },
 
     /**
@@ -72,12 +78,11 @@ WebInspector.StylesSourceMapping.prototype = {
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {number} lineNumber
      * @param {number} columnNumber
-     * @return {!WebInspector.CSSLocation}
+     * @return {?WebInspector.CSSLocation}
      */
     uiLocationToRawLocation: function(uiSourceCode, lineNumber, columnNumber)
     {
-        var networkURL = this._networkMapping.networkURL(uiSourceCode);
-        return new WebInspector.CSSLocation(this._cssModel.target(), null, networkURL || "", lineNumber, columnNumber);
+        return null;
     },
 
     /**
@@ -129,7 +134,7 @@ WebInspector.StylesSourceMapping.prototype = {
             map.set(header.frameId, headersById);
         }
         headersById.set(header.id, header);
-        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url);
+        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url, header.target());
         if (uiSourceCode)
             this._bindUISourceCode(uiSourceCode, header);
     },
@@ -153,7 +158,7 @@ WebInspector.StylesSourceMapping.prototype = {
             map.remove(header.frameId);
             if (!map.size) {
                 delete this._urlToHeadersByFrameId[url];
-                var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url);
+                var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url, header.target());
                 if (uiSourceCode)
                     this._unbindUISourceCode(uiSourceCode);
             }
@@ -190,7 +195,7 @@ WebInspector.StylesSourceMapping.prototype = {
      */
     _bindUISourceCode: function(uiSourceCode, header)
     {
-        if (this._styleFiles.get(uiSourceCode) || header.isInline)
+        if (this._styleFiles.get(uiSourceCode) || (header.isInline && !header.hasSourceURL))
             return;
         this._styleFiles.set(uiSourceCode, new WebInspector.StyleFile(uiSourceCode, this));
         WebInspector.cssWorkspaceBinding.updateLocations(header);
@@ -230,7 +235,7 @@ WebInspector.StylesSourceMapping.prototype = {
     _mainFrameNavigated: function(event)
     {
         for (var url in this._urlToHeadersByFrameId) {
-            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url);
+            var uiSourceCode = this._networkMapping.uiSourceCodeForURL(url, this._cssModel.target());
             if (!uiSourceCode)
                 continue;
             this._unbindUISourceCode(uiSourceCode);
@@ -242,32 +247,33 @@ WebInspector.StylesSourceMapping.prototype = {
      * @param {!WebInspector.UISourceCode} uiSourceCode
      * @param {string} content
      * @param {boolean} majorChange
-     * @param {function(?string)} userCallback
+     * @return {!Promise<?string>}
      */
-    _setStyleContent: function(uiSourceCode, content, majorChange, userCallback)
+    _setStyleContent: function(uiSourceCode, content, majorChange)
     {
         var networkURL = this._networkMapping.networkURL(uiSourceCode);
         var styleSheetIds = this._cssModel.styleSheetIdsForURL(networkURL);
-        if (!styleSheetIds.length) {
-            userCallback("No stylesheet found: " + networkURL);
-            return;
-        }
+        if (!styleSheetIds.length)
+            return Promise.resolve(/** @type {?string} */("No stylesheet found: " + networkURL));
 
         this._isSettingContent = true;
 
         /**
-         * @param {?Protocol.Error} error
+         * @param {?string} error
          * @this {WebInspector.StylesSourceMapping}
+         * @return {?string}
          */
         function callback(error)
         {
-            userCallback(error);
             delete this._isSettingContent;
+            return error || null;
         }
 
-
+        var promises = [];
         for (var i = 0; i < styleSheetIds.length; ++i)
-            this._cssModel.setStyleSheetText(styleSheetIds[i], content, majorChange, i === styleSheetIds.length - 1 ? callback.bind(this) : null);
+            promises.push(this._cssModel.setStyleSheetText(styleSheetIds[i], content, majorChange));
+
+        return Promise.all(promises).spread(callback.bind(this));
     },
 
     /**
@@ -277,11 +283,6 @@ WebInspector.StylesSourceMapping.prototype = {
     {
         if (this._isSettingContent)
             return;
-
-        if (event.data.majorChange) {
-            this._updateStyleSheetText(event.data.styleSheetId);
-            return;
-        }
 
         this._updateStyleSheetTextSoon(event.data.styleSheetId);
     },
@@ -294,7 +295,7 @@ WebInspector.StylesSourceMapping.prototype = {
         if (this._updateStyleSheetTextTimer)
             clearTimeout(this._updateStyleSheetTextTimer);
 
-        this._updateStyleSheetTextTimer = setTimeout(this._updateStyleSheetText.bind(this, styleSheetId), WebInspector.StylesSourceMapping.MinorChangeUpdateTimeoutMs);
+        this._updateStyleSheetTextTimer = setTimeout(this._updateStyleSheetText.bind(this, styleSheetId), WebInspector.StylesSourceMapping.ChangeUpdateTimeoutMs);
     },
 
     /**
@@ -313,7 +314,7 @@ WebInspector.StylesSourceMapping.prototype = {
         var styleSheetURL = header.resourceURL();
         if (!styleSheetURL)
             return;
-        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(styleSheetURL);
+        var uiSourceCode = this._networkMapping.uiSourceCodeForURL(styleSheetURL, header.target());
         if (!uiSourceCode)
             return;
         header.requestContent(callback.bind(this, uiSourceCode));
@@ -372,24 +373,21 @@ WebInspector.StyleFile.prototype = {
         this._commitThrottler.schedule(this._commitIncrementalEdit.bind(this), false);
     },
 
-    /**
-     * @param {!WebInspector.Throttler.FinishCallback} finishCallback
-     */
-    _commitIncrementalEdit: function(finishCallback)
+    _commitIncrementalEdit: function()
     {
-        this._mapping._setStyleContent(this._uiSourceCode, this._uiSourceCode.workingCopy(), this._isMajorChangePending, this._styleContentSet.bind(this, finishCallback));
+        var promise = this._mapping._setStyleContent(this._uiSourceCode, this._uiSourceCode.workingCopy(), this._isMajorChangePending)
+            .then(this._styleContentSet.bind(this))
         this._isMajorChangePending = false;
+        return promise;
     },
 
     /**
-     * @param {!WebInspector.Throttler.FinishCallback} finishCallback
      * @param {?string} error
      */
-    _styleContentSet: function(finishCallback, error)
+    _styleContentSet: function(error)
     {
         if (error)
             WebInspector.console.error(error);
-        finishCallback();
     },
 
     /**

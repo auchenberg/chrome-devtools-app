@@ -13,7 +13,7 @@
     "scripts": [
         "PromisePane.js"
     ],
-    "stylesheets": [
+    "resources": [
         "promisePane.css"
     ]
 }

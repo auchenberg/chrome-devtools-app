@@ -29,6 +29,8 @@ WebInspector.DropDownMenu.prototype = {
      */
     _onMouseDown: function(event)
     {
+        if (event.which !== 1)
+            return;
         var menu = new WebInspector.ContextMenu(event);
         for (var item of this._items)
             menu.appendCheckboxItem(item.title, this._itemHandler.bind(this, item.id), item.id === this._selectedItemId);

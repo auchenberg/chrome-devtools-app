@@ -4,7 +4,7 @@
             "type": "@WebInspector.PanelFactory",
             "name": "network",
             "title": "Network",
-            "order": 1,
+            "order": 40,
             "className": "WebInspector.NetworkPanelFactory"
         },
         {
@@ -18,23 +18,53 @@
             "className": "WebInspector.NetworkPanel.RequestRevealer"
         },
         {
-            "type": "ui-setting",
-            "section": "Network",
+            "type": "setting",
+            "category": "Network",
             "title": "Show primary load waterfall",
             "settingName": "networkShowPrimaryLoadWaterfall",
-            "settingType": "checkbox",
-            "experiment": "showPrimaryLoadWaterfallInNetworkTimeline"
+            "settingType": "boolean",
+            "experiment": "showPrimaryLoadWaterfallInNetworkTimeline",
+            "defaultValue": false
         },
         {
-            "type": "ui-setting",
-            "section": "Network",
+            "type": "setting",
+            "category": "Network",
             "title": "Color-code resource types",
             "settingName": "networkColorCodeResourceTypes",
-            "settingType": "checkbox"
+            "settingType": "boolean",
+            "defaultValue": false
+        },
+        {
+            "type": "@WebInspector.ActionDelegate",
+            "actionId": "network.blocked-urls.show",
+            "className": "WebInspector.BlockedURLsPane.ActionDelegate"
+        },
+        {
+            "type": "@WebInspector.ActionDelegate",
+            "actionId": "network.toggle-recording",
+            "iconClass": "record-toolbar-item",
+            "contextTypes": ["WebInspector.NetworkPanel"],
+            "className": "WebInspector.NetworkPanel.RecordActionDelegate",
+            "bindings": [
+                {
+                    "platform": "windows,linux",
+                    "shortcut": "Ctrl+E"
+                },
+                {
+                    "platform": "mac",
+                    "shortcut": "Meta+E"
+                }
+            ]
         }
     ],
-    "dependencies": ["source_frame", "components_lazy", "ui_lazy"],
+    "dependencies": [
+        "source_frame",
+        "components",
+        "components_lazy",
+        "ui_lazy"
+    ],
     "scripts": [
+        "BlockedURLsPane.js",
         "EventSourceMessagesView.js",
         "FilterSuggestionBuilder.js",
         "HARWriter.js",
@@ -43,6 +73,7 @@
         "NetworkItemView.js",
         "NetworkTimeCalculator.js",
         "NetworkLogView.js",
+        "NetworkOverview.js",
         "RequestCookiesView.js",
         "RequestHeadersView.js",
         "RequestHTMLView.js",
@@ -54,7 +85,8 @@
         "NetworkPanel.js",
         "XMLView.js"
     ],
-    "stylesheets": [
+    "resources": [
+        "blockedURLsPane.css",
         "eventSourceMessagesView.css",
         "networkLogView.css",
         "networkPanel.css",

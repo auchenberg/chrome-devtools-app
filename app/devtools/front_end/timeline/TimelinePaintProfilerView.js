@@ -5,28 +5,28 @@
 /**
  * @constructor
  * @param {!WebInspector.TracingTimelineFrameModel} frameModel
- * @extends {WebInspector.SplitView}
+ * @extends {WebInspector.SplitWidget}
  */
 WebInspector.TimelinePaintProfilerView = function(frameModel)
 {
-    WebInspector.SplitView.call(this, false, false);
+    WebInspector.SplitWidget.call(this, false, false);
     this.element.classList.add("timeline-paint-profiler-view");
     this.setSidebarSize(60);
     this.setResizable(false);
 
     this._frameModel = frameModel;
-    this._logAndImageSplitView = new WebInspector.SplitView(true, false);
-    this._logAndImageSplitView.element.classList.add("timeline-paint-profiler-log-split");
-    this.setMainView(this._logAndImageSplitView);
+    this._logAndImageSplitWidget = new WebInspector.SplitWidget(true, false);
+    this._logAndImageSplitWidget.element.classList.add("timeline-paint-profiler-log-split");
+    this.setMainWidget(this._logAndImageSplitWidget);
     this._imageView = new WebInspector.TimelinePaintImageView();
-    this._logAndImageSplitView.setMainView(this._imageView);
+    this._logAndImageSplitWidget.setMainWidget(this._imageView);
 
     this._paintProfilerView = new WebInspector.PaintProfilerView(this._imageView.showImage.bind(this._imageView));
     this._paintProfilerView.addEventListener(WebInspector.PaintProfilerView.Events.WindowChanged, this._onWindowChanged, this);
-    this.setSidebarView(this._paintProfilerView);
+    this.setSidebarWidget(this._paintProfilerView);
 
     this._logTreeView = new WebInspector.PaintProfilerCommandLogView();
-    this._logAndImageSplitView.setSidebarView(this._logTreeView);
+    this._logAndImageSplitWidget.setSidebarWidget(this._logTreeView);
 }
 
 WebInspector.TimelinePaintProfilerView.prototype = {
@@ -49,7 +49,10 @@ WebInspector.TimelinePaintProfilerView.prototype = {
         this._target = target;
         this._event = event;
 
-        this._updateWhenVisible = true;
+        if (this.isShowing())
+            this._update();
+        else
+            this._updateWhenVisible = true;
 
         if (this._event.name === WebInspector.TimelineModel.RecordType.Paint)
             return !!event.picture;
@@ -89,8 +92,10 @@ WebInspector.TimelinePaintProfilerView.prototype = {
             this._disposeSnapshot();
             this._lastLoadedSnapshot = snapshot;
             this._imageView.setMask(tileRect);
-            if (!snapshot)
+            if (!snapshot) {
+                this._imageView.showImage();
                 return;
+            }
             snapshot.commandLog(onCommandLogDone.bind(this, snapshot, tileRect));
         }
 
@@ -102,7 +107,7 @@ WebInspector.TimelinePaintProfilerView.prototype = {
          */
         function onCommandLogDone(snapshot, clipRect, log)
         {
-            this._logTreeView.setCommandLog(snapshot.target(), log);
+            this._logTreeView.setCommandLog(snapshot.target(), log || []);
             this._paintProfilerView.setSnapshotAndLog(snapshot, log || [], clipRect);
         }
     },
@@ -121,16 +126,16 @@ WebInspector.TimelinePaintProfilerView.prototype = {
         this._logTreeView.updateWindow(window.left, window.right);
     },
 
-    __proto__: WebInspector.SplitView.prototype
+    __proto__: WebInspector.SplitWidget.prototype
 };
 
 /**
  * @constructor
- * @extends {WebInspector.View}
+ * @extends {WebInspector.Widget}
  */
 WebInspector.TimelinePaintImageView = function()
 {
-    WebInspector.View.call(this);
+    WebInspector.Widget.call(this);
     this.element.classList.add("fill", "paint-profiler-image-view");
     this._imageContainer = this.element.createChild("div", "paint-profiler-image-container");
     this._imageElement = this._imageContainer.createChild("img");
@@ -190,7 +195,8 @@ WebInspector.TimelinePaintImageView.prototype = {
     showImage: function(imageURL)
     {
         this._imageContainer.classList.toggle("hidden", !imageURL);
-        this._imageElement.src = imageURL;
+        if (imageURL)
+            this._imageElement.src = imageURL;
     },
 
     /**
@@ -202,5 +208,5 @@ WebInspector.TimelinePaintImageView.prototype = {
         this._maskElement.classList.toggle("hidden", !maskRectangle);
     },
 
-    __proto__: WebInspector.View.prototype
+    __proto__: WebInspector.Widget.prototype
 };

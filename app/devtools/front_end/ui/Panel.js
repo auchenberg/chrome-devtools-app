@@ -113,6 +113,29 @@ WebInspector.Panel.prototype = {
             this._shortcuts[keys[i].key] = handler;
     },
 
+    /**
+     * @param {!WebInspector.Infobar} infobar
+     */
+    showInfobar: function(infobar)
+    {
+        infobar.setCloseCallback(this._onInfobarClosed.bind(this, infobar));
+        if (this.element.firstChild)
+            this.element.insertBefore(infobar.element, this.element.firstChild);
+        else
+            this.element.appendChild(infobar.element);
+        infobar.setVisible(true);
+        this.doResize();
+    },
+
+    /**
+     * @param {!WebInspector.Infobar} infobar
+     */
+    _onInfobarClosed: function(infobar)
+    {
+        infobar.element.remove();
+        this.doResize();
+    },
+
     __proto__: WebInspector.VBox.prototype
 }
 
@@ -126,17 +149,17 @@ WebInspector.PanelWithSidebar = function(name, defaultWidth)
 {
     WebInspector.Panel.call(this, name);
 
-    this._panelSplitView = new WebInspector.SplitView(true, false, this._panelName + "PanelSplitViewState", defaultWidth || 200);
-    this._panelSplitView.show(this.element);
+    this._panelSplitWidget = new WebInspector.SplitWidget(true, false, this._panelName + "PanelSplitViewState", defaultWidth || 200);
+    this._panelSplitWidget.show(this.element);
 
-    this._mainView = new WebInspector.VBox();
-    this._panelSplitView.setMainView(this._mainView);
+    this._mainWidget = new WebInspector.VBox();
+    this._panelSplitWidget.setMainWidget(this._mainWidget);
 
-    this._sidebarView = new WebInspector.VBox();
-    this._sidebarView.setMinimumSize(100, 25);
-    this._panelSplitView.setSidebarView(this._sidebarView);
+    this._sidebarWidget = new WebInspector.VBox();
+    this._sidebarWidget.setMinimumSize(100, 25);
+    this._panelSplitWidget.setSidebarWidget(this._sidebarWidget);
 
-    this._sidebarView.element.classList.add("sidebar");
+    this._sidebarWidget.element.classList.add("sidebar");
 }
 
 WebInspector.PanelWithSidebar.prototype = {
@@ -145,7 +168,7 @@ WebInspector.PanelWithSidebar.prototype = {
      */
     panelSidebarElement: function()
     {
-        return this._sidebarView.element;
+        return this._sidebarWidget.element;
     },
 
     /**
@@ -153,15 +176,15 @@ WebInspector.PanelWithSidebar.prototype = {
      */
     mainElement: function()
     {
-        return this._mainView.element;
+        return this._mainWidget.element;
     },
 
     /**
-     * @return {!WebInspector.SplitView}
+     * @return {!WebInspector.SplitWidget}
      */
-    splitView: function()
+    splitWidget: function()
     {
-        return this._panelSplitView;
+        return this._panelSplitWidget;
     },
 
     __proto__: WebInspector.Panel.prototype

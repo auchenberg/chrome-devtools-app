@@ -30,19 +30,20 @@
 
 /**
  * @constructor
- * @param {!WebInspector.Target} target
+ * @param {!WebInspector.DebuggerModel} debuggerModel
  * @param {string=} title
  * @param {string=} message
  * @extends {WebInspector.HelpScreen}
  */
-WebInspector.HelpScreenUntilReload = function(target, title, message)
+WebInspector.HelpScreenUntilReload = function(debuggerModel, title, message)
 {
     WebInspector.HelpScreen.call(this, title);
-    this._target = target;
+    this._debuggerModel = debuggerModel;
     var p = this.helpContentElement.createChild("p");
     p.classList.add("help-section");
     p.textContent = message;
-    target.debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, this.hide, this);
+
+    this._debuggerModel.addEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, this.hide, this);
 }
 
 WebInspector.HelpScreenUntilReload.prototype = {
@@ -51,7 +52,7 @@ WebInspector.HelpScreenUntilReload.prototype = {
      */
     willHide: function()
     {
-        this._target.debuggerModel.removeEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, this.hide, this);
+        this._debuggerModel.removeEventListener(WebInspector.DebuggerModel.Events.GlobalObjectCleared, this.hide, this);
         WebInspector.HelpScreen.prototype.willHide.call(this);
     },
 

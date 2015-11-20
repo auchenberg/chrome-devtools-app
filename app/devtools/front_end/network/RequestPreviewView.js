@@ -32,7 +32,7 @@
  * @constructor
  * @extends {WebInspector.RequestContentView}
  * @param {!WebInspector.NetworkRequest} request
- * @param {!WebInspector.View} responseView
+ * @param {!WebInspector.Widget} responseView
  */
 WebInspector.RequestPreviewView = function(request, responseView)
 {
@@ -44,15 +44,15 @@ WebInspector.RequestPreviewView.prototype = {
     contentLoaded: function()
     {
         if (!this.request.content && !this.request.contentError()) {
-            if (!this._emptyView) {
-                this._emptyView = this._createEmptyView();
-                this._emptyView.show(this.element);
-                this.innerView = this._emptyView;
+            if (!this._emptyWidget) {
+                this._emptyWidget = this._createEmptyWidget();
+                this._emptyWidget.show(this.element);
+                this.innerView = this._emptyWidget;
             }
         } else {
-            if (this._emptyView) {
-                this._emptyView.detach();
-                delete this._emptyView;
+            if (this._emptyWidget) {
+                this._emptyWidget.detach();
+                delete this._emptyWidget;
             }
 
             if (!this._previewView)
@@ -62,18 +62,18 @@ WebInspector.RequestPreviewView.prototype = {
         }
     },
 
-    _createEmptyView: function()
+    _createEmptyWidget: function()
     {
         return this._createMessageView(WebInspector.UIString("This request has no preview available."));
     },
 
     /**
      * @param {string} message
-     * @return {!WebInspector.EmptyView}
+     * @return {!WebInspector.EmptyWidget}
      */
     _createMessageView: function(message)
     {
-        return new WebInspector.EmptyView(message);
+        return new WebInspector.EmptyWidget(message);
     },
 
     /**
@@ -156,7 +156,7 @@ WebInspector.RequestPreviewView.prototype = {
             return this._responseView.sourceView;
 
         if (this.request.resourceType() === WebInspector.resourceTypes.Other)
-            return this._createEmptyView();
+            return this._createEmptyWidget();
 
         return WebInspector.RequestView.nonSourceViewForRequest(this.request);
     },

@@ -29,17 +29,21 @@
 
 .elements-disclosure li.parent::before {
     -webkit-user-select: none;
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs.png);
-    -webkit-mask-size: 320px 144px;
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
     content: "a";
     color: transparent;
     text-shadow: none;
     margin-right: 1px;
 }
 
+.elements-disclosure li.always-parent::before {
+    visibility: hidden;
+}
+
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 .elements-disclosure li.parent::before {
-    -webkit-mask-image: url(Images/statusbarButtonGlyphs_2x.png);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 
@@ -71,7 +75,7 @@
 
 .elements-disclosure li.selected .selection {
     display: block;
-    background-color: rgb(212, 212, 212);
+    background-color: #dadada;
 }
 
 .elements-disclosure ol {
@@ -118,10 +122,30 @@
     background-color: rgb(56, 121, 217);
 }
 
-.elements-tree-outline li.shadow-root + ol {
+.elements-tree-outline ol.shadow-root {
     margin-left: 5px;
     padding-left: 5px;
-    border-left: 1px solid gray;
+    border-left: 1px solid rgb(190, 190, 190);
+}
+
+.elements-tree-outline ol.shadow-root-depth-4 {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.elements-tree-outline ol.shadow-root-depth-3 {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.elements-tree-outline ol.shadow-root-depth-2 {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.elements-tree-outline ol.shadow-root-depth-1 {
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+.elements-tree-outline ol.shadow-root-deep {
+    background-color: transparent;
 }
 
 .elements-tree-editor {
@@ -187,13 +211,14 @@ button, input, select {
 
 .elements-gutter-decoration {
     position: absolute;
-    left: 1px;
+    left: 2px;
     margin-top: 2px;
-    height: 8px;
-    width: 8px;
-    border-radius: 4px;
+    height: 9px;
+    width: 9px;
+    border-radius: 5px;
     border: 1px solid orange;
     background-color: orange;
+    cursor: pointer;
 }
 
 .elements-gutter-decoration.elements-has-decorated-children {
@@ -268,58 +293,86 @@ button, input, select {
     padding-left: 2px;
 }
 
-
-li.parent.shadow-root {
-    /* display: none; */
+.elements-tree-shortcut-title {
+    color: rgb(87, 87, 87);
 }
 
-.shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
-    border: 0;
-    margin: 0;
-    background-color: inherit;
+ol:hover > li > .elements-tree-shortcut-link {
+    display: initial;
+}
+
+.elements-tree-shortcut-link {
+    color: rgb(87, 87, 87);
+    display: none;
+}
+
+ol:focus li.selected .webkit-html-tag {
+    color: #a5a5a5;
+}
+
+ol:focus li.selected .webkit-html-tag-name,
+ol:focus li.selected .webkit-html-close-tag-name,
+ol:focus li.selected .webkit-html-attribute-value,
+ol:focus li.selected .webkit-html-external-link,
+ol:focus li.selected .webkit-html-resource-link {
+    color: white;
+}
+
+ol:focus li.selected .webkit-html-attribute-name {
+    color: #ccc;
+}
+
+.elements-disclosure li.selected .selection > .node-actions-container {
+    visibility: visible;
+}
+
+.node-actions-container {
+    position: absolute;
+    z-index: 10000;
+    left: 0px;
     height: 13px;
-    opacity: 0.2;
+    background-color: hsla(0,100%,100%,0.3);
 }
 
-.shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled {
-    opacity: 0.7;
+.node-actions-toolbar {
+    position: absolute;
+    top: -30px;
+    left: 2px;
+    background: white;
+    border-radius: 3px;
+    border: 1px solid #B1B1B1;
+    visibility: hidden;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37)
+
 }
 
-li.hovered .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
-    opacity: 1;
+.node-actions-toggle {
+    -webkit-mask-position: -201px -26px;
+    width: 16.25px;
+    height: 20px;
+    transform: scale(0.8) rotate(90deg);
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs.png);
+    -webkit-mask-size: 352px 168px;
+    background-color: #FFFFFF;
+    z-index: 1;
+    margin-top: -3px;
+    cursor: pointer;
 }
 
-.shadow-host-display-mode-toolbar-button.toggled {
-    color: rgb(66, 129, 235);
+@media (-webkit-min-device-pixel-ratio: 1.5) {
+.node-actions-toggle {
+    -webkit-mask-image: url(Images/toolbarButtonGlyphs_2x.png);
+}
+} /* media */
+
+.gutter-container.has-decorations .node-actions-toggle {
+    opacity: 0;
 }
 
-.shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled.custom-mode {
-    opacity: 1;
+.node-actions-container.expanded > .node-actions-toolbar {
+    visibility: visible;
 }
 
-li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
-    opacity: 0.3;
-}
-
-li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled {
-    opacity: 0.8;
-}
-
-li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled.custom-mode {
-    opacity: 1;
-    color: rgb(36, 114, 245);
-}
-
-.elements-disclosure ol:focus li.selected .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
-    color: rgb(255, 255, 255);
-    opacity: 0.7;
-}
-
-.elements-disclosure ol:focus li.selected.hovered .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button {
-    opacity: 1;
-}
-
-.elements-disclosure ol:focus li.selected  .shadow-host-display-mode-toolbar .shadow-host-display-mode-toolbar-button.toggled {
-    color: rgb(235, 242, 255);
-    opacity: 1;
+.node-actions-toolbar-below {
+    margin-top: 2px;
 }

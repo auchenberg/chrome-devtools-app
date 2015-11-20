@@ -80,8 +80,8 @@ class Descriptors:
                 files.append(script)
         return files
 
-    def module_stylesheets(self, name):
-        return [name + '/' + css for css in self.modules[name].get('stylesheets', [])]
+    def module_resources(self, name):
+        return [name + '/' + resource for resource in self.modules[name].get('resources', [])]
 
     def sorted_modules(self):
         if self._cached_sorted_modules:

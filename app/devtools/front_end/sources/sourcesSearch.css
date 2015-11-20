@@ -36,7 +36,7 @@
     display: flex;
 }
 
-.search-status-bar-summary {
+.search-toolbar-summary {
     background-color: #eee;
     border-top: 1px solid #ccc;
     padding-left: 5px;
@@ -45,11 +45,11 @@
     padding-right: 5px;
 }
 
-.search-status-bar-summary .search-message {
+.search-toolbar-summary .search-message {
     padding-top: 2px;
 }
 
-.search-status-bar-summary .search-message-spacer {
+.search-toolbar-summary .search-message-spacer {
     flex-grow: 1;
 }
 
@@ -72,8 +72,8 @@
 
 #search-results-pane-file-based li.parent::before {
     -webkit-user-select: none;
-    background-image: url(Images/statusbarButtonGlyphs.png);
-    background-size: 320px 144px;
+    background-image: url(Images/toolbarButtonGlyphs.png);
+    background-size: 352px 168px;
     opacity: 0.5;
     width: 12px;
     content: "a";
@@ -86,7 +86,7 @@
 
 @media (-webkit-min-device-pixel-ratio: 1.5) {
 #search-results-pane-file-based li.parent::before {
-    background-image: url(Images/statusbarButtonGlyphs_2x.png);
+    background-image: url(Images/toolbarButtonGlyphs_2x.png);
 }
 } /* media */
 

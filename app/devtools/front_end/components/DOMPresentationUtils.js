@@ -99,16 +99,16 @@ WebInspector.DOMPresentationUtils.linkifyNodeReference = function(node)
     if (!node)
         return createTextNode(WebInspector.UIString("<node>"));
 
-    var root = createElement("div");
-    var shadowRoot = root.createShadowRoot();
-    shadowRoot.appendChild(WebInspector.View.createStyleElement("components/nodeLink.css"));
+    var root = createElement("span");
+    var shadowRoot = WebInspector.createShadowRootWithCoreStyles(root);
+    shadowRoot.appendChild(WebInspector.Widget.createStyleElement("components/domUtils.css"));
     var link = shadowRoot.createChild("div", "node-link");
 
     WebInspector.DOMPresentationUtils.decorateNodeLabel(node, link);
 
     link.addEventListener("click", WebInspector.Revealer.reveal.bind(WebInspector.Revealer, node, undefined), false);
     link.addEventListener("mouseover", node.highlight.bind(node, undefined, undefined), false);
-    link.addEventListener("mouseleave", node.domModel().hideDOMNodeHighlight.bind(node.domModel()), false);
+    link.addEventListener("mouseleave", WebInspector.DOMModel.hideDOMNodeHighlight.bind(WebInspector.DOMModel), false);
 
     return root;
 }
@@ -120,11 +120,12 @@ WebInspector.DOMPresentationUtils.linkifyNodeReference = function(node)
 WebInspector.DOMPresentationUtils.linkifyDeferredNodeReference = function(deferredNode)
 {
     var root = createElement("div");
-    var shadowRoot = root.createShadowRoot();
-    shadowRoot.appendChild(WebInspector.View.createStyleElement("components/nodeLink.css"));
+    var shadowRoot = WebInspector.createShadowRootWithCoreStyles(root);
+    shadowRoot.appendChild(WebInspector.Widget.createStyleElement("components/domUtils.css"));
     var link = shadowRoot.createChild("div", "node-link");
-
+    link.createChild("content");
     link.addEventListener("click", deferredNode.resolve.bind(deferredNode, onDeferredNodeResolved), false);
+    link.addEventListener("mousedown", consumeEvent, false);
 
     /**
      * @param {?WebInspector.DOMNode} node
@@ -211,7 +212,12 @@ WebInspector.DOMPresentationUtils.buildImagePreviewContents = function(target, o
  */
 WebInspector.DOMPresentationUtils.buildStackTracePreviewContents = function(target, linkifier, stackTrace, asyncStackTrace)
 {
-    var element = createElementWithClass("table", "stack-preview-container");
+    var element = createElement("span");
+    element.style.display = "inline-block";
+    var shadowRoot = WebInspector.createShadowRootWithCoreStyles(element);
+
+    shadowRoot.appendChild(WebInspector.Widget.createStyleElement("components/domUtils.css"));
+    var contentElement = shadowRoot.createChild("table", "stack-preview-container");
 
     /**
      * @param {!Array.<!ConsoleAgent.CallFrame>} stackTrace
@@ -223,7 +229,7 @@ WebInspector.DOMPresentationUtils.buildStackTracePreviewContents = function(targ
             row.createChild("td").textContent = WebInspector.beautifyFunctionName(stackFrame.functionName);
             row.createChild("td").textContent = " @ ";
             row.createChild("td").appendChild(linkifier.linkifyConsoleCallFrame(target, stackFrame));
-            element.appendChild(row);
+            contentElement.appendChild(row);
         }
     }
 
@@ -234,7 +240,7 @@ WebInspector.DOMPresentationUtils.buildStackTracePreviewContents = function(targ
         var callFrames = asyncStackTrace.callFrames;
         if (!callFrames || !callFrames.length)
             break;
-        var row = element.createChild("tr");
+        var row = contentElement.createChild("tr");
         row.createChild("td", "stack-preview-async-description").textContent = WebInspector.asyncStackTraceLabel(asyncStackTrace.description);
         row.createChild("td");
         row.createChild("td");
@@ -602,4 +608,19 @@ WebInspector.DOMNodePathStep.prototype = {
     {
         return this.value;
     }
+}
+
+/**
+ * @interface
+ */
+WebInspector.DOMPresentationUtils.MarkerDecorator = function()
+{
+}
+
+WebInspector.DOMPresentationUtils.MarkerDecorator.prototype = {
+    /**
+     * @param {!WebInspector.DOMNode} node
+     * @return {?{title: string, color: string}}
+     */
+    decorate: function(node) { }
 }

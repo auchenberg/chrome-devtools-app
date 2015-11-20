@@ -10,14 +10,16 @@
 WebInspector.ThreadsSidebarPane = function()
 {
     WebInspector.SidebarPane.call(this, WebInspector.UIString("Threads"));
-    /** @type {!Map.<!WebInspector.Target, !WebInspector.UIList.Item>} */
-    this._targetsToListItems = new Map();
+    this.setVisible(false);
+
+    /** @type {!Map.<!WebInspector.DebuggerModel, !WebInspector.UIList.Item>} */
+    this._debuggerModelToListItems = new Map();
     /** @type {!Map.<!WebInspector.UIList.Item, !WebInspector.Target>} */
     this._listItemsToTargets = new Map();
     /** @type {?WebInspector.UIList.Item} */
     this._selectedListItem = null;
     this.threadList = new WebInspector.UIList();
-    this.threadList.show(this.bodyElement);
+    this.threadList.show(this.element);
     WebInspector.targetManager.addModelListener(WebInspector.DebuggerModel, WebInspector.DebuggerModel.Events.DebuggerPaused, this._onDebuggerStateChanged, this);
     WebInspector.targetManager.addModelListener(WebInspector.DebuggerModel, WebInspector.DebuggerModel.Events.DebuggerResumed, this._onDebuggerStateChanged, this);
     WebInspector.context.addFlavorChangeListener(WebInspector.Target, this._targetChanged, this);
@@ -31,16 +33,28 @@ WebInspector.ThreadsSidebarPane.prototype = {
      */
     targetAdded: function(target)
     {
+        var debuggerModel = WebInspector.DebuggerModel.fromTarget(target)
+        if (!debuggerModel) {
+            this._updateVisibility();
+            return;
+        }
         var listItem = new WebInspector.UIList.Item(target.name(), "");
         listItem.element.addEventListener("click", this._onListItemClick.bind(this, listItem), false);
         var currentTarget = WebInspector.context.flavor(WebInspector.Target);
         if (currentTarget === target)
             this._selectListItem(listItem);
 
-        this._targetsToListItems.set(target, listItem);
+        this._debuggerModelToListItems.set(debuggerModel, listItem);
         this._listItemsToTargets.set(listItem, target);
         this.threadList.addItem(listItem);
-        this._updateDebuggerState(target);
+        this._updateDebuggerState(debuggerModel);
+        this._updateVisibility();
+    },
+
+    _updateVisibility: function()
+    {
+        this._wasVisibleAtLeastOnce = this._wasVisibleAtLeastOnce || this._debuggerModelToListItems.size > 1;
+        this.setVisible(this._wasVisibleAtLeastOnce);
     },
 
     /**
@@ -49,9 +63,15 @@ WebInspector.ThreadsSidebarPane.prototype = {
      */
     targetRemoved: function(target)
     {
-        var listItem = this._targetsToListItems.remove(target);
-        this._listItemsToTargets.remove(listItem);
-        this.threadList.removeItem(listItem);
+        var debuggerModel = WebInspector.DebuggerModel.fromTarget(target)
+        if (!debuggerModel)
+            return;
+        var listItem = this._debuggerModelToListItems.remove(debuggerModel);
+        if (listItem) {
+            this._listItemsToTargets.remove(listItem);
+            this.threadList.removeItem(listItem);
+        }
+        this._updateVisibility();
     },
 
     /**
@@ -60,7 +80,10 @@ WebInspector.ThreadsSidebarPane.prototype = {
     _targetChanged: function(event)
     {
         var newTarget = /** @type {!WebInspector.Target} */(event.data);
-        var listItem =  /** @type {!WebInspector.UIList.Item} */ (this._targetsToListItems.get(newTarget));
+        var debuggerModel = WebInspector.DebuggerModel.fromTarget(newTarget)
+        if (!debuggerModel)
+            return;
+        var listItem =  /** @type {!WebInspector.UIList.Item} */ (this._debuggerModelToListItems.get(debuggerModel));
         this._selectListItem(listItem);
     },
 
@@ -70,16 +93,16 @@ WebInspector.ThreadsSidebarPane.prototype = {
     _onDebuggerStateChanged: function(event)
     {
         var debuggerModel = /** @type {!WebInspector.DebuggerModel} */ (event.target);
-        this._updateDebuggerState(debuggerModel.target());
+        this._updateDebuggerState(debuggerModel);
     },
 
     /**
-     * @param {!WebInspector.Target} target
+     * @param {!WebInspector.DebuggerModel} debuggerModel
      */
-    _updateDebuggerState: function(target)
+    _updateDebuggerState: function(debuggerModel)
     {
-        var listItem = this._targetsToListItems.get(target);
-        listItem.setSubtitle(WebInspector.UIString(target.debuggerModel.isPaused() ? "paused" : ""));
+        var listItem = this._debuggerModelToListItems.get(debuggerModel);
+        listItem.setSubtitle(WebInspector.UIString(debuggerModel.isPaused() ? "paused" : ""));
     },
 
     /**

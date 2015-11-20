@@ -46,15 +46,15 @@ WebInspector.LayersPanel = function()
     this.panelSidebarElement().appendChild(this._layerTreeOutline.element);
     this.setDefaultFocusedElement(this._layerTreeOutline.element);
 
-    this._rightSplitView = new WebInspector.SplitView(false, true, "layerDetailsSplitViewState");
-    this.splitView().setMainView(this._rightSplitView);
+    this._rightSplitWidget = new WebInspector.SplitWidget(false, true, "layerDetailsSplitViewState");
+    this.splitWidget().setMainWidget(this._rightSplitWidget);
 
     this._layers3DView = new WebInspector.Layers3DView(this._layerViewHost);
-    this._rightSplitView.setMainView(this._layers3DView);
+    this._rightSplitWidget.setMainWidget(this._layers3DView);
     this._layers3DView.addEventListener(WebInspector.Layers3DView.Events.LayerSnapshotRequested, this._onSnapshotRequested, this);
 
     this._tabbedPane = new WebInspector.TabbedPane();
-    this._rightSplitView.setSidebarView(this._tabbedPane);
+    this._rightSplitWidget.setSidebarWidget(this._tabbedPane);
 
     this._layerDetailsView = new WebInspector.LayerDetailsView(this._layerViewHost);
     this._tabbedPane.appendTab(WebInspector.LayersPanel.DetailsViewTabs.Details, WebInspector.UIString("Details"), this._layerDetailsView);

@@ -120,8 +120,8 @@ WebInspector.TextPrompt.prototype = {
         this._boundSelectStart = this._selectStart.bind(this);
         this._boundRemoveSuggestionAids = this._removeSuggestionAids.bind(this);
         this._proxyElement = element.ownerDocument.createElement("span");
-        var shadowRoot = this._proxyElement.createShadowRoot();
-        shadowRoot.appendChild(WebInspector.View.createStyleElement("ui/textPrompt.css"));
+        var shadowRoot = WebInspector.createShadowRootWithCoreStyles(this._proxyElement);
+        shadowRoot.appendChild(WebInspector.Widget.createStyleElement("ui/textPrompt.css"));
         this._contentElement = shadowRoot.createChild("div");
         this._contentElement.createChild("content");
         this._proxyElement.style.display = this._proxyElementDisplay;
@@ -724,9 +724,12 @@ WebInspector.TextPrompt.prototype = {
         var selection = this._element.getComponentSelection();
         var selectionRange = this._createRange();
 
-        var offset = this._element.childNodes.length;
-        selectionRange.setStart(this._element, offset);
-        selectionRange.setEnd(this._element, offset);
+        var container = this._element;
+        while (container.childNodes.length)
+            container = container.lastChild;
+        var offset = container.nodeType === Node.TEXT_NODE ? container.textContent.length : 0;
+        selectionRange.setStart(container, offset);
+        selectionRange.setEnd(container, offset);
 
         selection.removeAllRanges();
         selection.addRange(selectionRange);

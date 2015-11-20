@@ -12,16 +12,20 @@
         "Geometry.js",
         "Console.js",
         "ContentProvider.js",
-        "Lock.js",
         "ParsedURL.js",
         "Progress.js",
         "ResourceType.js",
         "Settings.js",
         "StaticContentProvider.js",
+        "OutputStream.js",
+        "TestBase.js",
         "TextRange.js",
         "TextUtils.js",
         "Throttler.js",
         "UIString.js",
         "ModuleExtensionInterfaces.js"
+    ],
+    "skip_compilation": [
+        "TestBase.js"
     ]
 }

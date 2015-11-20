@@ -451,7 +451,8 @@ WebInspector.Project.prototype = {
             }
             var oldPath = uiSourceCode.path();
             var newPath = uiSourceCode.parentPath() ? uiSourceCode.parentPath() + "/" + newName : newName;
-            this._uiSourceCodesMap.set(newPath, this._uiSourceCodesMap.get(oldPath));
+            var value = /** @type {!{uiSourceCode: !WebInspector.UISourceCode, index: number}} */ (this._uiSourceCodesMap.get(oldPath));
+            this._uiSourceCodesMap.set(newPath, value);
             this._uiSourceCodesMap.delete(oldPath);
             callback(true, newName, newURL, newOriginURL, newContentType);
         }
@@ -573,6 +574,7 @@ WebInspector.Workspace.Events = {
     UISourceCodeAdded: "UISourceCodeAdded",
     UISourceCodeRemoved: "UISourceCodeRemoved",
     UISourceCodeContentCommitted: "UISourceCodeContentCommitted",
+    UISourceCodeWorkingCopyChanged: "UISourceCodeWorkingCopyChanged",
     ProjectAdded: "ProjectAdded",
     ProjectRemoved: "ProjectRemoved"
 }
@@ -619,6 +621,22 @@ WebInspector.Workspace.prototype = {
     {
         var projects = this.projectsForType(WebInspector.projectTypes.Network);
         projects = projects.concat(this.projectsForType(WebInspector.projectTypes.ContentScripts));
+        for (var i = 0; i < projects.length; ++i) {
+            var project = projects[i];
+            var uiSourceCode = project.uiSourceCodeForOriginURL(originURL);
+            if (uiSourceCode)
+                return uiSourceCode;
+        }
+        return null;
+    },
+
+    /**
+     * @param {string} originURL
+     * @return {?WebInspector.UISourceCode}
+     */
+    filesystemUISourceCode: function(originURL)
+    {
+        var projects = this.projectsForType(WebInspector.projectTypes.FileSystem);
         for (var i = 0; i < projects.length; ++i) {
             var project = projects[i];
             var uiSourceCode = project.uiSourceCodeForOriginURL(originURL);

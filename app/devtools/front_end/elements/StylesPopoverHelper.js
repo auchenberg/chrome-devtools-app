@@ -1,4 +1,4 @@
- // Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright (c) 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,17 +10,26 @@ WebInspector.StylesPopoverHelper = function()
 {
     this._popover = new WebInspector.Popover();
     this._popover.setCanShrink(false);
+    this._popover.setNoMargins(true);
     this._popover.element.addEventListener("mousedown", consumeEvent, false);
 
     this._hideProxy = this.hide.bind(this, true);
     this._boundOnKeyDown = this._onKeyDown.bind(this);
+    this._repositionBound = this.reposition.bind(this);
+    this._boundFocusOut = this._onFocusOut.bind(this);
 }
 
-WebInspector.StylesPopoverHelper.Events = {
-    Hidden: "Hidden"
-};
-
 WebInspector.StylesPopoverHelper.prototype = {
+    /**
+     * @param {!Event} event
+     */
+    _onFocusOut: function(event)
+    {
+        if (!event.relatedTarget || event.relatedTarget.isSelfOrDescendant(this._view.contentElement))
+            return;
+        this._hideProxy();
+    },
+
     /**
      * @return {boolean}
      */
@@ -30,15 +39,15 @@ WebInspector.StylesPopoverHelper.prototype = {
     },
 
     /**
-     * @param {!WebInspector.View} view
+     * @param {!WebInspector.Widget} view
      * @param {!Element} anchorElement
-     * @return {boolean}
+     * @param {function(boolean)=} hiddenCallback
      */
-    show: function(view, anchorElement)
+    show: function(view, anchorElement, hiddenCallback)
     {
         if (this._popover.isShowing()) {
             if (this._anchorElement === anchorElement)
-                return false;
+                return;
 
             // Reopen the picker for another anchor element.
             this.hide(true);
@@ -47,27 +56,31 @@ WebInspector.StylesPopoverHelper.prototype = {
         delete this._isHidden;
         this._anchorElement = anchorElement;
         this._view = view;
-        this.reposition(this._view, anchorElement);
+        this._hiddenCallback = hiddenCallback;
+        this.reposition();
 
         var document = this._popover.element.ownerDocument;
         document.addEventListener("mousedown", this._hideProxy, false);
         document.defaultView.addEventListener("resize", this._hideProxy, false);
         this._view.contentElement.addEventListener("keydown", this._boundOnKeyDown, false);
 
-        return true;
+        this._scrollerElement = anchorElement.enclosingNodeOrSelfWithClass("style-panes-wrapper");
+        if (this._scrollerElement)
+            this._scrollerElement.addEventListener("scroll", this._repositionBound, false);
     },
 
     /**
-     * @param {!Element} element
-     * @param {!WebInspector.View} view
      * @param {!Event=} event
      */
-    reposition: function(view, element, event)
+    reposition: function(event)
     {
         if (!this._previousFocusElement)
             this._previousFocusElement = WebInspector.currentFocusElement();
-        this._popover.showView(view, element);
-        WebInspector.setCurrentFocusElement(view.contentElement);
+        // Unbind "blur" listener to avoid reenterability: |popover.showView| will hide the popover and trigger it synchronously.
+        this._view.contentElement.removeEventListener("focusout", this._boundFocusOut, false);
+        this._popover.showView(this._view, this._anchorElement);
+        this._view.contentElement.addEventListener("focusout", this._boundFocusOut, false);
+        WebInspector.setCurrentFocusElement(this._view.contentElement);
     },
 
     /**
@@ -81,10 +94,14 @@ WebInspector.StylesPopoverHelper.prototype = {
         this._isHidden = true;
         this._popover.hide();
 
+        if (this._scrollerElement)
+            this._scrollerElement.removeEventListener("scroll", this._repositionBound, false);
+
         document.removeEventListener("mousedown", this._hideProxy, false);
         document.defaultView.removeEventListener("resize", this._hideProxy, false);
 
-        this.dispatchEventToListeners(WebInspector.StylesPopoverHelper.Events.Hidden, !!commitEdit);
+        if (this._hiddenCallback)
+            this._hiddenCallback.call(null, !!commitEdit);
 
         WebInspector.setCurrentFocusElement(this._previousFocusElement);
         delete this._previousFocusElement;
@@ -92,6 +109,7 @@ WebInspector.StylesPopoverHelper.prototype = {
         if (this._view) {
             this._view.detach();
             this._view.contentElement.removeEventListener("keydown", this._boundOnKeyDown, false);
+            this._view.contentElement.removeEventListener("focusout", this._boundFocusOut, false);
             delete this._view;
         }
     },
@@ -117,40 +135,46 @@ WebInspector.StylesPopoverHelper.prototype = {
 
 /**
  * @constructor
- * @extends {WebInspector.Object}
- * @param {!WebInspector.StylePropertyTreeElementBase} treeElement
- * @param {?WebInspector.StylesPopoverHelper} stylesPopoverHelper
- * @param {!Element} nameElement
- * @param {!Element} valueElement
+ * @param {!WebInspector.StylePropertyTreeElement} treeElement
+ * @param {!WebInspector.StylesPopoverHelper} stylesPopoverHelper
  * @param {string} text
  */
-WebInspector.StylesPopoverIcon = function(treeElement, stylesPopoverHelper, nameElement, valueElement, text)
+WebInspector.BezierPopoverIcon = function(treeElement, stylesPopoverHelper, text)
 {
     this._treeElement = treeElement;
     this._stylesPopoverHelper = stylesPopoverHelper;
-    this._nameElement = nameElement;
-    this._valueElement = valueElement;
-    this._text = text;
-    this._isEditable = this._treeElement.isEditableStyleRule();
-    this._boundPopoverHidden = this.popoverHidden.bind(this);
+    this._createDOM(text);
+
+    this._boundBezierChanged = this._bezierChanged.bind(this);
 }
 
-WebInspector.StylesPopoverIcon.prototype = {
+WebInspector.BezierPopoverIcon.prototype = {
     /**
-     * @return {?WebInspector.View}
+     * @return {!Element}
      */
-    view: function()
+    element: function()
     {
-        return null;
+        return this._element;
     },
 
     /**
-     * @param {!Event} event
-     * @return {boolean}
+     * @param {string} text
      */
-    toggle: function(event)
+    _createDOM: function(text)
     {
-        return false;
+        this._element = createElement("nobr");
+        this._element.title = WebInspector.UIString("Open cubic bezier editor");
+
+        this._iconElement = this._element.createSVGChild("svg", "popover-icon bezier-icon");
+        this._iconElement.setAttribute("height", 10);
+        this._iconElement.setAttribute("width", 10);
+        this._iconElement.addEventListener("click", this._iconClick.bind(this), false);
+        var g = this._iconElement.createSVGChild("g");
+        var path = g.createSVGChild("path");
+        path.setAttribute("d", "M2,8 C2,3 8,7 8,2");
+
+        this._bezierValueElement = this._element.createChild("span");
+        this._bezierValueElement.textContent = text;
     },
 
     /**
@@ -159,45 +183,166 @@ WebInspector.StylesPopoverIcon.prototype = {
     _iconClick: function(event)
     {
         event.consume(true);
-
-        if (!this._isEditable)
+        if (this._stylesPopoverHelper.isShowing()) {
+            this._stylesPopoverHelper.hide(true);
             return;
-
-        if (this.toggle(event)) {
-            this._originalPropertyText = this._treeElement.property.propertyText;
-            this._treeElement.editablePane().setEditingStyle(true);
-            this._scrollerElement = this._iconElement.enclosingNodeOrSelfWithClass("style-panes-wrapper");
-            this._stylesPopoverHelper.addEventListener(WebInspector.StylesPopoverHelper.Events.Hidden, this._boundPopoverHidden);
-            if (this._scrollerElement && this.view()) {
-                this._repositionCallback = this._stylesPopoverHelper.reposition.bind(this._stylesPopoverHelper, /** @type {!WebInspector.View} */(this.view()), this._iconElement);
-                this._scrollerElement.addEventListener("scroll", this._repositionCallback, false);
-            } else {
-                console.error("Unable to handle picker scrolling");
-            }
         }
-    },
 
-    _valueChanged: function()
-    {
-        this._treeElement.applyStyleText(this._nameElement.textContent + ": " + this._valueElement.textContent, false, false, false);
+        this._bezierEditor = new WebInspector.BezierEditor();
+        var geometry = WebInspector.Geometry.CubicBezier.parse(this._bezierValueElement.textContent);
+        this._bezierEditor.setBezier(geometry);
+        this._bezierEditor.addEventListener(WebInspector.BezierEditor.Events.BezierChanged, this._boundBezierChanged);
+        this._stylesPopoverHelper.show(this._bezierEditor, this._iconElement, this._onPopoverHidden.bind(this));
+
+        this._originalPropertyText = this._treeElement.property.propertyText;
+        this._treeElement.parentPane().setEditingStyle(true);
     },
 
     /**
      * @param {!WebInspector.Event} event
      */
-    popoverHidden: function(event)
+    _bezierChanged: function(event)
     {
-        if (this._scrollerElement && this._repositionCallback) {
-            this._scrollerElement.removeEventListener("scroll", this._repositionCallback, false);
-            delete this._repositionCallback;
-        }
-        this._stylesPopoverHelper.removeEventListener(WebInspector.StylesPopoverHelper.Events.Hidden, this._boundPopoverHidden);
-        var commitEdit = event.data;
-        var propertyText = !commitEdit && this._originalPropertyText ? this._originalPropertyText : (this._nameElement.textContent + ": " + this._valueElement.textContent);
-        this._treeElement.applyStyleText(propertyText, true, true, false);
-        this._treeElement.editablePane().setEditingStyle(false);
-        delete this._originalPropertyText;
+        this._bezierValueElement.textContent = /** @type {string} */ (event.data);
+        this._treeElement.applyStyleText(this._treeElement.renderedPropertyText(), false);
     },
 
-    __proto__: WebInspector.Object.prototype
+    /**
+     * @param {boolean} commitEdit
+     */
+    _onPopoverHidden: function(commitEdit)
+    {
+        this._bezierEditor.removeEventListener(WebInspector.BezierEditor.Events.BezierChanged, this._boundBezierChanged);
+        delete this._bezierEditor;
+
+        var propertyText = commitEdit ? this._treeElement.renderedPropertyText() : this._originalPropertyText;
+        this._treeElement.applyStyleText(propertyText, true);
+        this._treeElement.parentPane().setEditingStyle(false);
+        delete this._originalPropertyText;
+    }
+}
+
+/**
+ * @constructor
+ * @param {!WebInspector.StylePropertyTreeElement} treeElement
+ * @param {!WebInspector.StylesPopoverHelper} stylesPopoverHelper
+ * @param {string} colorText
+ */
+WebInspector.ColorSwatchPopoverIcon = function(treeElement, stylesPopoverHelper, colorText)
+{
+    this._treeElement = treeElement;
+    this._stylesPopoverHelper = stylesPopoverHelper;
+
+    this._swatch = WebInspector.ColorSwatch.create();
+    this._swatch.setColorText(colorText);
+    this._swatch.setFormat(WebInspector.ColorSwatchPopoverIcon._colorFormat(this._swatch.color()));
+    var shiftClickMessage = WebInspector.UIString("Shift + Click to change color format.");
+    this._swatch.iconElement().title = WebInspector.UIString("Open color picker. %s", shiftClickMessage);
+    this._swatch.iconElement().addEventListener("click", this._iconClick.bind(this));
+    this._contrastColor = null;
+
+    this._boundSpectrumChanged = this._spectrumChanged.bind(this);
+}
+
+/**
+ * @param {!WebInspector.Color} color
+ * @return {!WebInspector.Color.Format}
+ */
+WebInspector.ColorSwatchPopoverIcon._colorFormat = function(color)
+{
+    const cf = WebInspector.Color.Format;
+    var format;
+    var formatSetting = WebInspector.moduleSetting("colorFormat").get();
+    if (formatSetting === cf.Original)
+        format = cf.Original;
+    else if (formatSetting === cf.RGB)
+        format = (color.hasAlpha() ? cf.RGBA : cf.RGB);
+    else if (formatSetting === cf.HSL)
+        format = (color.hasAlpha() ? cf.HSLA : cf.HSL);
+    else if (!color.hasAlpha())
+        format = (color.canBeShortHex() ? cf.ShortHEX : cf.HEX);
+    else
+        format = cf.RGBA;
+
+    return format;
+}
+
+WebInspector.ColorSwatchPopoverIcon.prototype = {
+    /**
+     * @return {!Element}
+     */
+    element: function()
+    {
+        return this._swatch;
+    },
+
+    /**
+     * @param {!WebInspector.Color} color
+     */
+    setContrastColor: function(color)
+    {
+        this._contrastColor = color;
+        if (this._spectrum)
+            this._spectrum.setContrastColor(this._contrastColor);
+    },
+
+    /**
+     * @param {!Event} event
+     */
+    _iconClick: function(event)
+    {
+        event.consume(true);
+        if (this._stylesPopoverHelper.isShowing()) {
+            this._stylesPopoverHelper.hide(true);
+            return;
+        }
+
+        var color = this._swatch.color();
+        var format = this._swatch.format();
+        if (format === WebInspector.Color.Format.Original)
+            format = color.format();
+        this._spectrum = new WebInspector.Spectrum();
+        this._spectrum.setColor(color, format);
+        if (this._contrastColor)
+            this._spectrum.setContrastColor(this._contrastColor);
+
+        this._spectrum.addEventListener(WebInspector.Spectrum.Events.SizeChanged, this._spectrumResized, this);
+        this._spectrum.addEventListener(WebInspector.Spectrum.Events.ColorChanged, this._boundSpectrumChanged);
+        this._stylesPopoverHelper.show(this._spectrum, this._swatch.iconElement(), this._onPopoverHidden.bind(this));
+
+        this._originalPropertyText = this._treeElement.property.propertyText;
+        this._treeElement.parentPane().setEditingStyle(true);
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _spectrumResized: function(event)
+    {
+        this._stylesPopoverHelper.reposition();
+    },
+
+    /**
+     * @param {!WebInspector.Event} event
+     */
+    _spectrumChanged: function(event)
+    {
+        var colorString = /** @type {string} */ (event.data);
+        this._swatch.setColorText(colorString);
+        this._treeElement.applyStyleText(this._treeElement.renderedPropertyText(), false);
+    },
+
+    /**
+     * @param {boolean} commitEdit
+     */
+    _onPopoverHidden: function(commitEdit)
+    {
+        this._spectrum.removeEventListener(WebInspector.Spectrum.Events.ColorChanged, this._boundSpectrumChanged);
+        delete this._spectrum;
+
+        var propertyText = commitEdit ? this._treeElement.renderedPropertyText() : this._originalPropertyText;
+        this._treeElement.applyStyleText(propertyText, true);
+        this._treeElement.parentPane().setEditingStyle(false);
+        delete this._originalPropertyText;
+    }
 }

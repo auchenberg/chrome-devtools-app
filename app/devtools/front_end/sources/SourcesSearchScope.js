@@ -61,26 +61,17 @@ WebInspector.SourcesSearchScope.prototype = {
     /**
      * @override
      * @param {!WebInspector.Progress} progress
-     * @param {function(boolean)} indexingFinishedCallback
      */
-    performIndexing: function(progress, indexingFinishedCallback)
+    performIndexing: function(progress)
     {
         this.stopSearch();
 
         var projects = this._projects();
         var compositeProgress = new WebInspector.CompositeProgress(progress);
-        progress.addEventListener(WebInspector.Progress.Events.Canceled, indexingCanceled);
         for (var i = 0; i < projects.length; ++i) {
             var project = projects[i];
             var projectProgress = compositeProgress.createSubProgress(project.uiSourceCodes().length);
             project.indexContent(projectProgress);
-        }
-        compositeProgress.addEventListener(WebInspector.Progress.Events.Done, indexingFinishedCallback.bind(this, true));
-
-        function indexingCanceled()
-        {
-            indexingFinishedCallback(false);
-            progress.done();
         }
     },
 
@@ -104,7 +95,7 @@ WebInspector.SourcesSearchScope.prototype = {
          */
         function filterOutContentScriptsIfNeeded(project)
         {
-            return WebInspector.settings.searchInContentScripts.get() || project.type() !== WebInspector.projectTypes.ContentScripts;
+            return WebInspector.moduleSetting("searchInContentScripts").get() || project.type() !== WebInspector.projectTypes.ContentScripts;
         }
 
         return WebInspector.workspace.projects().filter(filterOutServiceProjects).filter(filterOutContentScriptsIfNeeded);

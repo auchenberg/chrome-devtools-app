@@ -13,12 +13,11 @@
         "DefaultScriptMapping.js",
         "FileSystemWorkspaceBinding.js",
         "FileUtils.js",
-        "Linkifier.js",
+        "BlackboxSupport.js",
         "NetworkMapping.js",
         "NetworkProject.js",
         "PresentationConsoleMessageHelper.js",
         "ResourceUtils.js",
-        "ScriptSnippetModel.js",
         "TempFile.js",
         "WorkspaceController.js",
         "ContentScriptProjectDecorator.js"
