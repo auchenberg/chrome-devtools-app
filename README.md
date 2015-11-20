@@ -14,31 +14,33 @@ I've written an article about this project, where I go in detail, and provide a 
 ![Intro](https://raw.githubusercontent.com/auchenberg/chrome-devtools-app/master/readme/app-intro.png)
 ![Tools](https://raw.githubusercontent.com/auchenberg/chrome-devtools-app/master/readme/app-inspector.png)
 
-## How to get started with a release
+## Installation
 
-1. Go to the releases page, and download the latest DMG installer (Mac only, for now)
-2. Start an instance of Chrome with [remote debugging enabled](https://developer.chrome.com/devtools/docs/debugger-protocol#remote)
-3. 3. Wait a second or click the refresh button.
-4. Targets should show up. Click "Go" next to your target.
-5. Bam. There go you.
+1. Go to the [releases page](https://github.com/auchenberg/chrome-devtools-app/releases), and download the latest DMG installer (Mac only, for now)
+2. Drag Chrome DevTools App to your `applications` folder
+3. Start an instance of Chrome with [remote debugging enabled](https://developer.chrome.com/devtools/docs/debugger-protocol#remote)
+4. Start Chrome DevTools App
+5. Wait a second or click the refresh button.
+6. Targets should show up. Click "Go" next to your target.
+7. Bam. There go you.
 
-### How to get started from source?
+## Development
+
+#### How to get started from source?
 1. Run `npm install`
 2. Run `npm start`
 
----
-
-### How to start this app from source?
+#### How to start this app from source?
 1. Run `npm install`
 2. Run `npm install bower-cli -g`
 3. Run `npm start`
 
-### How to start a debug version of this app?
+#### How to start a debug version of this app?
 Run `npm start`
 
----
+## Releases
 
-### How to make a new build?
+#### How to make a new build?
 Run `npm run release`
 
 ---
