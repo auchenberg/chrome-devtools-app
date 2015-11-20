@@ -23,17 +23,18 @@ I've written an article about this project, where I go in detail, and provide a 
 5. Bam. There go you.
 
 ### How to get started from source?
-1. Run ``npm install``
-3. Run ``npm start``
+1. Run `npm install`
+3. Run `npm start`
 
 ---
 
 ### How to start this app from source?
-1. Run ``npm install`` if you haven't already
-2. Run ``npm start``
+1. Run `npm install`
+2. Run `npm install bower-cli -g`
+2. Run `npm start`
 
 ### How to start a debug version of this app?
-Run ``npm start``
+Run `npm start`
 
 ---
 
