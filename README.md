@@ -3,6 +3,9 @@
 Chrome DevTools App.
 ===================
 
+## Discontinued
+This project is Discontinued. See https://github.com/auchenberg/chrome-devtools-app/issues/48
+
 [![Join the chat at https://gitter.im/auchenberg/chrome-devtools-app](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/auchenberg/chrome-devtools-app?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Chrome DevTools packaged as an app using [electron-prebuilt](https://github.com/mafintosh/electron-prebuilt). 
