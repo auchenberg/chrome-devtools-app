@@ -1,6 +1,6 @@
 # Update on Chrome DevTools App.
 
-Chrome DevTools App. is now superseeded by https://inspect.dev/ – a new developer tool for macOS and Windows to inspect and debug your web apps and websites in Safari and WebViews on iOS devices 🤯🎉🔥 
+Chrome DevTools App is now superseeded by https://inspect.dev/ – a new developer tool for macOS and Windows to inspect and debug your web apps and websites in Safari and WebViews on iOS devices 🤯🎉🔥 
 
 <p><strong>Maintenance status:</strong> Chrome DevTools App. is not proactively maintained or extended.
 
